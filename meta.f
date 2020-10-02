@@ -2,7 +2,7 @@
 \ Andrew McKewan
 \ December 1994
 
-ANEW FVM HEX
+HEX
 
 \ Memory Access Words
 CREATE TARGET-ORIGIN 2000 ALLOT   TARGET-ORIGIN 2000 ERASE
@@ -111,7 +111,7 @@ VARIABLE OP  ( next opcode )
 : ABORT"  0B ,-T  STRING,-T   ; IMMEDIATE
 
 \ Define Meta Branching Constructs
-: ?CONDITION  TRUE ?PAIRS  ;
+: ?CONDITION  INVERT ABORT" unbalanced"  ;
 : MARK  ( -- here )  HERE-T  0 ?CODE ! ;
 : OFFSET  ( to from -- offset )  - CELL / ;
 : ?>MARK      ( -- f addr )   TRUE  MARK   0 ,-T  ;
