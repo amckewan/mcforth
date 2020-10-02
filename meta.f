@@ -3,23 +3,31 @@
 \ December 1994
 
 HEX
+\ Support 64-bit gforth host
+4 CONSTANT CELL-T
+: CELL+-T CELL-T + ;
+: CELLS-T CELL-T * ;
+: CELL@ UL@ ; \ gforth
+: CELL! L! ; \ gforth
+: CELL, HERE CELL-T ALLOT CELL! ;
+
 
 \ Memory Access Words
 CREATE TARGET-ORIGIN 2000 ALLOT   TARGET-ORIGIN 2000 ERASE
 VARIABLE DP-T
 : THERE   ( taddr -- addr )   TARGET-ORIGIN +   ;
 : C@-T    ( taddr -- char )   THERE C@ ;
-: @-T     ( taddr -- n )      THERE @  ;
+: @-T     ( taddr -- n )      THERE CELL@ ;
 : C!-T    ( char taddr -- )   THERE C! ;
-: !-T     ( n taddr -- )      THERE !  ;
+: !-T     ( n taddr -- )      THERE CELL! ;
 : HERE-T  ( -- taddr )   DP-T @   ;
 : ALLOT-T ( n -- )       HERE-T THERE OVER ERASE   DP-T +!   ;
 : C,-T    ( char -- )   HERE-T C!-T   1 DP-T +!  ;
-: ,-T     ( n -- )      HERE-T  !-T   CELL DP-T +!  ;
+: ,-T     ( n -- )      HERE-T  !-T   CELL-T DP-T +!  ;
 : S,-T    ( addr len -- )
    0 ?DO   COUNT C,-T   LOOP   DROP   ;
 
-: ALIGN  BEGIN HERE-T 3 AND WHILE 0 C,-T REPEAT ;
+: ALIGN  BEGIN HERE-T CELL-T 1 - AND WHILE 0 C,-T REPEAT ;
 
 \ Output to kernel.c
 : ?ERR  ABORT" file I/O error" ;
@@ -61,10 +69,13 @@ VARIABLE ?CODE
 
 \ Create Headers in Target Image
 VARIABLE LAST
-VARIABLE CONTEXT  0 , ( FORTH ) 0 , ( COMPILER )
+CREATE CONTEXT  1 , 0 , ( FORTH ) 0 , ( COMPILER )
 : FORTH     1 CONTEXT ! ; FORTH
 : COMPILER  2 CONTEXT ! ;
-: EMPLACE  ( targ-addr -- )  FORTH  CONTEXT SWAP THERE 3 CELLS MOVE ;
+: EMPLACE  ( targ-addr -- )  FORTH  \ TODO CONTEXT SWAP THERE 3 CELLS MOVE ;
+    CONTEXT @ OVER !-T
+    CONTEXT CELL+ @ OVER CELL+-T !-T
+    CONTEXT 2 CELLS + @ SWAP 2 CELLS-T + !-T ;
 
 : HASH   ( voc -- thread )  CELLS CONTEXT + ;
 
