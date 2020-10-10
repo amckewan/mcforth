@@ -30,6 +30,8 @@ VARIABLE DP-T
 
 : ALIGN  BEGIN HERE-T CELL-T 1 - AND WHILE 0 C,-T REPEAT ;
 
+: dump-it  target-origin here-t dump ;
+
 \ Output to kernel.c
 : ?ERR  ABORT" file I/O error" ;
 
@@ -48,7 +50,9 @@ CREATE CRLF 2 C, 0D C, 0A C,
     DUP TARGET-ORIGIN HERE-T ROT WRITE-FILE ?ERR
     CLOSE-FILE ?ERR
     OUT @ CLOSE-FILE ?ERR
-    ." done" CR BYE ;
+    ." done" ; \ CR BYE ;
+
+: ciao cr bye ;
 
 \ Opcodes
 2F CONSTANT <LIT>
@@ -116,18 +120,10 @@ VARIABLE OP  ( next opcode )
 : LITERAL  ( n -- )  <LIT> ,C  ,-T ; IMMEDIATE
 : $   BL WORD NUMBER DROP [COMPILE] LITERAL ; IMMEDIATE
 
-\ Compile Strings into the Target
-: STRING,-T   ( -- )
-   [CHAR] " PARSE  DUP C,-T  S,-T  ALIGN  0 ?CODE ! ;
-
-: ."      09 ,-T  STRING,-T   ; IMMEDIATE
-: S"      0A ,-T  STRING,-T   ; IMMEDIATE
-: ABORT"  0B ,-T  STRING,-T   ; IMMEDIATE
-
 \ Define Meta Branching Constructs
 : ?CONDITION  INVERT ABORT" unbalanced"  ;
 : MARK  ( -- here )  HERE-T  0 ?CODE ! ;
-: OFFSET  ( to from -- offset )  - CELL / ;
+: OFFSET  ( to from -- offset )  - CELL-T / ;
 : ?>MARK      ( -- f addr )   TRUE  MARK   0 ,-T  ;
 : ?>RESOLVE   ( f addr -- )   MARK  OVER OFFSET  SWAP !-T   ?CONDITION  ;
 : ?<MARK      ( -- f addr )   TRUE  MARK  ;
@@ -147,6 +143,14 @@ VARIABLE OP  ( next opcode )
 : AGAIN		2 ,C  ?<RESOLVE ; IMMEDIATE
 : WHILE		[COMPILE] IF  2SWAP ; IMMEDIATE
 : REPEAT	[COMPILE] AGAIN  [COMPILE] THEN ; IMMEDIATE
+
+\ Compile Strings into the Target
+: STRING,-T   ( -- )
+   [CHAR] " PARSE  DUP C,-T  S,-T  ALIGN  0 ?CODE ! ;
+
+: ."      09 ,-T  STRING,-T   ; IMMEDIATE
+: S"      0A ,-T  STRING,-T   ; IMMEDIATE
+: ABORT"  0B ,-T  STRING,-T   ; IMMEDIATE
 
 \ Defining Words
 : EQU CONSTANT ;
