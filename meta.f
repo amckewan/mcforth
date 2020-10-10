@@ -10,6 +10,7 @@ HEX
 : CELL@ UL@ ; \ gforth
 : CELL! L! ; \ gforth
 : CELL, HERE CELL-T ALLOT CELL! ;
+warnings off
 
 
 \ Memory Access Words
@@ -33,7 +34,7 @@ VARIABLE DP-T
 : ?ERR  ABORT" file I/O error" ;
 
 VARIABLE OUT
-S" KERNEL.C" R/W CREATE-FILE ?ERR OUT !
+S" kernel.c" R/W CREATE-FILE ?ERR OUT !
 
 CREATE CRLF 2 C, 0D C, 0A C,
 : WRITE  ( adr len -- )  OUT @ WRITE-FILE ?ERR ;
@@ -42,10 +43,12 @@ CREATE CRLF 2 C, 0D C, 0A C,
 
 \ Save dictionary image to KERNEL.DCT
 : SAVE  ( -- )
-    S" KERNEL.DCT" R/W CREATE-FILE ?ERR
+    CR ." Saving..."
+    S" kernel.dct" R/W CREATE-FILE ?ERR
     DUP TARGET-ORIGIN HERE-T ROT WRITE-FILE ?ERR
     CLOSE-FILE ?ERR
-    OUT @ CLOSE-FILE ?ERR ;
+    OUT @ CLOSE-FILE ?ERR
+    ." done" CR BYE ;
 
 \ Opcodes
 2F CONSTANT <LIT>

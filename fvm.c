@@ -154,7 +154,7 @@ void dotid(cell nfa)
 {
 	type(nfa+1, m[nfa] & 31);
 	putchar(BL);
-} 
+}
 
 void words(cell v)
 {
@@ -216,8 +216,10 @@ void fvm()
 
 int main(int argc, char* argv[])
 {
-	FILE* f = fopen("kernel.dct", "r");
-	if (!f) { printf("Cannot open kernel.dct\n"); return 1; }
+	const char *filename = "kernel.dct";
+	if (argc > 1) filename = argv[1];
+	FILE* f = fopen(filename, "r");
+	if (!f) { printf("Cannot open %s\n", filename); return 1; }
 	fread(m, 1, 0x2000, f);
 	fclose(f);
 
