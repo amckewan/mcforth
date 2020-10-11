@@ -5,3 +5,6 @@ fvm: fvm.c kernel.c
 
 kernel.c: meta.f
 	gforth meta.f -e ciao
+
+test: fvm
+	./fvm

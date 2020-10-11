@@ -38,9 +38,9 @@ VARIABLE DP-T
 VARIABLE OUT
 S" kernel.c" R/W CREATE-FILE ?ERR OUT !
 
-CREATE CRLF 2 C, 0D C, 0A C,
+CREATE EOL 1 C, 0A C,
 : WRITE  ( adr len -- )  OUT @ WRITE-FILE ?ERR ;
-: NEWLINE   CRLF COUNT WRITE ;
+: NEWLINE   EOL COUNT WRITE ;
 : &  1 PARSE WRITE  NEWLINE ;
 
 \ Save dictionary image to KERNEL.DCT
@@ -102,6 +102,7 @@ CREATE CONTEXT  1 , 0 , ( FORTH ) 0 , ( COMPILER )
 	>IN @  BL WORD COUNT S" (" COMPARE
 	IF  >IN !  ELSE  DROP  [COMPILE] (  THEN ;
 
+: C-COMMENT  S" /* " WRITE  >IN @  BL WORD COUNT WRITE  >IN !  S"  */ " WRITE ;
 VARIABLE OP  ( next opcode )
 : OP!  OP ! ;
 : OP:  ( output opcode case statement )
@@ -109,8 +110,8 @@ VARIABLE OP  ( next opcode )
 	?COMMENT & ( copy rest of line )  1 OP +! ;
 
 : (PRIM)   OP @ ,C  [COMPILE] EXIT  OP:  ; 
-: PRIM   HEADER (PRIM) ;
-: CODE   TARGET-CREATE (PRIM) ;
+: PRIM   C-COMMENT  HEADER (PRIM) ;
+: CODE   C-COMMENT  TARGET-CREATE (PRIM) ;
 
 : BINARY  ( op -- )
 	CREATE , IMMEDIATE  DOES> @  LATEST <LIT> =
@@ -305,13 +306,18 @@ CODE -FIND  ( str v -- str t | xt f )
 CODE .  ( n -- )  printf("%d ", top); pop; NEXT
 CODE DEPTH ( -- n )	 w = sp - stack; push w; NEXT
 CODE .S ( -- )
-&		push sp - stack - 1;
-&		if (top)
-&			for (w = top - 1; w >= 0; w--)
-&				printf("%d ", sp[-w]);
-&		else
-&			printf("<empty> ");
-&		pop;  NEXT
+&       w = sp - stack;  sp[1] = top;
+&       printf("[%d] ", w);
+&       for (int i = 0; i < w; i++)
+&           printf("%d ", stack[i+2]);
+&       NEXT
+\ &		push sp - stack - 1;
+\ &		if (top)
+\ &			for (w = top - 1; w >= 0; w--)
+\ &				printf("%d ", sp[-w]);
+\ &		else
+\ &			printf("<empty> ");
+\ &		pop;  NEXT
 
 CODE WORDS  ( -- )  words(M(CONTEXT)); NEXT
 CODE DUMP  ( a n -- )  dump(*sp--, top); pop; NEXT
@@ -328,7 +334,7 @@ COMPILER
 : LITERAL  $ 2F , , ;
 FORTH
 
-: INTERPRET  ( -- )
+: INTERPRET1  ( -- )
 	BEGIN	BL WORD DUP C@
 	WHILE	STATE @
 		IF	$ 2 -FIND IF  $ 1 -FIND IF  NUMBER ( [COMPILE]) LITERAL
@@ -336,6 +342,12 @@ FORTH
 		ELSE  $ 1 -FIND IF  NUMBER  ELSE  EXECUTE  THEN
 		THEN  DEPTH 0< ABORT" stack?"
 	REPEAT DROP ;
+
+: INTERPRET  ( -- )
+    BEGIN   BL WORD DUP C@
+    WHILE   $ 1 -FIND IF  NUMBER  ELSE  EXECUTE  THEN
+            DEPTH 0< DROP \ ABORT" stack?"
+    REPEAT DROP ;
 
 : QUIT [ HERE-T 200 !-T ]
 \	." hi" CR

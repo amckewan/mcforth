@@ -34,7 +34,7 @@ uchar m[0x2000]; // This is the dictionary
 #define pop top = *sp--
 #define pop2 top = sp[-1], sp -= 2
 #define LOGICAL ? -1 : 0
-#define aligned(x) ((cell)(x) + (CELL - 1) & ~(CELL - 1))
+#define aligned(x) (((cell)(x) + (CELL - 1)) & ~(CELL - 1))
 #define c(x) HERE = x, HERE += CELL
 
 // Memory Map
@@ -45,6 +45,8 @@ uchar m[0x2000]; // This is the dictionary
 uchar *word(cell delim, Input *input, uchar *here) {
     uchar *p = input->addr + input->in;
     cell n = input->len - input->in;
+
+    //printf("tib='%s' len=%d >in=%d\n", input->addr, input->len, input->in);
 
     uchar *q = here + 1;
     int i;
@@ -64,6 +66,7 @@ uchar *word(cell delim, Input *input, uchar *here) {
 
     *q = 0;           // null-terminate string
     *here = (uchar)i; // store count byte
+    //printf("word='%s' >in=%d\n", here+1, input->in);
     return here;
 }
 
@@ -72,20 +75,33 @@ cell cfa(cell nfa) // convert nfa to cfa (NAME>)
     return aligned(nfa + (m[nfa] & 31) + 1);
 }
 
-cell nfa(cell cfa) // convert cfa to nfa (>NAME)
-{
+cell nfa(cell cfa) {
+    // convert cfa to nfa (>NAME)
     do
         --cfa;
     while ((m[cfa] & 0x80) == 0);
     return cfa;
 }
 
-cell find(cell name, cell v) // return nfa if found, else zero
-{
+int match(const char *name, const char *str, int len) {
+    for (int i = 0; i < len; i++) {
+        if (toupper(name[i]) != toupper(str[i])) return 0;
+    }
+    return 1;
+}
+
+void typex(const char *str, int len) {
+    fwrite(str, len, sizeof(char), stdout);
+}
+
+cell find(cell name, cell v) {
+    //printf("find '"); typex((char*)m+name+1, m[name]); printf("'\n");
+    // return nfa if found, else zero
     cell link = M(CONTEXT + v * CELL);
     cell len = m[name];
     while (link) {
-        if ((m[link + CELL] & 63) == len && !memcmp(m + name + 1, m + link + CELL + 1, len))
+        if ((m[link + CELL] & 63) == len
+            && match((char*)m + name + 1, (char*)m + link + CELL + 1, len))
             return link + CELL;
 
         link = M(link);
@@ -118,8 +134,10 @@ void type(cell addr, cell len) {
 }
 
 int accept(cell addr, cell len) {
-    len = strlen(fgets((char *)m + addr, len, stdin));
-    if (len && m[addr + len - 1] == EOL) len--;
+    char *str = fgets((char *)m + addr, len, stdin);
+    if (!str) exit (0);
+    len = strlen(str);
+    if (len && str[len-1] == EOL) str[--len] = 0;
     return len;
 }
 
