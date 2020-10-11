@@ -196,15 +196,14 @@ next:
     w = *ip++;
 exec:
     switch (w) {
+
 #include "prims.inc"
 
         default: // call
-
-            if (w < 0x200) {
+            if (w < 0x200 || w > HERE) {
                 printf("Invalid opcode 0x%X\n", w);
                 goto abort;
             }
-
             *++rp = (cell)ip;
             ip = (cell *)(m + w);
             NEXT
