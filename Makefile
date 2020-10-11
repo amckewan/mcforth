@@ -1,10 +1,10 @@
 # fvm makefile
 
-fvm: fvm.c kernel.c
+fvm: fvm.c dict.inc prims.inc
 	clang -m32 fvm.c -o fvm
 
-kernel.c: meta.f
-	gforth meta.f -e ciao
+prims.inc: meta.fs
+	gforth meta.fs -e ciao
 
 test: fvm
 	./fvm

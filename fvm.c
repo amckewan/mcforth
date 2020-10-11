@@ -26,7 +26,9 @@ typedef struct {
     uchar name[1];
 } Header;
 
-uchar m[0x2000]; // This is the dictionary
+uchar m[0x2000] = {
+#include "dict.inc"
+};
 
 #define M(n) *(cell *)&m[n]
 #define NEXT goto next;
@@ -194,7 +196,7 @@ next:
     w = *ip++;
 exec:
     switch (w) {
-#include "kernel.c"
+#include "prims.inc"
 
         default: // call
 
@@ -210,6 +212,7 @@ exec:
 }
 
 int main(int argc, char *argv[]) {
+    fvm();
     const char *filename = "dict.img";
     if (argc > 1) filename = argv[1];
     FILE *f = fopen(filename, "r");

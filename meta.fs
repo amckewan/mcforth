@@ -40,7 +40,7 @@ VARIABLE OUT
 : CLOSE  OUT @ CLOSE-FILE ?ERR ;
 : WRITE  ( adr len -- )  OUT @ WRITE-FILE ?ERR ;
 
-S" kernel.c" OPEN
+S" prims.inc" OPEN
 
 CREATE EOL 1 C, 0A C,
 : NEWLINE   EOL COUNT WRITE ;
@@ -52,7 +52,7 @@ CREATE EOL 1 C, 0A C,
     CLOSE-FILE ?ERR ;
 
 : WRITE-DICT \ write dict.c
-    S" dict.c" OPEN
+    S" dict.inc" OPEN
     HERE-T 0 DO
         S" /* " WRITE  I 0 <# # # # # #> WRITE  S"  */ " WRITE  
         I THERE 10 0 DO
