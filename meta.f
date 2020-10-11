@@ -36,21 +36,52 @@ VARIABLE DP-T
 : ?ERR  ABORT" file I/O error" ;
 
 VARIABLE OUT
-S" kernel.c" R/W CREATE-FILE ?ERR OUT !
+: OPEN   R/W CREATE-FILE ?ERR OUT ! ;
+: CLOSE  OUT @ CLOSE-FILE ?ERR ;
+: WRITE  ( adr len -- )  OUT @ WRITE-FILE ?ERR ;
+
+S" kernel.c" OPEN
 
 CREATE EOL 1 C, 0A C,
-: WRITE  ( adr len -- )  OUT @ WRITE-FILE ?ERR ;
 : NEWLINE   EOL COUNT WRITE ;
 : &  1 PARSE WRITE  NEWLINE ;
 
+: WRITE-DICT-IMG
+    S" dict.img" R/W CREATE-FILE ?ERR
+    DUP TARGET-ORIGIN HERE-T ROT WRITE-FILE ?ERR
+    CLOSE-FILE ?ERR ;
+
+: WRITE-DICT \ write dict.c
+    S" dict.c" OPEN
+    HERE-T 0 DO
+        S" /* " WRITE  I 0 <# # # # # #> WRITE  S"  */ " WRITE  
+        I THERE 10 0 DO
+            S" 0x" WRITE  COUNT 0 <# # # #> WRITE  S" , " WRITE
+        LOOP DROP
+        NEWLINE
+    10 +LOOP  CLOSE ;
+
+: PRINTABLE  DUP 20 < OVER 7F > OR IF DROP [CHAR] . THEN ;
+: WRITE-DICT-DUMP  \ write dump to dict.dump
+    S" dict.dump" OPEN
+    HERE-T 0 DO
+        I 0 <# [CHAR] : HOLD # # # # #> WRITE
+        I THERE 10 0 DO
+            I 3 AND 0= IF S"  " WRITE THEN
+            COUNT 0 <# BL HOLD # # #> WRITE 
+        LOOP DROP
+        I THERE 10 0 DO  COUNT 0 <# OVER PRINTABLE HOLD #> WRITE  LOOP DROP
+        NEWLINE
+    10 +LOOP  CLOSE ;
+
 \ Save dictionary image to KERNEL.DCT
 : SAVE  ( -- )
+    CLOSE
     CR ." Saving..."
-    S" kernel.dct" R/W CREATE-FILE ?ERR
-    DUP TARGET-ORIGIN HERE-T ROT WRITE-FILE ?ERR
-    CLOSE-FILE ?ERR
-    OUT @ CLOSE-FILE ?ERR
-    ." done" ; \ CR BYE ;
+    WRITE-DICT-IMG
+    WRITE-DICT
+    WRITE-DICT-DUMP
+    ." done" ;
 
 : ciao cr bye ;
 

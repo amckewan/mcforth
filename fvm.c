@@ -210,7 +210,7 @@ exec:
 }
 
 int main(int argc, char *argv[]) {
-    const char *filename = "kernel.dct";
+    const char *filename = "dict.img";
     if (argc > 1) filename = argv[1];
     FILE *f = fopen(filename, "r");
     if (!f) {
