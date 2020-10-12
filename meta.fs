@@ -9,28 +9,28 @@ HEX
 : CELLS-T CELL-T * ;
 : CELL@ UL@ ; \ gforth
 : CELL! L! ; \ gforth
-: CELL, HERE CELL-T ALLOT CELL! ;
+\ : CELL, HERE CELL-T ALLOT CELL! ;
 warnings off
 
 
 \ Memory Access Words
-CREATE TARGET-ORIGIN 2000 ALLOT   TARGET-ORIGIN 2000 ERASE
+CREATE TARGET-IMAGE 2000 ALLOT   TARGET-IMAGE 2000 ERASE
 VARIABLE DP-T
-: THERE   ( taddr -- addr )   TARGET-ORIGIN +   ;
+: THERE   ( taddr -- addr )   TARGET-IMAGE + ;
 : C@-T    ( taddr -- char )   THERE C@ ;
 : @-T     ( taddr -- n )      THERE CELL@ ;
 : C!-T    ( char taddr -- )   THERE C! ;
 : !-T     ( n taddr -- )      THERE CELL! ;
-: HERE-T  ( -- taddr )   DP-T @   ;
-: ALLOT-T ( n -- )       HERE-T THERE OVER ERASE   DP-T +!   ;
-: C,-T    ( char -- )   HERE-T C!-T   1 DP-T +!  ;
-: ,-T     ( n -- )      HERE-T  !-T   CELL-T DP-T +!  ;
+: HERE-T  ( -- taddr )   DP-T @ ;
+: ALLOT-T ( n -- )       HERE-T THERE OVER ERASE   DP-T +! ;
+: C,-T    ( char -- )   HERE-T C!-T   1 DP-T +! ;
+: ,-T     ( n -- )      HERE-T  !-T   CELL-T DP-T +! ;
 : S,-T    ( addr len -- )
-   0 ?DO   COUNT C,-T   LOOP   DROP   ;
+   0 ?DO   COUNT C,-T   LOOP   DROP ;
 
 : ALIGN  BEGIN HERE-T CELL-T 1 - AND WHILE 0 C,-T REPEAT ;
 
-: dump-it  target-origin here-t dump ;
+: tdump  target-image here-t dump ;
 
 \ Output to kernel.c
 : ?ERR  ABORT" file I/O error" ;
@@ -48,7 +48,7 @@ CREATE EOL 1 C, 0A C,
 
 : WRITE-DICT-IMG
     S" dict.img" R/W CREATE-FILE ?ERR
-    DUP TARGET-ORIGIN HERE-T ROT WRITE-FILE ?ERR
+    DUP TARGET-IMAGE HERE-T ROT WRITE-FILE ?ERR
     CLOSE-FILE ?ERR ;
 
 : WRITE-DICT \ write dict.c
@@ -78,7 +78,7 @@ CREATE EOL 1 C, 0A C,
 : SAVE  ( -- )
     CLOSE
     CR ." Saving..."
-    WRITE-DICT-IMG
+    \ WRITE-DICT-IMG
     WRITE-DICT
     WRITE-DICT-DUMP
     ." done" ;
@@ -123,10 +123,10 @@ CREATE CONTEXT  1 , 0 , ( FORTH ) 0 , ( COMPILER )
 
 : TARGET-CREATE   ( -- )
    >IN @ HEADER >IN !  CREATE IMMEDIATE  HERE-T ,
-   DOES>  @ COMPILE,  ;
+   DOES>  @ COMPILE, ;
 
 : RECREATE   ( -- )
-   >IN @   TARGET-CREATE   >IN !   ;
+   >IN @   TARGET-CREATE   >IN ! ;
 
 \ Generate FVM Primatives
 : ?COMMENT  ( allow Forth comment after OP: etc. )
@@ -140,7 +140,7 @@ VARIABLE OP  ( next opcode )
 	S" case 0x" WRITE  OP @ 0 <# # # # #> WRITE  S" :  " WRITE
 	?COMMENT & ( copy rest of line )  1 OP +! ;
 
-: (PRIM)   OP @ ,C  [COMPILE] EXIT  OP:  ; 
+: (PRIM)   OP @ ,C  [COMPILE] EXIT  OP: ;
 : PRIM   C-COMMENT  HEADER (PRIM) ;
 : CODE   C-COMMENT  TARGET-CREATE (PRIM) ;
 
@@ -153,13 +153,13 @@ VARIABLE OP  ( next opcode )
 : $   BL WORD NUMBER DROP [COMPILE] LITERAL ; IMMEDIATE
 
 \ Define Meta Branching Constructs
-: ?CONDITION  INVERT ABORT" unbalanced"  ;
+: ?CONDITION  INVERT ABORT" unbalanced" ;
 : MARK  ( -- here )  HERE-T  0 ?CODE ! ;
 : OFFSET  ( to from -- offset )  - CELL-T / ;
-: ?>MARK      ( -- f addr )   TRUE  MARK   0 ,-T  ;
-: ?>RESOLVE   ( f addr -- )   MARK  OVER OFFSET  SWAP !-T   ?CONDITION  ;
-: ?<MARK      ( -- f addr )   TRUE  MARK  ;
-: ?<RESOLVE   ( f addr -- )   MARK  OFFSET ,-T   ?CONDITION   ;
+: ?>MARK      ( -- f addr )   TRUE  MARK   0 ,-T ;
+: ?>RESOLVE   ( f addr -- )   MARK  OVER OFFSET  SWAP !-T   ?CONDITION ;
+: ?<MARK      ( -- f addr )   TRUE  MARK ;
+: ?<RESOLVE   ( f addr -- )   MARK  OFFSET ,-T   ?CONDITION ;
 
 : CONDITION  ( optimizer )
 	58 ,C ;
@@ -180,22 +180,22 @@ VARIABLE OP  ( next opcode )
 : STRING,-T   ( -- )
    [CHAR] " PARSE  DUP C,-T  S,-T  ALIGN  0 ?CODE ! ;
 
-: ."      09 ,-T  STRING,-T   ; IMMEDIATE
-: S"      0A ,-T  STRING,-T   ; IMMEDIATE
-: ABORT"  0B ,-T  STRING,-T   ; IMMEDIATE
+: ."      09 ,-T  STRING,-T ; IMMEDIATE
+: S"      0A ,-T  STRING,-T ; IMMEDIATE
+: ABORT"  0B ,-T  STRING,-T ; IMMEDIATE
 
 \ Defining Words
-: EQU CONSTANT ;
-: ;_  [COMPILE] ;  ; IMMEDIATE
+\ : EQU CONSTANT ;
+: ;_  [COMPILE] ; ; IMMEDIATE
 
 : CONSTANT  TARGET-CREATE  [COMPILE] LITERAL  [COMPILE] EXIT ;
 : VARIABLE  TARGET-CREATE  8 ,C  0 ,-T ;
 
 : T:  HEADER   0 ?CODE !  ] ;  \ to create words with no host header
 
-: ;   [COMPILE] EXIT  [COMPILE] [  ;_ IMMEDIATE
+: ;   [COMPILE] EXIT  [COMPILE] [ ;_ IMMEDIATE
 : [COMPILE] ;_
-: :   TARGET-CREATE  0 ?CODE !  ]  ;_
+: :   TARGET-CREATE  0 ?CODE !  ] ;_
 
 
 \ **********************************************************************
