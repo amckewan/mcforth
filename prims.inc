@@ -1,6 +1,6 @@
-case 0x000:  /* EXIT */	xit:  ip = (cell*) *rp--; NEXT
-/* EXECUTE */ case 0x001:  	w = top; pop; goto exec;
-case 0x002:  /* BRANCH */	ip += *ip; NEXT
+case 0x000:  /* EXIT */	xit:  ip = (opcode*) *rp--; NEXT
+/* EXECUTEX */ case 0x001:  	w = top; pop; goto exec;
+case 0x002:  /* BRANCH */	ip += *(cell*)ip; NEXT
 case 0x003:  /* DO */		NEXT
 case 0x004:  /* ?DO */		NEXT
 case 0x005:  /* LOOP */		NEXT
@@ -30,7 +30,7 @@ ip = litq(ip); pop; NEXT
 case 0x020:  	top += *ip++; NEXT
 case 0x021:  	top -= *ip++; NEXT
 case 0x022:  	top &= *ip++; NEXT
-case 0x02F:  	push *ip++; NEXT
+case 0x02F:  	push *(cell*)ip; ip += CELL; NEXT
 /* 0= */ case 0x040:  		top = (top == 0) LOGICAL; NEXT
 /* 0< */ case 0x041:  		top = (top < 0) LOGICAL; NEXT
 /* 0> */ case 0x042:  		top = (top > 0) LOGICAL; NEXT
@@ -47,7 +47,7 @@ case 0x04C:  		top = (*sp-- >= top) LOGICAL; NEXT
 case 0x04D:  		top = (*sp-- <= top) LOGICAL; NEXT
 case 0x04E:  		top = ((ucell)*sp-- >= (ucell)top) LOGICAL; NEXT
 case 0x04F:  		top = ((ucell)*sp-- <= (ucell)top) LOGICAL; NEXT
-case 0x058:  	ip += top ? 1 : *ip; pop; NEXT
+case 0x058:  	ip += top ? CELL : *(cell*)ip; pop; NEXT
 /* DROP */ case 0x060:  	pop; NEXT
 /* DUP */ case 0x061:  	*++sp = top; NEXT
 /* ?DUP */ case 0x062:  	if (top) *++sp = top; NEXT

@@ -1,6 +1,7 @@
 // fvm.c
 
 #include <ctype.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,9 +9,11 @@
 #define BL ' '
 #define EOL '\n'
 
-typedef int cell;
-typedef unsigned int ucell;
+typedef int32_t cell;
+typedef uint32_t ucell;
 typedef unsigned char uchar;
+typedef uint8_t byte;
+typedef uint8_t opcode;
 
 #define CELL sizeof(cell)
 
@@ -143,12 +146,12 @@ int accept(cell addr, cell len) {
     return len;
 }
 
-cell *litq(cell *ip) {
+void *litq(void *ip) {
     uchar *p = (uchar *)ip;
     return (cell *)aligned(p + *p + 1);
 }
 
-cell *dotq(cell *ip) {
+void *dotq(void *ip) {
     char *p = (char *)ip;
     int n = *p++;
     while (n--) putchar(*p++);
@@ -182,7 +185,8 @@ void dump(cell a, cell n) {
 void fvm() {
     cell stack[100], *sp, top;
     cell rack[100], *rp;
-    cell *ip, w;
+    opcode *ip;
+    cell w;
 
     printf("hi\n");
 
@@ -190,23 +194,25 @@ abort:
     sp = stack;
     *sp = top = 0;
     rp = rack;
-    ip = (cell *)&m[0x200];
+    ip = (opcode *)&m[0x200];
 
 next:
+//printf("ip=%X op=%02X\n", ip-m, *(ip-m));
     w = *ip++;
 exec:
     switch (w) {
 
 #include "prims.inc"
 
-        default: // call
-            if (w < 0x200 || w > HERE) {
-                printf("Invalid opcode 0x%X\n", w);
-                goto abort;
-            }
-            *++rp = (cell)ip;
-            ip = (cell *)(m + w);
-            NEXT
+    case 0xFF: // call 32-bit address
+        w = *(cell*)ip;
+        *++rp = (cell)ip + CELL;
+        ip = (opcode*)(m + w);
+        NEXT
+
+    default:
+        printf("Invalid opcode 0x%X\n", w);
+        goto abort;
     }
 }
 

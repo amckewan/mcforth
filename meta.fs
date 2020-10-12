@@ -89,13 +89,15 @@ CREATE EOL 1 C, 0A C,
 2F CONSTANT <LIT>
 
 VARIABLE ?CODE
-: LATEST  ( -- n )  ?CODE @ @-T ;
-: PATCH  ( n -- )  ?CODE @ !-T ;
-: ,C  ( opcode -- )  HERE-T ?CODE !  ,-T ;
-: ,A  ( addr -- )   ,C ;
+: LATEST  ( -- n )  ?CODE @ C@-T ;
+: PATCH  ( n -- )  ?CODE @ C!-T ;
+: ,C  ( opcode -- )  HERE-T ?CODE !  C,-T ;
+\ : ,A  ( addr -- )   ,C ;
 
 : COMPILE,  ( op/addr -- )
-	,C ;  ( non-optimizing )
+    DUP 200 < IF  ,C  ELSE  FF ,C ,-T  THEN ;
+
+\	,C ;  ( non-optimizing )
 \	DUP 200 < IF  ,C  ELSE  DUP @-T  ( adr op )
 \	OVER 2 CELLS + @-T 0=  OVER 20 40 WITHIN AND
 \	IF  ( literal ) ,C  CELL+ @-T ,-T  ELSE
@@ -145,7 +147,7 @@ VARIABLE OP  ( next opcode )
 : CODE   C-COMMENT  TARGET-CREATE (PRIM) ;
 
 : BINARY  ( op -- )
-	CREATE , IMMEDIATE  DOES> @  LATEST <LIT> =
+	CREATE , IMMEDIATE  DOES> @  LATEST <LIT> =     0 AND ( FIXME)
 		IF  10 + PATCH  ELSE  ,C  THEN ;
 
 \ Target Literals
@@ -155,7 +157,7 @@ VARIABLE OP  ( next opcode )
 \ Define Meta Branching Constructs
 : ?CONDITION  INVERT ABORT" unbalanced" ;
 : MARK  ( -- here )  HERE-T  0 ?CODE ! ;
-: OFFSET  ( to from -- offset )  - CELL-T / ;
+: OFFSET  ( to from -- offset )  - ( CELL-T /) ;
 : ?>MARK      ( -- f addr )   TRUE  MARK   0 ,-T ;
 : ?>RESOLVE   ( f addr -- )   MARK  OVER OFFSET  SWAP !-T   ?CONDITION ;
 : ?<MARK      ( -- f addr )   TRUE  MARK ;
@@ -180,9 +182,9 @@ VARIABLE OP  ( next opcode )
 : STRING,-T   ( -- )
    [CHAR] " PARSE  DUP C,-T  S,-T  ALIGN  0 ?CODE ! ;
 
-: ."      09 ,-T  STRING,-T ; IMMEDIATE
-: S"      0A ,-T  STRING,-T ; IMMEDIATE
-: ABORT"  0B ,-T  STRING,-T ; IMMEDIATE
+: ."      09 ,C  STRING,-T ; IMMEDIATE
+: S"      0A ,C  STRING,-T ; IMMEDIATE
+: ABORT"  0B ,C  STRING,-T ; IMMEDIATE
 
 \ Defining Words
 \ : EQU CONSTANT ;
@@ -202,13 +204,13 @@ VARIABLE OP  ( next opcode )
 \ FVM Kernel
 
 200 DP-T !
-( cold start: )  0 ,C
+( cold start: )  FF ,C 0 ,-T
 
 0 OP!
 
-OP: /* EXIT */	xit:  ip = (cell*) *rp--; NEXT
-CODE EXECUTE		w = top; pop; goto exec;
-OP: /* BRANCH */	ip += *ip; NEXT
+OP: /* EXIT */	xit:  ip = (opcode*) *rp--; NEXT
+CODE EXECUTEX		w = top; pop; goto exec;
+OP: /* BRANCH */	ip += *(cell*)ip; NEXT
 OP: /* DO */		NEXT
 OP: /* ?DO */		NEXT
 OP: /* LOOP */		NEXT
@@ -244,7 +246,7 @@ OP: ( LIT - )	top -= *ip++; NEXT
 OP: ( LIT AND )	top &= *ip++; NEXT
 
 2F OP!
-OP:  ( LIT )	push *ip++; NEXT
+OP:  ( LIT )	push *(cell*)ip; ip += CELL; NEXT
 
 40 OP!
 
@@ -267,7 +269,7 @@ OP: ( U>= )		top = ((ucell)*sp-- >= (ucell)top) LOGICAL; NEXT
 OP: ( U<= )		top = ((ucell)*sp-- <= (ucell)top) LOGICAL; NEXT
 
 58 OP!
-OP: ( 0<> IF )	ip += top ? 1 : *ip; pop; NEXT
+OP: ( 0<> IF )	ip += top ? CELL : *(cell*)ip; pop; NEXT
 
 60 OP!
 CODE DROP		pop; NEXT
@@ -342,13 +344,6 @@ CODE .S ( -- )
 &       for (int i = 0; i < w; i++)
 &           printf("%d ", stack[i+2]);
 &       NEXT
-\ &		push sp - stack - 1;
-\ &		if (top)
-\ &			for (w = top - 1; w >= 0; w--)
-\ &				printf("%d ", sp[-w]);
-\ &		else
-\ &			printf("<empty> ");
-\ &		pop;  NEXT
 
 CODE WORDS  ( -- )  words(M(CONTEXT)); NEXT
 CODE DUMP  ( a n -- )  dump(*sp--, top); pop; NEXT
@@ -360,10 +355,11 @@ VARIABLE STATE
 : ,   H @ !   $ 4 H +! ;
 : C,  H @ C!  $ 1 H +! ;
 
-: COMPILE,  , ;
+: COMPILE,  $ FF C, , ;
 COMPILER
-: LITERAL  $ 2F , , ;
+: LITERAL  $ 2F C, , ;
 FORTH
+: EXECUTE  >R ;
 
 : INTERPRET  ( -- )
 	BEGIN	BL WORD DUP C@
@@ -374,7 +370,7 @@ FORTH
 		THEN  DEPTH 0< ABORT" stack?"
 	REPEAT DROP ;
 
-: QUIT [ HERE-T 200 !-T ]
+: QUIT [ HERE-T 201 !-T ]
 \	." hi" CR
 \		WORDS CR
 	BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF  ." ok"  THEN  AGAIN ;
