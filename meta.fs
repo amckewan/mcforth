@@ -85,27 +85,30 @@ CREATE EOL 1 C, 0A C,
 
 : ciao cr bye ;
 
+\ **********************************************************************
+\ Compiler
+
 \ Opcodes
 2F CONSTANT <LIT>
 
 VARIABLE ?CODE
 : LATEST  ( -- n )  ?CODE @ C@-T ;
 : PATCH  ( n -- )  ?CODE @ C!-T ;
-: ,C  ( opcode -- )  HERE-T ?CODE !  C,-T ;
-\ : ,A  ( addr -- )   ,C ;
+: OP,  ( opcode -- )  HERE-T ?CODE !  C,-T ;
+\ : ,A  ( addr -- )   OP, ;
 
 : COMPILE,  ( op/addr -- )
-    DUP 200 < IF  ,C  ELSE  FF ,C ,-T  THEN ;
+    DUP 200 < IF  OP,  ELSE  FF OP, ,-T  THEN ;
 
-\   ,C ;  ( non-optimizing )
-\   DUP 200 < IF  ,C  ELSE  DUP @-T  ( adr op )
+\   OP, ;  ( non-optimizing )
+\   DUP 200 < IF  OP,  ELSE  DUP @-T  ( adr op )
 \   OVER 2 CELLS + @-T 0=  OVER 20 40 WITHIN AND
-\   IF  ( literal ) ,C  CELL+ @-T ,-T  ELSE
+\   IF  ( literal ) OP,  CELL+ @-T ,-T  ELSE
 \   OVER CELL+ @-T 0=  SWAP 200 < AND
-\   IF  ( primative )  @-T ,C  ELSE
+\   IF  ( primative )  @-T OP,  ELSE
 \   ( call )  ,A  THEN THEN THEN ;
 
-: EXIT  0 ,C ; IMMEDIATE
+: EXIT  0 OP, ; IMMEDIATE
 
 \ Create Headers in Target Image
 VARIABLE LAST
@@ -142,16 +145,17 @@ VARIABLE OP  ( next opcode )
     S" case 0x" WRITE  OP @ 0 <# # # # #> WRITE  S" :  " WRITE
     ?COMMENT & ( copy rest of line )  1 OP +! ;
 
-: (PRIM)   OP @ ,C  [COMPILE] EXIT  OP: ;
-: PRIM   C-COMMENT  HEADER (PRIM) ;
-: CODE   C-COMMENT  TARGET-CREATE (PRIM) ;
+: (PRIM)   OP @ OP,  [COMPILE] EXIT  OP: ;
+: PRIM   C-COMMENT  HEADER (PRIM) ;  ( in target only )
+: CODE   C-COMMENT  TARGET-CREATE (PRIM) ;  ( in host and target)
 
 : BINARY  ( op -- )
-    CREATE , IMMEDIATE  DOES> @  LATEST <LIT> =     0 AND ( FIXME)
-        IF  10 + PATCH  ELSE  ,C  THEN ;
+    CREATE , IMMEDIATE  DOES> @ OP, ;
+\    CREATE , IMMEDIATE  DOES> @  LATEST <LIT> =
+\        IF  10 + PATCH  ELSE  OP,  THEN ;
 
 \ Target Literals
-: LITERAL  ( n -- )  <LIT> ,C  ,-T ; IMMEDIATE
+: LITERAL  ( n -- )  <LIT> OP,  ,-T ; IMMEDIATE
 : $   BL WORD NUMBER DROP [COMPILE] LITERAL ; IMMEDIATE
 
 \ Define Meta Branching Constructs
@@ -164,34 +168,33 @@ VARIABLE OP  ( next opcode )
 : ?<RESOLVE   ( f addr -- )   MARK  OFFSET ,-T   ?CONDITION ;
 
 : CONDITION  ( optimizer )
-    58 ,C ;
+    58 OP, ;
 
 : NOT  ( invert last conditional op )  LATEST 40 48 WITHIN
-    IF  LATEST 8 + PATCH  ELSE  40 ,C  THEN ; IMMEDIATE
+    IF  LATEST 8 + PATCH  ELSE  40 OP,  THEN ; IMMEDIATE
 
 : IF        CONDITION  ?>MARK ; IMMEDIATE
 : THEN      ?>RESOLVE ; IMMEDIATE
-: ELSE      2 ,C  ?>MARK  2SWAP ?>RESOLVE ; IMMEDIATE
+: ELSE      2 OP,  ?>MARK  2SWAP ?>RESOLVE ; IMMEDIATE
 : BEGIN     ?<MARK ; IMMEDIATE
 : UNTIL     CONDITION  ?<RESOLVE ; IMMEDIATE
-: AGAIN     2 ,C  ?<RESOLVE ; IMMEDIATE
+: AGAIN     2 OP,  ?<RESOLVE ; IMMEDIATE
 : WHILE     [COMPILE] IF  2SWAP ; IMMEDIATE
 : REPEAT    [COMPILE] AGAIN  [COMPILE] THEN ; IMMEDIATE
 
 \ Compile Strings into the Target
-: STRING,-T   ( -- )
-   [CHAR] " PARSE  DUP C,-T  S,-T  ALIGN  0 ?CODE ! ;
+: ",  [CHAR] " PARSE  DUP C,-T  S,-T  ALIGN  0 ?CODE ! ;
 
-: ."      09 ,C  STRING,-T ; IMMEDIATE
-: S"      0A ,C  STRING,-T ; IMMEDIATE
-: ABORT"  0B ,C  STRING,-T ; IMMEDIATE
+: ."      09 OP,  ", ; IMMEDIATE
+: S"      0A OP,  ", ; IMMEDIATE
+: ABORT"  0B OP,  ", ; IMMEDIATE
 
 \ Defining Words
 \ : EQU CONSTANT ;
 : ;_  [COMPILE] ; ; IMMEDIATE
 
 : CONSTANT  TARGET-CREATE  [COMPILE] LITERAL  [COMPILE] EXIT ;
-: VARIABLE  TARGET-CREATE  8 ,C  0 ,-T ;
+: VARIABLE  TARGET-CREATE  8 OP,  0 ,-T ;
 
 : T:  HEADER   0 ?CODE !  ] ;  \ to create words with no host header
 
@@ -204,79 +207,88 @@ VARIABLE OP  ( next opcode )
 \ FVM Kernel
 
 200 DP-T !
-( cold start: )  FF ,C 0 ,-T
+( cold start: )  FF OP, 0 ,-T
+
+& #define S sp
+& #define R rp
+& #define I ip
 
 0 OP!
 
-OP: /* EXIT */  xit:  ip = (opcode*) *rp--; NEXT
+OP: /* EXIT */  xit:  ip = (opcode*) *rp--  NEXT
 CODE EXECUTEX       w = top; pop; goto exec;
-OP: /* BRANCH */    ip += *(cell*)ip; NEXT
+OP: /* BRANCH */    ip += *(cell*)ip  NEXT
 OP: /* DO */        NEXT
 OP: /* ?DO */       NEXT
 OP: /* LOOP */      NEXT
 OP: /* +LOOP */     NEXT
-OP: /* DLIT */      push *ip++; push *ip++; NEXT
+OP: /* DLIT */      push *ip++; push *ip++  NEXT
+( must be 8!)
 OP: /* DOVAR */     push (uchar*)ip++ - m; goto xit;
-OP: /* ." */        ip = dotq(ip); NEXT
-OP: /* S" */        push (cell)ip + 1; push *(uchar*)ip; ip = litq(ip); NEXT
+OP: /* ." */        ip = dotq(ip)  NEXT
+OP: /* S" */        push (cell)ip + 1; push *(uchar*)ip; ip = litq(ip)  NEXT
 OP: /* abort" */    if (top) { dotq((cell*)(m + HERE)); putchar(BL); dotq(ip); goto abort; }
-                    & ip = litq(ip); pop; NEXT
+                    & ip = litq(ip); pop  NEXT
 
 10 OP!
 
-PRIM +          top += *sp--; NEXT
-PRIM -          top = *sp-- - top; NEXT
-PRIM AND        top &= *sp--; NEXT
-PRIM OR         top |= *sp--; NEXT
-PRIM XOR        top ^= *sp--; NEXT
-PRIM LSHIFT     top = *sp-- << top; NEXT
-PRIM RSHIFT     top = (cell) ((ucell)(*sp--) >> top); NEXT
-PRIM ARSHIFT    top = *sp-- >> top; NEXT
-CODE SWAP       w = top; top = *sp; *sp = w; NEXT
-CODE PICK       top = sp[-top]; NEXT
-CODE @          top = M(top); NEXT
-CODE !          M(top) = *sp; pop2; NEXT
-CODE +!         M(top) += *sp; pop2; NEXT
-CODE *          top *= *sp--; NEXT
-CODE /          top = *sp-- / top; NEXT
+PRIM +          top += *sp--  NEXT
+PRIM -          top = *sp-- - top  NEXT
+PRIM AND        top &= *sp--  NEXT
+PRIM OR         top |= *sp--  NEXT
+PRIM XOR        top ^= *sp--  NEXT
+PRIM LSHIFT     top = *sp-- << top  NEXT
+PRIM RSHIFT     top = (cell) ((ucell)(*sp--) >> top)  NEXT
+PRIM ARSHIFT    top = *sp-- >> top  NEXT
+CODE SWAP       w = top; top = *sp; *sp = w  NEXT
+CODE PICK       top = sp[-top]  NEXT
+CODE @          top = M(top)  NEXT
+CODE !          M(top) = *sp; pop2  NEXT
+CODE +!         M(top) += *sp; pop2  NEXT
+CODE *          top *= *sp--  NEXT
+CODE /          top = *sp-- / top  NEXT
 CODE NOP        NEXT
 
-OP: ( LIT + )   top += *ip++; NEXT
-OP: ( LIT - )   top -= *ip++; NEXT
-OP: ( LIT AND ) top &= *ip++; NEXT
+OP: ( LIT + )   top += *ip++  NEXT
+OP: ( LIT - )   top -= *ip++  NEXT
+OP: ( LIT AND ) top &= *ip++  NEXT
 
 2F OP!
-OP:  ( LIT )    push *(cell*)ip; ip += CELL; NEXT
+OP:  ( LIT )    push *(cell*)ip; ip += CELL  NEXT
 
 40 OP!
 
-CODE 0=         top = (top == 0) LOGICAL; NEXT
-CODE 0<         top = (top < 0) LOGICAL; NEXT
-CODE 0>         top = (top > 0) LOGICAL; NEXT
-CODE =          top = (*sp-- == top) LOGICAL; NEXT
-CODE <          top = (*sp-- < top) LOGICAL; NEXT
-CODE >          top = (*sp-- > top) LOGICAL; NEXT
-CODE U<         top = ((ucell)*sp-- < (ucell)top) LOGICAL; NEXT
-CODE U>         top = ((ucell)*sp-- > (ucell)top) LOGICAL; NEXT
+CODE 0=         top = (top == 0) LOGICAL  NEXT
+CODE 0<         top = (top < 0) LOGICAL  NEXT
+CODE 0>         top = (top > 0) LOGICAL  NEXT
+CODE =          top = (*sp-- == top) LOGICAL  NEXT
+CODE <          top = (*sp-- < top) LOGICAL  NEXT
+CODE >          top = (*sp-- > top) LOGICAL  NEXT
+CODE U<         top = ((ucell)*sp-- < (ucell)top) LOGICAL  NEXT
+CODE U>         top = ((ucell)*sp-- > (ucell)top) LOGICAL  NEXT
 
-OP: ( 0<> )     top = (top != 0) LOGICAL; NEXT
-OP: ( 0>= )     top = (top >= 0) LOGICAL; NEXT
-OP: ( 0<= )     top = (top <= 0) LOGICAL; NEXT
-OP: ( <>  )     top = (*sp-- != top) LOGICAL; NEXT
-OP: ( >=  )     top = (*sp-- >= top) LOGICAL; NEXT
-OP: ( <=  )     top = (*sp-- <= top) LOGICAL; NEXT
-OP: ( U>= )     top = ((ucell)*sp-- >= (ucell)top) LOGICAL; NEXT
-OP: ( U<= )     top = ((ucell)*sp-- <= (ucell)top) LOGICAL; NEXT
+OP: /* 0<> */   top = (top != 0) LOGICAL  NEXT
+OP: /* 0>= */   top = (top >= 0) LOGICAL  NEXT
+OP: /* 0<= */   top = (top <= 0) LOGICAL  NEXT
+OP: /* <>  */   top = (*sp-- != top) LOGICAL  NEXT
+OP: /* >=  */   top = (*sp-- >= top) LOGICAL  NEXT
+OP: /* <=  */   top = (*sp-- <= top) LOGICAL  NEXT
+OP: /* U>= */   top = ((ucell)*sp-- >= (ucell)top) LOGICAL  NEXT
+OP: /* U<= */   top = ((ucell)*sp-- <= (ucell)top) LOGICAL  NEXT
 
 58 OP!
-OP: ( 0<> IF )  ip += top ? CELL : *(cell*)ip; pop; NEXT
+OP: ( 0<> IF )  ip += top ? CELL : *(cell*)ip; pop  NEXT
 
 60 OP!
-CODE DROP       pop; NEXT
-CODE DUP        *++sp = top; NEXT
-CODE ?DUP       if (top) *++sp = top; NEXT
-OP: ( SWAP )    NEXT
-CODE OVER       NEXT
+CODE DROP       pop  NEXT
+CODE DUP        *++sp = top  NEXT
+CODE NIP        sp--  NEXT
+CODE ?DUP       if (top) *++sp = top  NEXT
+\ OP: ( SWAP )    NEXT
+CODE OVER       push sp[-1]  NEXT
+CODE ROT        w = S[-1], S[-1] = *S, *S = top, top = w  NEXT
+CODE >R         *++rp = top, pop  NEXT
+CODE R>         push *rp--  NEXT
 
 : 2DROP DROP DROP ;
 
@@ -287,16 +299,16 @@ CODE OVER       NEXT
 : 1+  $ 1 + ;
 : 1-  $ 1 - ;
 
-CODE C@  ( a -- c )  top = m[top];  NEXT
-CODE C!  ( c a -- )  m[top] = *sp; pop2; NEXT
+CODE C@  ( a -- c )  top = m[top]  NEXT
+CODE C!  ( c a -- )  m[top] = *sp; pop2  NEXT
 : COUNT  DUP 1+ SWAP C@ ;
 
-CODE KEY   ( -- char )  push getchar(); NEXT
-CODE EMIT  ( char -- )  putchar(top); pop; NEXT
-CODE TYPE  ( a n -- )   type(*sp, top); pop2; NEXT
-CODE CR    ( -- )       putchar('\n'); NEXT
+CODE KEY   ( -- char )  push getchar()  NEXT
+CODE EMIT  ( char -- )  putchar(top); pop  NEXT
+CODE TYPE  ( a n -- )   type(*sp, top); pop2  NEXT
+CODE CR    ( -- )       putchar('\n')  NEXT
 
-CODE ACCEPT ( a n -- n )  top = accept(*sp--, top); NEXT
+CODE ACCEPT ( a n -- n )  top = accept(*sp--, top)  NEXT
 
 VARIABLE TIB 50 ALLOT-T
 
@@ -306,8 +318,8 @@ VARIABLE TIB 50 ALLOT-T
 10 CONSTANT >IN
 14 CONSTANT CONTEXT
 
-CODE +M  top += (cell)m; NEXT   // convert to physical address
-CODE -M  top -= (cell)m; NEXT   // convert to absolute address
+CODE +M  top += (cell)m  NEXT   // convert to physical address
+CODE -M  top -= (cell)m  NEXT   // convert to absolute address
 
 : QUERY  ( -- )  TIB $ 50 ACCEPT  TIB +M 'TIB !  #TIB !  $ 0 >IN ! ;
 
@@ -316,28 +328,28 @@ CODE -M  top -= (cell)m; NEXT   // convert to absolute address
 \   DROP COUNT TYPE ABORT"  ?"  THEN ;
 
 CODE -NUMBER  ( a -- a t, n f ) w = number(top, ++sp);
-&   if (w) top = 0; else *sp = top, top = -1; NEXT
+&   if (w) top = 0; else *sp = top, top = -1  NEXT
 \ : NUMBER  ( a -- n )  -NUMBER IF  COUNT TYPE  $ 1 ABORT"  ?"  THEN ;
 : NUMBER  ( a -- n )  -NUMBER ABORT" ?" ;
     
 20 CONSTANT BL
-CODE WORD  ( char -- addr )  top = word(top, (Input*)(m+8), m+HERE) - m; NEXT
+CODE WORD  ( char -- addr )  top = word(top, (Input*)(m+8), m+HERE) - m  NEXT
 
 CODE FIND  ( str -- xt flag | str 0 )
 &       w = find(top, 1);
 &       if (w) *++sp = cfa(w), top = -1;
-&       else push 0; NEXT
+&       else push 0  NEXT
 
 CODE -FIND  ( str v -- str t | xt f )
 &       w = find(*sp, top);
 &       if (w) *sp = cfa(w), top = 0;
-&       else top = -1; NEXT
+&       else top = -1  NEXT
 
 : -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
 : '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
 
-CODE .  ( n -- )  printf("%d ", top); pop; NEXT
-CODE DEPTH ( -- n )  w = sp - stack; push w; NEXT
+CODE .  ( n -- )  printf("%d ", top); pop  NEXT
+CODE DEPTH ( -- n )  w = sp - stack; push w  NEXT
 CODE .S ( -- )
 &       w = sp - stack;  sp[1] = top;
 &       printf("[%d] ", w);
@@ -345,8 +357,8 @@ CODE .S ( -- )
 &           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
 &       NEXT
 
-CODE WORDS  ( -- )  words(M(CONTEXT)); NEXT
-CODE DUMP  ( a n -- )  dump(*sp--, top); pop; NEXT
+CODE WORDS  ( -- )  words(M(CONTEXT))  NEXT
+CODE DUMP  ( a n -- )  dump(m, *sp--, top); pop  NEXT
 
 VARIABLE STATE
 
@@ -359,9 +371,8 @@ VARIABLE STATE
 COMPILER
 : LITERAL  $ 2F C, , ;
 FORTH
-CODE >R  *++rp = top, pop; NEXT
-\ : EXECUTE  >R ;
-CODE EXECUTE  ip = m + top, pop; NEXT
+: EXECUTE  +M >R ;
+\ CODE EXECUTE  ip = m + top, pop  NEXT
 
 : INTERPRET  ( -- )
     BEGIN   BL WORD DUP C@
@@ -380,11 +391,12 @@ CODE EXECUTE  ip = m + top, pop; NEXT
 CODE BYE  return;
 
 ( Compiler )
+: OP,  C, ;
 
-CODE ALIGNED    top = aligned(top); NEXT
-\ CODE ALIGN        while (HERE != aligned(HERE)) m[HERE++] = 0; NEXT
+CODE ALIGNED    top = aligned(top)  NEXT
+\ CODE ALIGN        while (HERE != aligned(HERE)) m[HERE++] = 0  NEXT
 : ALIGN BEGIN HERE $ 3 AND WHILE $ 0 C, REPEAT ;
-CODE CELLS      top *= CELL; NEXT
+CODE CELLS      top *= CELL  NEXT
 4 CONSTANT CELL
 : CELL+  CELL + ;
 
@@ -394,14 +406,18 @@ VARIABLE LAST
     ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
     HERE LAST !  BL WORD C@ 1+ ALLOT  ALIGN ;
 
-: PREVIOUS  ( -- a n )  CONTEXT @ HASH @  CELL+ COUNT ;
-: USE  ( a -- )  PREVIOUS $ 1F AND + ALIGNED ! ;
-: DOES   R> USE ;
+: CONSTANT  HEADER  ( [COMPILE]) LITERAL  $ 0 OP, ;
+: CREATE   HEADER  $ 8 OP, ;
+: VARIABLE  CREATE $ 0 , ;
+
+: PREVIOUS  ( -- nfa count )  CONTEXT @ HASH @  CELL+ DUP C@ ;
+\ : USE  ( a -- )  PREVIOUS $ 1F AND + ALIGNED ! ;
+\ : DOES   R> USE ;
 : SMUDGE  PREVIOUS $ 20 XOR SWAP C! ;
 
 COMPILER
 : [  $ 0 STATE ! ;
-: EXIT  $ 0 , ;
+: EXIT  $ 0 OP, ;
 T: ;  SMUDGE [COMPILE] EXIT [COMPILE] [ ;
 FORTH
 : ]  $ -1 STATE ! ;

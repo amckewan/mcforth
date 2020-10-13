@@ -1,10 +1,6 @@
 // fvm.c
 
-#include <ctype.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "lib.h"
 
 #define BL ' '
 #define EOL '\n'
@@ -34,7 +30,7 @@ uchar m[0x2000] = {
 };
 
 #define M(n) *(cell *)&m[n]
-#define NEXT goto next;
+#define NEXT ; goto next;
 #define push *++sp = top, top =
 #define pop top = *sp--
 #define pop2 top = sp[-1], sp -= 2
@@ -171,17 +167,6 @@ void words(cell v) {
     }
 }
 
-void dump(cell a, cell n) {
-    cell i, j;
-    for (i = 0; i < n; i += 16, a += 16) {
-        printf("%04X  ", a);
-        for (j = 0; j < 16; j++) printf("%02X ", m[a + j]);
-        printf(" ");
-        for (j = 0; j < 16; j++) printf("%c", isprint(m[a + j]) ? m[a + j] : '.');
-        printf("\n");
-    }
-}
-
 void fvm() {
     cell stack[100], *sp, top;
     cell rack[100], *rp;
@@ -206,6 +191,7 @@ exec:
 
     case 0xFF: // call 32-bit address
         w = *(cell*)ip;
+        //printf("call 0x%x\n", w);
         *++rp = (cell)ip + CELL;
         ip = (opcode*)(m + w);
         NEXT
