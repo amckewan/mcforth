@@ -134,14 +134,6 @@ void type(cell addr, cell len) {
     while (len--) putchar(m[addr++]);
 }
 
-int accept(cell addr, cell len) {
-    char *str = fgets((char *)m + addr, len, stdin);
-    if (!str) exit (0);
-    len = strlen(str);
-    if (len && str[len-1] == EOL) str[--len] = 0;
-    return len;
-}
-
 void *litq(void *ip) {
     uchar *p = (uchar *)ip;
     return (cell *)aligned(p + *p + 1);
@@ -203,6 +195,7 @@ exec:
 }
 
 int main(int argc, char *argv[]) {
+    printf("sizeof(source) = %u\n", sizeof *source);
     fvm();
     const char *filename = "dict.img";
     if (argc > 1) filename = argv[1];

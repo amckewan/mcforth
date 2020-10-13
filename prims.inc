@@ -65,7 +65,8 @@ case 0x058:    ip += top ? CELL : *(cell*)ip; pop  NEXT
 /* EMIT */ case 0x06B:    putchar(top); pop  NEXT
 /* TYPE */ case 0x06C:     type(*sp, top); pop2  NEXT
 /* CR */ case 0x06D:         putchar('\n')  NEXT
-/* ACCEPT */ case 0x06E:    top = accept(*sp--, top)  NEXT
+/* ACCEPT */ case 0x06E:    top = accept((char *)m + *sp--, top);
+/* temporary */ if (top < 0) exit(0)  NEXT
 /* +M */ case 0x06F:   top += (cell)m  NEXT   // convert to physical address
 /* -M */ case 0x070:   top -= (cell)m  NEXT   // convert to absolute address
 /* -NUMBER */ case 0x071:   w = number(top, ++sp);

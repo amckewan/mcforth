@@ -308,7 +308,8 @@ CODE EMIT  ( char -- )  putchar(top); pop  NEXT
 CODE TYPE  ( a n -- )   type(*sp, top); pop2  NEXT
 CODE CR    ( -- )       putchar('\n')  NEXT
 
-CODE ACCEPT ( a n -- n )  top = accept(*sp--, top)  NEXT
+CODE ACCEPT ( a n -- n )  top = accept((char *)m + *sp--, top);
+& /* temporary */ if (top < 0) exit(0)  NEXT
 
 VARIABLE TIB 50 ALLOT-T
 
