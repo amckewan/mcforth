@@ -342,7 +342,7 @@ CODE .S ( -- )
 &       w = sp - stack;  sp[1] = top;
 &       printf("[%d] ", w);
 &       for (int i = 0; i < w; i++)
-&           printf("%d ", stack[i+2]);
+&           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
 &       NEXT
 
 CODE WORDS  ( -- )  words(M(CONTEXT)); NEXT
@@ -359,7 +359,9 @@ VARIABLE STATE
 COMPILER
 : LITERAL  $ 2F C, , ;
 FORTH
-: EXECUTE  >R ;
+CODE >R  *++rp = top, pop; NEXT
+\ : EXECUTE  >R ;
+CODE EXECUTE  ip = m + top, pop; NEXT
 
 : INTERPRET  ( -- )
     BEGIN   BL WORD DUP C@
