@@ -39,11 +39,18 @@ void pop_source() {
  * Utilities
  */
 
-char *new_string(const char *str, int len) {
+char *new_string1(const char *str, int len) {
     char *cstr = malloc(len + 1);
     memcpy(cstr, str, len);
     cstr[len] = 0;
     return cstr;
+}
+
+cell new_string(cell str_va, int len) {
+    char *cstr = malloc(len + 1);
+    memcpy(cstr, phys(str_va), len);
+    cstr[len] = 0;
+    return virt(cstr);
 }
 
 void fatal(const char *msg) {

@@ -20,7 +20,7 @@ typedef uint8_t opcode;
 extern byte m[]; // forth memory
 
 #define phys(va)    (void *)(m + (va))
-#define virt(pa)    (cell)((pa) - m)
+#define virt(pa)    (cell)((byte*)(pa) - m)
 
 #define TRUE -1
 #define FALSE 0
@@ -48,7 +48,7 @@ struct source {
 STATIC_ASSERT(sizeof(struct source) == 32, source_size);
 
 // lib.c
-char *new_string(const char *str, int len);
+cell new_string(cell str_va, int len);
 void fatal(const char *msg);
 void dump(int a, int n);
 
@@ -59,7 +59,7 @@ void pop_source();
 // parse.c
 cell parse(cell source_va, char c, cell *start_addr);
 cell parse_name(cell source_va, cell *start_addr);
-cell word2(cell source_va, char c, cell here_va);
+cell word(cell source_va, char c, cell here_va);
 
 // file.c
 cell accept(cell addr_va, cell max);

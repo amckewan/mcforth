@@ -77,7 +77,7 @@ CREATE EOL 1 C, 0A C,
 \ Save dictionary image to KERNEL.DCT
 : SAVE  ( -- )
     CLOSE
-    CR ." Saving..."
+    CR ." Saving " BASE @ DECIMAL HERE-T . BASE ! ." bytes..."
     \ WRITE-DICT-IMG
     WRITE-DICT
     WRITE-DICT-DUMP
@@ -98,6 +98,8 @@ VARIABLE ?CODE
 \ : ,A  ( addr -- )   OP, ;
 
 : COMPILE,  ( op/addr -- )
+    DUP C@-T 68 70 WITHIN OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
+
     DUP 200 < IF  OP,  ELSE  FF OP, ,-T  THEN ;
 
 \   OP, ;  ( non-optimizing )
@@ -128,7 +130,7 @@ CREATE CONTEXT  1 , 0 , ( FORTH ) 0 , ( COMPILER )
 
 : TARGET-CREATE   ( -- )
    >IN @ HEADER >IN !  CREATE IMMEDIATE  HERE-T ,
-   DOES>  @ COMPILE, ;
+   DOES>  STATE @ 0= ABORT" target word!"  @ COMPILE, ;
 
 : RECREATE   ( -- )
    >IN @   TARGET-CREATE   >IN ! ;
@@ -206,8 +208,6 @@ VARIABLE OP  ( next opcode )
 \ **********************************************************************
 \ FVM Kernel
 
-
-
 200 DP-T !
 ( cold start: )  FF OP, 0 ,-T
 
@@ -217,80 +217,95 @@ VARIABLE OP  ( next opcode )
 
 0 OP!
 
-OP: /* EXIT */  xit:  ip = (opcode*) *rp--  NEXT
+OP: /* EXIT */  xit:  ip = (opcode*) *rp--; NEXT
 CODE EXECUTEX       w = top; pop; goto exec;
-OP: /* BRANCH */    ip += *(cell*)ip  NEXT
-OP: /* DO */        NEXT
-OP: /* ?DO */       NEXT
-OP: /* LOOP */      NEXT
-OP: /* +LOOP */     NEXT
-OP: /* DLIT */      push *ip++; push *ip++  NEXT
-( must be 8!)
+OP: /* BRANCH */    ip += *(cell*)ip; NEXT
+OP: /* DO */        ; NEXT // TODO
+OP: /* ?DO */       ; NEXT // TODO
+OP: /* LOOP */      ; NEXT // TODO
+OP: /* +LOOP */     ; NEXT // TODO
+OP: /* DLIT */      push *ip++; push *ip++; NEXT
+( DOVAR must be 8!)
 OP: /* DOVAR */     push (uchar*)ip++ - m; goto xit;
-OP: /* ." */        ip = dotq(ip)  NEXT
-OP: /* S" */        push (cell)ip + 1; push *(uchar*)ip; ip = litq(ip)  NEXT
-OP: /* abort" */    if (top) { dotq((cell*)(m + HERE)); putchar(BL); dotq(ip); goto abort; }
-                    | ip = litq(ip); pop  NEXT
+OP: /* ." */        ip = dotq(ip); NEXT
+OP: /* S" */        push virt(ip) + 1; push *ip; ip = litq(ip); NEXT
+OP: /* abort" */    if (top) {
+                    |   dotq(m + HERE); putchar(BL); dotq(ip);
+                    |   goto abort;
+                    | } ip = litq(ip); pop; NEXT
 
 10 OP!
 
-PRIM +          top += *sp--  NEXT
-PRIM -          top = *sp-- - top  NEXT
-PRIM AND        top &= *sp--  NEXT
-PRIM OR         top |= *sp--  NEXT
-PRIM XOR        top ^= *sp--  NEXT
-PRIM LSHIFT     top = *sp-- << top  NEXT
-PRIM RSHIFT     top = (cell) ((ucell)(*sp--) >> top)  NEXT
-PRIM ARSHIFT    top = *sp-- >> top  NEXT
-CODE SWAP       w = top; top = *sp; *sp = w  NEXT
-CODE PICK       top = sp[-top]  NEXT
-CODE @          top = M(top)  NEXT
-CODE !          M(top) = *sp; pop2  NEXT
-CODE +!         M(top) += *sp; pop2  NEXT
-CODE *          top *= *sp--  NEXT
-CODE /          top = *sp-- / top  NEXT
-CODE NOP        NEXT
+PRIM +          top += *sp--; NEXT
+PRIM -          top = *sp-- - top; NEXT
+PRIM AND        top &= *sp--; NEXT
+PRIM OR         top |= *sp--; NEXT
+PRIM XOR        top ^= *sp--; NEXT
+PRIM LSHIFT     top = *sp-- << top; NEXT
+PRIM RSHIFT     top = (cell) ((ucell)(*sp--) >> top); NEXT
+PRIM ARSHIFT    top = *sp-- >> top; NEXT
+CODE SWAP       w = top; top = *sp; *sp = w; NEXT
+CODE PICK       top = sp[-top]; NEXT
+CODE @          top = M(top); NEXT
+CODE !          M(top) = *sp; pop2; NEXT
+CODE +!         M(top) += *sp; pop2; NEXT
+CODE *          top *= *sp--; NEXT
+CODE /          top = *sp-- / top; NEXT
+CODE NOP      ; NEXT
 
-OP: ( LIT + )   top += *ip++  NEXT
-OP: ( LIT - )   top -= *ip++  NEXT
-OP: ( LIT AND ) top &= *ip++  NEXT
+OP: ( LIT + )   top += *ip++; NEXT
+OP: ( LIT - )   top -= *ip++; NEXT
+OP: ( LIT AND ) top &= *ip++; NEXT
 
 2F OP!
-OP:  ( LIT )    push *(cell*)ip; ip += CELL  NEXT
+OP:  ( LIT )    push *(cell*)ip; ip += CELL; NEXT
 
 40 OP!
 
-CODE 0=         top = (top == 0) LOGICAL  NEXT
-CODE 0<         top = (top < 0) LOGICAL  NEXT
-CODE 0>         top = (top > 0) LOGICAL  NEXT
-CODE =          top = (*sp-- == top) LOGICAL  NEXT
-CODE <          top = (*sp-- < top) LOGICAL  NEXT
-CODE >          top = (*sp-- > top) LOGICAL  NEXT
-CODE U<         top = ((ucell)*sp-- < (ucell)top) LOGICAL  NEXT
-CODE U>         top = ((ucell)*sp-- > (ucell)top) LOGICAL  NEXT
+CODE 0=         top = (top == 0) LOGICAL; NEXT
+CODE 0<         top = (top < 0) LOGICAL; NEXT
+CODE 0>         top = (top > 0) LOGICAL; NEXT
+CODE =          top = (*sp-- == top) LOGICAL; NEXT
+CODE <          top = (*sp-- < top) LOGICAL; NEXT
+CODE >          top = (*sp-- > top) LOGICAL; NEXT
+CODE U<         top = ((ucell)*sp-- < (ucell)top) LOGICAL; NEXT
+CODE U>         top = ((ucell)*sp-- > (ucell)top) LOGICAL; NEXT
 
-OP: /* 0<> */   top = (top != 0) LOGICAL  NEXT
-OP: /* 0>= */   top = (top >= 0) LOGICAL  NEXT
-OP: /* 0<= */   top = (top <= 0) LOGICAL  NEXT
-OP: /* <>  */   top = (*sp-- != top) LOGICAL  NEXT
-OP: /* >=  */   top = (*sp-- >= top) LOGICAL  NEXT
-OP: /* <=  */   top = (*sp-- <= top) LOGICAL  NEXT
-OP: /* U>= */   top = ((ucell)*sp-- >= (ucell)top) LOGICAL  NEXT
-OP: /* U<= */   top = ((ucell)*sp-- <= (ucell)top) LOGICAL  NEXT
+OP: /* 0<> */   top = (top != 0) LOGICAL; NEXT
+OP: /* 0>= */   top = (top >= 0) LOGICAL; NEXT
+OP: /* 0<= */   top = (top <= 0) LOGICAL; NEXT
+OP: /* <>  */   top = (*sp-- != top) LOGICAL; NEXT
+OP: /* >=  */   top = (*sp-- >= top) LOGICAL; NEXT
+OP: /* <=  */   top = (*sp-- <= top) LOGICAL; NEXT
+OP: /* U>= */   top = ((ucell)*sp-- >= (ucell)top) LOGICAL; NEXT
+OP: /* U<= */   top = ((ucell)*sp-- <= (ucell)top) LOGICAL; NEXT
 
 58 OP!
-OP: ( 0<> IF )  ip += top ? CELL : *(cell*)ip; pop  NEXT
+OP: ( 0<> IF )  ip += top ? CELL : *(cell*)ip; pop; NEXT
 
 60 OP!
-CODE DROP       pop  NEXT
-CODE DUP        *++sp = top  NEXT
-CODE NIP        sp--  NEXT
-CODE ?DUP       if (top) *++sp = top  NEXT
-\ OP: ( SWAP )    NEXT
-CODE OVER       push sp[-1]  NEXT
-CODE ROT        w = S[-1], S[-1] = *S, *S = top, top = w  NEXT
-CODE >R         *++rp = top, pop  NEXT
-CODE R>         push *rp--  NEXT
+CODE DROP       pop; NEXT
+CODE DUP        *++sp = top; NEXT
+CODE NIP        sp--; NEXT
+CODE ?DUP       if (top) *++sp = top; NEXT
+\ OP: ( SWAP )  ; NEXT
+CODE OVER       push sp[-1]; NEXT
+CODE ROT        w = S[-1], S[-1] = *S, *S = top, top = w; NEXT
+
+68 OP!
+\ 68-6F must be inlined
+CODE >R         
+|    //printf(">R R=%p top=0x%X", R, top);getchar();
+|    *++rp = top, pop;
+|    //printf(">R R=%p *R=0x%X", R, *R);getchar();
+|  ; NEXT
+CODE R>         
+|    //printf("R> R=%p *R=0x%X", R, *R);getchar();
+|    push *rp--; 
+|    //printf("R> R=%p top=0x%X", R, top);getchar();
+|  ; NEXT
+CODE R@         push *rp  ; NEXT
+70 OP!
 
 : 2DROP DROP DROP ;
 
@@ -301,102 +316,131 @@ CODE R>         push *rp--  NEXT
 : 1+  $ 1 + ;
 : 1-  $ 1 - ;
 
-CODE C@  ( a -- c )  top = m[top]  NEXT
-CODE C!  ( c a -- )  m[top] = *sp; pop2  NEXT
+CODE CELLS      top *= CELL; NEXT
+CELL-T CONSTANT CELL
+: CELL+  CELL + ;
+
+CODE C@  ( a -- c )  top = m[top]; NEXT
+CODE C!  ( c a -- )  m[top] = *sp; pop2; NEXT
 : COUNT  DUP 1+ SWAP C@ ;
 
-CODE KEY   ( -- char )  push getchar()  NEXT
-CODE EMIT  ( char -- )  putchar(top); pop  NEXT
-CODE TYPE  ( a n -- )   type(*sp, top); pop2  NEXT
+CODE PHYS  top += (cell)m; NEXT   // convert to physical address
+CODE VIRT  top -= (cell)m; NEXT   // convert to absolute address
+
+CODE KEY   ( -- char )  push getchar(); NEXT
+CODE EMIT  ( char -- )  putchar(top); pop; NEXT
+CODE TYPE  ( a n -- )   type(*sp, top); pop2; NEXT
+
+\ : X $ 12345 >R KEY DROP R> KEY DROP ;
 
 : CR     $ 0A EMIT ;
 : SPACE  $ 20 EMIT ;
 
-CODE .  ( n -- )  printf("%d ", top); pop  NEXT
-CODE H. ( u -- )  printf("0x%X ", top); pop  NEXT
+CODE .  ( n -- )  printf("%d ", top); pop; NEXT
+CODE H. ( u -- )  printf("0x%X ", top); pop; NEXT
 
 CODE BYE  return;
 
 CODE ACCEPT ( a n -- n )  top = accept(*sp--, top);
-| /* FIXME */ if (top < 0) exit(0)  NEXT
+| /* FIXME */ if (top < 0) exit(0); NEXT
 
-| #define SOURCE M(8)
-
-VARIABLE TIB 50 ALLOT-T
 
 04 CONSTANT H
 14 CONSTANT CONTEXT
 
-0 [IF]
-08 CONSTANT >IN
-0C CONSTANT #TIB
-10 CONSTANT 'TIB
-[ELSE]
+| #define SOURCE M(8)
+
+\ 8 CONSTANT SOURCE-CELLS ( sizeof )
 
 8 CONSTANT 'SOURCE
-ALIGN  HERE-T 8 !-T  100 ALLOT-T ( source stack )
+ALIGN  HERE-T 8 !-T  HERE-T 100 ( 20 8 *) ALLOT-T
+CONSTANT SOURCE-STACK
 
-: >IN   'SOURCE @ ;
-: #TIB  >IN $ 4 + ;
-: 'TIB  >IN $ 8 + ;
-[THEN]
+: >IN           'SOURCE @ ;
+: #TIB          >IN     CELL+ ;
+: 'TIB          >IN $ 2 CELLS + ;
+: 'SOURCE-ID    >IN $ 3 CELLS + ;
+: SOURCE-BUF    >IN $ 4 CELLS + ;
+: SOURCE-NAME   >IN $ 5 CELLS + ;
+: SOURCE-LINE   >IN $ 6 CELLS + ;
+
+: SOURCE-DEPTH  >IN SOURCE-STACK -  $ 5 RSHIFT ( 32 /) ;
+
+CODE ALLOCATE   *++S = virt(malloc(top)), top = *S ? 0 : -1; NEXT
+CODE RESIZE     *S = virt(realloc(phys(*S), top)), top = *S ? 0 : -1; NEXT
+CODE FREE       free(phys(top)), top = 0; NEXT
+
+CODE NEW-STRING top = new_string(*sp--, top); NEXT
+
+CODE OPEN-FILE ( c-addr u fam -- fileid ior ) {
+|   printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
+|   char *filename = "meta.fs"; // phys(new_string(S[-1], *S));
+|   FILE *file = fopen(filename, "r");
+|   printf("open %s returned %p\n", filename, file);
+|   *--S = (cell) file;
+|   top = file ? 0 : -1; }
+
+CODE CLOSE-FILE ( fileid -- ior )  top = fclose((FILE*)top); NEXT
+
+: >SOURCE ( str len fileid -- ) \ CR ." Including " DROP TYPE SPACE ;
+    SOURCE-DEPTH $ 7 U> ABORT" nested too deep"
+    $ 20 'SOURCE +!
+    'SOURCE-ID !
+    NEW-STRING SOURCE-NAME !
+    0 SOURCE-LINE ! ;
+
+: SOURCE> ( -- )
+    SOURCE-DEPTH $ 1 < ABORT" trying to pop empty source"
+    SOURCE-ID 1+ $ 2 U< NOT IF  SOURCE-ID CLOSE-FILE DROP  THEN
+    SOURCE-NAME @ FREE DROP
+    $ -20 'SOURCE +! ;
+
+CODE REFILL ( -- f )  push refill(SOURCE); NEXT
+
+VARIABLE TIB 80 ALLOT-T
+: QUERY  ( -- )  TIB SOURCE-BUF !  REFILL 0= IF BYE THEN ;
 
 
-CODE +M  top += (cell)m  NEXT   // convert to physical address
-CODE -M  top -= (cell)m  NEXT   // convert to absolute address
 
-CODE REFILL ( -- f )  push refill(SOURCE)  NEXT
 
-\ : QUERY  ( -- )  TIB $ 50 ACCEPT  TIB +M 'TIB !  #TIB !  $ 0 >IN ! ;
-: QUERY  ( -- )
-    \ ." SOURCE=" >IN H. >IN +M H.
-    \ ." TIB=" TIB +M H. ." 'TIB=" 'TIB @ H. ." #TIB=" #TIB @ . ." >IN=" >IN @ . CR
-    TIB >IN $ 10 + !
-    REFILL 0= IF BYE THEN 
-    \ ." TIB=" TIB +M H. ." 'TIB=" 'TIB @ H. ." #TIB=" #TIB @ . ." >IN=" >IN @ . CR
-    ;
-
-\ CODE NUMBER?  ( addr -- n f )  top = number(top, ++sp);  NEXT
+\ CODE NUMBER?  ( addr -- n f )  top = number(top, ++sp);; NEXT
 \ : NUMBER  ( addr -- n )  DUP NUMBER? IF SWAP DROP ELSE
 \   DROP COUNT TYPE ABORT"  ?"  THEN ;
 
 CODE -NUMBER  ( a -- a t, n f ) w = number(top, ++sp);
-|   if (w) top = 0; else *sp = top, top = -1  NEXT
+|   if (w) top = 0; else *sp = top, top = -1; NEXT
 \ : NUMBER  ( a -- n )  -NUMBER IF  COUNT TYPE  $ 1 ABORT"  ?"  THEN ;
 : NUMBER  ( a -- n )  -NUMBER ABORT" ?" ;
     
 20 CONSTANT BL
 
-0 [IF]
-CODE WORD  ( char -- addr )  top = word(top, (Input*)(m+8), m+HERE) - m  NEXT
-[ELSE]
 CODE WORD  ( char -- addr )
-|   top = word2(SOURCE, top, HERE)  NEXT
-[THEN]
+|   top = word(SOURCE, top, HERE); NEXT
 
 CODE FIND  ( str -- xt flag | str 0 )
 |       w = find(top, 1);
 |       if (w) *++sp = cfa(w), top = -1;
-|       else push 0  NEXT
+|       else push 0; NEXT
 
 CODE -FIND  ( str v -- str t | xt f )
 |       w = find(*sp, top);
 |       if (w) *sp = cfa(w), top = 0;
-|       else top = -1  NEXT
+|       else top = -1; NEXT
 
 : -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
 : '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
 
-CODE DEPTH ( -- n )  w = sp - stack; push w  NEXT
+CODE DEPTH ( -- n )  w = sp - stack; push w; NEXT
 CODE .S ( -- )
 |       w = sp - stack;  sp[1] = top;
 |       printf("[%d] ", w);
 |       for (int i = 0; i < w; i++)
 |           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
-|       NEXT
+|     ; NEXT
 
-CODE WORDS  ( -- )  words(M(CONTEXT))  NEXT
-CODE DUMP  ( a n -- )  dump(*sp--, top); pop  NEXT
+
+CODE WORDS  ( -- )  words(M(CONTEXT)); NEXT
+CODE DUMP  ( a n -- )  dump(*sp--, top); pop; NEXT
 
 VARIABLE STATE
 
@@ -409,8 +453,8 @@ VARIABLE STATE
 COMPILER
 : LITERAL  $ 2F C, , ;
 FORTH
-: EXECUTE  +M >R ;
-\ CODE EXECUTE  ip = m + top, pop  NEXT
+: EXECUTE  PHYS >R ;
+\ CODE EXECUTE  ip = m + top, pop; NEXT
 
 : INTERPRET  ( -- )
     \ BEGIN BL WORD DUP C@ WHILE COUNT TYPE SPACE REPEAT EXIT
@@ -422,31 +466,40 @@ FORTH
         THEN  DEPTH 0< ABORT" stack?"
     REPEAT DROP ;
 
-\ Include
-: OPEN-INCLUDE-FILE  ( str len -- fileid ior )  2DROP $ 0 $ 1 ;
-: >SOURCE ( str len fileid -- )  CR ." Including " DROP TYPE SPACE ;
-: SOURCE> ( -- ) ;
-
-: INCLUDED  ( str len -- )
-    2DUP OPEN-INCLUDE-FILE 0= ABORT" file not found"
-    ?DUP IF  >SOURCE
-        BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE>
-    ELSE  2DROP  THEN ;
-
 : QUIT [ HERE-T 201 !-T ]
 \   ." hi" CR
 \       WORDS CR
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF  ."  ok"  THEN  AGAIN ;
 
+: INCLUDED  ( str len -- )
+    $ 0 OPEN-FILE .S EXIT ABORT" file not found" DROP EXIT
+
+
+    2DUP $ 0 OPEN-FILE ABORT" file not found"
+    ?DUP IF
+      >SOURCE  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE>
+    ELSE  2DROP  THEN ;
+
+: INCLUDE  BL WORD COUNT INCLUDED ;
+
 ( Compiler )
 : OP,  C, ;
 
-CODE ALIGNED    top = aligned(top)  NEXT
-\ CODE ALIGN        while (HERE != aligned(HERE)) m[HERE++] = 0  NEXT
+CODE ALIGNED    top = aligned(top); NEXT
+\ CODE ALIGN        while (HERE != aligned(HERE)) m[HERE++] = 0; NEXT
 : ALIGN BEGIN HERE $ 3 AND WHILE $ 0 C, REPEAT ;
-CODE CELLS      top *= CELL  NEXT
-4 CONSTANT CELL
-: CELL+  CELL + ;
+
+CODE PARSE  ( c -- a n )  top = parse(SOURCE, top, ++S); NEXT
+
+: S,  ( a n -- )  BEGIN DUP WHILE >R COUNT C, R> 1- REPEAT 2DROP ;
+: ",  $ 22 ( [CHAR] ") PARSE  DUP C,  S,  ALIGN  ( 0 ?CODE !) ;
+
+COMPILER
+: test ." testing... " ;
+: ."      $ 9 OP,  ", ;
+: S"      $ A OP,  ", ;
+: ABORT"  $ B OP,  ", ;
+FORTH
 
 VARIABLE LAST
 : HASH  ( v -- a )  CELLS CONTEXT + ;
@@ -455,7 +508,7 @@ VARIABLE LAST
     HERE LAST !  BL WORD C@ 1+ ALLOT  ALIGN ;
 
 : CONSTANT  HEADER  ( [COMPILE]) LITERAL  $ 0 OP, ;
-: CREATE   HEADER  $ 8 OP, ;
+: CREATE    HEADER  $ 8 OP, ;
 : VARIABLE  CREATE $ 0 , ;
 
 : PREVIOUS  ( -- nfa count )  CONTEXT @ HASH @  CELL+ DUP C@ ;

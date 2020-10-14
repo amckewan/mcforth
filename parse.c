@@ -32,7 +32,7 @@ cell parse_name(cell source_va, cell *start_addr) {
     return len;
 }
 
-cell word2(cell source_va, char c, cell here_va) {
+cell word(cell source_va, char c, cell here_va) {
     struct source *source = phys(source_va);
     const char *src = phys(source->addr);
     int in = source->in;

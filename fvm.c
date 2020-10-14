@@ -33,34 +33,6 @@ byte m[0x2000] = {
 #define HERE M(4)
 #define CONTEXT 20
 
-uchar *wordxx(cell delim, Input *input, uchar *here) {
-    uchar *p = input->addr + input->in;
-    cell n = input->len - input->in;
-
-    //printf("tib='%s' len=%d >in=%d\n", input->addr, input->len, input->in);
-
-    uchar *q = here + 1;
-    int i;
-
-    if (delim == BL) {
-        while (n > 0 && isspace(*p)) p++, n--;
-
-        for (i = 0; i < n && !isspace(*p); i++) *q++ = *p++;
-    } else {
-        while (n > 0 && *p == delim) p++, n--;
-
-        for (i = 0; i < n && *p != delim; i++) *q++ = *p++;
-    }
-
-    if (i < n) p++;
-    input->in = p - input->addr;
-
-    *q = 0;           // null-terminate string
-    *here = (uchar)i; // store count byte
-    //printf("word='%s' >in=%d\n", here+1, input->in);
-    return here;
-}
-
 cell cfa(cell nfa) // convert nfa to cfa (NAME>)
 {
     return aligned(nfa + (m[nfa] & 31) + 1);
