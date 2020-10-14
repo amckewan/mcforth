@@ -44,7 +44,7 @@ S" prims.inc" OPEN
 
 CREATE EOL 1 C, 0A C,
 : NEWLINE   EOL COUNT WRITE ;
-: &  1 PARSE WRITE  NEWLINE ;
+: |  1 PARSE WRITE  NEWLINE ;
 
 : WRITE-DICT-IMG
     S" dict.img" R/W CREATE-FILE ?ERR
@@ -143,7 +143,7 @@ VARIABLE OP  ( next opcode )
 : OP!  OP ! ;
 : OP:  ( output opcode case statement )
     S" case 0x" WRITE  OP @ 0 <# # # # #> WRITE  S" :  " WRITE
-    ?COMMENT & ( copy rest of line )  1 OP +! ;
+    ?COMMENT | ( copy rest of line )  1 OP +! ;
 
 : (PRIM)   OP @ OP,  [COMPILE] EXIT  OP: ;
 : PRIM   C-COMMENT  HEADER (PRIM) ;  ( in target only )
@@ -206,12 +206,14 @@ VARIABLE OP  ( next opcode )
 \ **********************************************************************
 \ FVM Kernel
 
+
+
 200 DP-T !
 ( cold start: )  FF OP, 0 ,-T
 
-& #define S sp
-& #define R rp
-& #define I ip
+| #define S sp
+| #define R rp
+| #define I ip
 
 0 OP!
 
@@ -228,7 +230,7 @@ OP: /* DOVAR */     push (uchar*)ip++ - m; goto xit;
 OP: /* ." */        ip = dotq(ip)  NEXT
 OP: /* S" */        push (cell)ip + 1; push *(uchar*)ip; ip = litq(ip)  NEXT
 OP: /* abort" */    if (top) { dotq((cell*)(m + HERE)); putchar(BL); dotq(ip); goto abort; }
-                    & ip = litq(ip); pop  NEXT
+                    | ip = litq(ip); pop  NEXT
 
 10 OP!
 
@@ -312,15 +314,28 @@ CODE TYPE  ( a n -- )   type(*sp, top); pop2  NEXT
 : SPACE  $ 20 EMIT ;
 
 CODE ACCEPT ( a n -- n )  top = accept((char *)m + *sp--, top);
-& /* temporary */ if (top < 0) exit(0)  NEXT
+| /* FIXME */ if (top < 0) exit(0)  NEXT
+
+| #define SOURCE (struct source *)(m + M(8))
 
 VARIABLE TIB 50 ALLOT-T
 
 04 CONSTANT H
+14 CONSTANT CONTEXT
+
+1 [IF]
 08 CONSTANT 'TIB
 0C CONSTANT #TIB
 10 CONSTANT >IN
-14 CONSTANT CONTEXT
+[ELSE]
+08 CONSTANT 'SOURCE
+ALIGN  HERE-T 8 !-T  32 ALLOT-T ( source )
+
+: >IN   'SOURCE @ ;
+: #TIB  >IN CELL+ ;
+: 'TIB  >IN 2 CELLS + ;
+[THEN]
+
 
 CODE +M  top += (cell)m  NEXT   // convert to physical address
 CODE -M  top -= (cell)m  NEXT   // convert to absolute address
@@ -332,22 +347,28 @@ CODE -M  top -= (cell)m  NEXT   // convert to absolute address
 \   DROP COUNT TYPE ABORT"  ?"  THEN ;
 
 CODE -NUMBER  ( a -- a t, n f ) w = number(top, ++sp);
-&   if (w) top = 0; else *sp = top, top = -1  NEXT
+|   if (w) top = 0; else *sp = top, top = -1  NEXT
 \ : NUMBER  ( a -- n )  -NUMBER IF  COUNT TYPE  $ 1 ABORT"  ?"  THEN ;
 : NUMBER  ( a -- n )  -NUMBER ABORT" ?" ;
     
 20 CONSTANT BL
+
+1 [IF]
 CODE WORD  ( char -- addr )  top = word(top, (Input*)(m+8), m+HERE) - m  NEXT
+[ELSE]
+CODE WORD  ( char -- addr )
+|   top = word2(SOURCE, top, (char*)m + HERE) - (char *)m  NEXT
+[THEN]
 
 CODE FIND  ( str -- xt flag | str 0 )
-&       w = find(top, 1);
-&       if (w) *++sp = cfa(w), top = -1;
-&       else push 0  NEXT
+|       w = find(top, 1);
+|       if (w) *++sp = cfa(w), top = -1;
+|       else push 0  NEXT
 
 CODE -FIND  ( str v -- str t | xt f )
-&       w = find(*sp, top);
-&       if (w) *sp = cfa(w), top = 0;
-&       else top = -1  NEXT
+|       w = find(*sp, top);
+|       if (w) *sp = cfa(w), top = 0;
+|       else top = -1  NEXT
 
 : -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
 : '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
@@ -355,11 +376,11 @@ CODE -FIND  ( str v -- str t | xt f )
 CODE .  ( n -- )  printf("%d ", top); pop  NEXT
 CODE DEPTH ( -- n )  w = sp - stack; push w  NEXT
 CODE .S ( -- )
-&       w = sp - stack;  sp[1] = top;
-&       printf("[%d] ", w);
-&       for (int i = 0; i < w; i++)
-&           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
-&       NEXT
+|       w = sp - stack;  sp[1] = top;
+|       printf("[%d] ", w);
+|       for (int i = 0; i < w; i++)
+|           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
+|       NEXT
 
 CODE WORDS  ( -- )  words(M(CONTEXT))  NEXT
 CODE DUMP  ( a n -- )  dump(m, *sp--, top); pop  NEXT
@@ -387,10 +408,11 @@ FORTH
         THEN  DEPTH 0< ABORT" stack?"
     REPEAT DROP ;
 
+\ Include
 : OPEN-INCLUDE-FILE  ( str len -- fileid ior )  2DROP $ 0 $ 1 ;
 : >SOURCE ( str len fileid -- )  CR ." Including " DROP TYPE SPACE ;
 : SOURCE> ( -- ) ;
-CODE REFILL ( -- f )  push refill()  NEXT
+CODE REFILL ( -- f )  push refill(SOURCE)  NEXT
 
 : INCLUDED  ( str len -- )
     2DUP OPEN-INCLUDE-FILE 0= ABORT" file not found"

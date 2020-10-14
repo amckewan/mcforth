@@ -19,9 +19,9 @@
 #define SOURCE_EVALUATE     ((FILE*)-1)
 
 struct source {
-    const char *addr;   // input buffer address
-    int len;            // length of input buffer
     int in;             // current parsing offset (>IN)
+    int len;            // length of input buffer
+    const char *addr;   // input buffer address
     FILE *file;         // SOURCE-ID: 0=console, -1=evaluate, else file id
 
     char *buf;          // input buffer for file or console (malloc)
@@ -33,19 +33,22 @@ struct source {
 // This is assumed for the memory layout in fvm.c
 STATIC_ASSERT(sizeof(struct source) == 32, source_size);
 
-extern struct source *source; // current input source
+//extern struct source *source; // current input source
+
+char *new_string(const char *str, int len);
+void fatal(const char *msg);
+void dump(const uint8_t *m, int a, int n);
 
 int source_depth();
 void push_source(FILE *file, const char *filename, int len);
 void pop_source();
 
-int parse(char c, const char **addr);
-int parse_name(const char **addr);
-char *word2(char c, char *here);
+// parse.c
+int parse(struct source *source, char c, const char **addr);
+int parse_name(struct source *source, const char **addr);
+char *word2(struct source *source, char c, char *here);
 
+// file.c
 int accept(char *str, int max);
-int refill();
+int refill(struct source *source);
 
-char *new_string(const char *str, int len);
-void fatal(const char *msg);
-void dump(const uint8_t *m, int a, int n);

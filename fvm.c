@@ -40,7 +40,6 @@ uchar m[0x2000] = {
 
 // Memory Map
 #define HERE M(4)
-#define SOURCE M(8)
 #define CONTEXT 20
 
 uchar *word(cell delim, Input *input, uchar *here) {
@@ -195,7 +194,7 @@ exec:
 }
 
 int main(int argc, char *argv[]) {
-    printf("sizeof(source) = %u\n", sizeof *source);
+    printf("sizeof(source) = %u\n", sizeof(struct source));
     fvm();
     const char *filename = "dict.img";
     if (argc > 1) filename = argv[1];

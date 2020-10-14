@@ -65,7 +65,8 @@ case 0x058:    ip += top ? CELL : *(cell*)ip; pop  NEXT
 /* EMIT */ case 0x06B:    putchar(top); pop  NEXT
 /* TYPE */ case 0x06C:     type(*sp, top); pop2  NEXT
 /* ACCEPT */ case 0x06D:    top = accept((char *)m + *sp--, top);
-/* temporary */ if (top < 0) exit(0)  NEXT
+/* FIXME */ if (top < 0) exit(0)  NEXT
+#define SOURCE (struct source *)(m + M(8))
 /* +M */ case 0x06E:   top += (cell)m  NEXT   // convert to physical address
 /* -M */ case 0x06F:   top -= (cell)m  NEXT   // convert to absolute address
 /* -NUMBER */ case 0x070:   w = number(top, ++sp);
@@ -89,7 +90,7 @@ case 0x058:    ip += top ? CELL : *(cell*)ip; pop  NEXT
       NEXT
 /* WORDS */ case 0x077:    words(M(CONTEXT))  NEXT
 /* DUMP */ case 0x078:    dump(m, *sp--, top); pop  NEXT
-/* REFILL */ case 0x079:    push refill()  NEXT
+/* REFILL */ case 0x079:    push refill(SOURCE)  NEXT
 /* BYE */ case 0x07A:   return;
 /* ALIGNED */ case 0x07B:     top = aligned(top)  NEXT
 /* CELLS */ case 0x07C:       top *= CELL  NEXT
