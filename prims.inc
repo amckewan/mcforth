@@ -90,9 +90,10 @@ case 0x058:    ip += top ? CELL : *(cell*)ip; pop; NEXT
 /* NEW-STRING */ case 0x07F:  top = new_string(*sp--, top); NEXT
 /* OPEN-FILE */ case 0x080:   {
   //printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
-  char *filename = "meta.fs"; // phys(new_string(S[-1], *S));
+  char *filename = phys(new_string(S[-1], *S));
   FILE *file = fopen(filename, "r");
   printf("open %s returned %p\n", filename, file);
+  free(filename);
   *--S = (cell) file;
   top = file ? 0 : -1; NEXT }
 /* CLOSE-FILE */ case 0x081:    

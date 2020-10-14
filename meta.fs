@@ -381,9 +381,10 @@ CODE NEW-STRING top = new_string(*sp--, top); NEXT
 
 CODE OPEN-FILE ( c-addr u fam -- fileid ior ) {
 |   //printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
-|   char *filename = "meta.fs"; // phys(new_string(S[-1], *S));
+|   char *filename = phys(new_string(S[-1], *S));
 |   FILE *file = fopen(filename, "r");
 |   printf("open %s returned %p\n", filename, file);
+|   free(filename);
 |   *--S = (cell) file;
 |   top = file ? 0 : -1; NEXT }
 
@@ -487,6 +488,7 @@ FORTH
     REPEAT DROP ;
 
 : QUIT [ HERE-T 201 !-T ]
+    BEGIN SOURCE-DEPTH 0> WHILE SOURCE> REPEAT
 \   ." hi" CR
 \       WORDS CR
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF  ."  ok"  THEN  AGAIN ;
@@ -494,11 +496,11 @@ FORTH
 : INCLUDED  ( str len -- )
     \ $ 0 OPEN-FILE .S EXIT ABORT" file not found" DROP EXIT
     2DUP $ 0 OPEN-FILE ABORT" file not found"
-    >SOURCE  BEGIN REFILL WHILE ( INTERPRET) REPEAT  SOURCE> ;
+    >SOURCE  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
 
 : INCLUDE  BL WORD COUNT INCLUDED ;
 
-: xx S" meta.fs" INCLUDED ;
+: TEST S" test.fs" INCLUDED ;
 
 ( Compiler )
 : OP,  C, ;
