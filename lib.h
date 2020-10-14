@@ -35,8 +35,9 @@ STATIC_ASSERT(sizeof(struct source) == 32, source_size);
 
 extern struct source *source; // current input source
 
-
-void dump(const uint8_t *m, int a, int n);
+int source_depth();
+void push_source(FILE *file, const char *filename, int len);
+void pop_source();
 
 int parse(char c, const char **addr);
 int parse_name(const char **addr);
@@ -44,3 +45,7 @@ char *word2(char c, char *here);
 
 int accept(char *str, int max);
 int refill();
+
+char *new_string(const char *str, int len);
+void fatal(const char *msg);
+void dump(const uint8_t *m, int a, int n);

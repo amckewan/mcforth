@@ -64,32 +64,32 @@ case 0x058:    ip += top ? CELL : *(cell*)ip; pop  NEXT
 /* KEY */ case 0x06A:    push getchar()  NEXT
 /* EMIT */ case 0x06B:    putchar(top); pop  NEXT
 /* TYPE */ case 0x06C:     type(*sp, top); pop2  NEXT
-/* CR */ case 0x06D:         putchar('\n')  NEXT
-/* ACCEPT */ case 0x06E:    top = accept((char *)m + *sp--, top);
+/* ACCEPT */ case 0x06D:    top = accept((char *)m + *sp--, top);
 /* temporary */ if (top < 0) exit(0)  NEXT
-/* +M */ case 0x06F:   top += (cell)m  NEXT   // convert to physical address
-/* -M */ case 0x070:   top -= (cell)m  NEXT   // convert to absolute address
-/* -NUMBER */ case 0x071:   w = number(top, ++sp);
+/* +M */ case 0x06E:   top += (cell)m  NEXT   // convert to physical address
+/* -M */ case 0x06F:   top -= (cell)m  NEXT   // convert to absolute address
+/* -NUMBER */ case 0x070:   w = number(top, ++sp);
   if (w) top = 0; else *sp = top, top = -1  NEXT
-/* WORD */ case 0x072:    top = word(top, (Input*)(m+8), m+HERE) - m  NEXT
-/* FIND */ case 0x073:  
+/* WORD */ case 0x071:    top = word(top, (Input*)(m+8), m+HERE) - m  NEXT
+/* FIND */ case 0x072:  
       w = find(top, 1);
       if (w) *++sp = cfa(w), top = -1;
       else push 0  NEXT
-/* -FIND */ case 0x074:  
+/* -FIND */ case 0x073:  
       w = find(*sp, top);
       if (w) *sp = cfa(w), top = 0;
       else top = -1  NEXT
-/* . */ case 0x075:    printf("%d ", top); pop  NEXT
-/* DEPTH */ case 0x076:    w = sp - stack; push w  NEXT
-/* .S */ case 0x077:  
+/* . */ case 0x074:    printf("%d ", top); pop  NEXT
+/* DEPTH */ case 0x075:    w = sp - stack; push w  NEXT
+/* .S */ case 0x076:  
       w = sp - stack;  sp[1] = top;
       printf("[%d] ", w);
       for (int i = 0; i < w; i++)
           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
       NEXT
-/* WORDS */ case 0x078:    words(M(CONTEXT))  NEXT
-/* DUMP */ case 0x079:    dump(m, *sp--, top); pop  NEXT
+/* WORDS */ case 0x077:    words(M(CONTEXT))  NEXT
+/* DUMP */ case 0x078:    dump(m, *sp--, top); pop  NEXT
+/* REFILL */ case 0x079:    push refill()  NEXT
 /* BYE */ case 0x07A:   return;
 /* ALIGNED */ case 0x07B:     top = aligned(top)  NEXT
 /* CELLS */ case 0x07C:       top *= CELL  NEXT

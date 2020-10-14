@@ -306,7 +306,10 @@ CODE C!  ( c a -- )  m[top] = *sp; pop2  NEXT
 CODE KEY   ( -- char )  push getchar()  NEXT
 CODE EMIT  ( char -- )  putchar(top); pop  NEXT
 CODE TYPE  ( a n -- )   type(*sp, top); pop2  NEXT
-CODE CR    ( -- )       putchar('\n')  NEXT
+\ CODE CR    ( -- )       putchar('\n')  NEXT
+
+: CR  $ A EMIT ;
+: SPACE  $ 20 EMIT ;
 
 CODE ACCEPT ( a n -- n )  top = accept((char *)m + *sp--, top);
 & /* temporary */ if (top < 0) exit(0)  NEXT
@@ -383,6 +386,17 @@ FORTH
         ELSE  $ 1 -FIND IF  NUMBER  ELSE  EXECUTE  THEN
         THEN  DEPTH 0< ABORT" stack?"
     REPEAT DROP ;
+
+: OPEN-INCLUDE-FILE  ( str len -- fileid ior )  2DROP $ 0 $ 1 ;
+: >SOURCE ( str len fileid -- )  CR ." Including " DROP TYPE SPACE ;
+: SOURCE> ( -- ) ;
+CODE REFILL ( -- f )  push refill()  NEXT
+
+: INCLUDED  ( str len -- )
+    2DUP OPEN-INCLUDE-FILE 0= ABORT" file not found"
+    ?DUP IF  >SOURCE
+        BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE>
+    ELSE  2DROP  THEN ;
 
 : QUIT [ HERE-T 201 !-T ]
 \   ." hi" CR
