@@ -1,52 +1,60 @@
 /* FVM Parsing */
 
+#include "fvm.h"
 #include "lib.h"
 
-int parse(struct source *source, char c, const char **addr) {
+//int parse(struct source *source, char c, const char **addr) {
+cell parse(cell source_va, char c, cell *start_addr) {
+    struct source *source = phys(source_va);
+    const char *src = phys(source->addr);
     int len = 0;
     int in = source->in;
-    *addr = source->addr + in;
-    while (in < source->len && source->addr[in] != c) in++, len++;
+
+    *start_addr = source->addr + in;
+    while (in < source->len && src[in] != c)
+        in++, len++;
     if (in < source->len) in++;
     source->in = in;
     return len;
 }
 
-int parse_name(struct source *source, const char **addr) {
-    const char *src = source->addr;
-    int in = source->in;
+cell parse_name(cell source_va, cell *start_addr) {
+    struct source *source = phys(source_va);
+    const char *src = phys(source->addr);
     int len = 0;
-    while (in < source->len && isspace(src[in])) in++;
-    *addr = source->addr + in;
-    while (in < source->len && !isspace(src[in])) in++, len++;
+    int in = source->in;
+
+    while (in < source->len && isspace(src[in]))
+        in++;
+    *start_addr = source->addr + in;
+    while (in < source->len && !isspace(src[in]))
+        in++, len++;
     if (in < source->len) in++;
     source->in = in;
     return len;
 }
 
-char *word2(struct source *source, char c, char *here) {
-    const char *src = source->addr;
+cell word2(cell source_va, char c, cell here_va) {
+    struct source *source = phys(source_va);
+    const char *src = phys(source->addr);
+    int in = source->in;
+    char *here = phys(here_va);
     char *dest = here;
-    int in = source->in;
     if (c == BL) {
-        while (in < source->len && isspace(src[in])) {
+        while (in < source->len && isspace(src[in]))
             in++;
-        }
-        while (in < source->len && !isspace(src[in])) {
+        while (in < source->len && !isspace(src[in]))
             *++dest = src[in++];
-        }
     } else {
-        while (in < source->len && src[in] == c) {
+        while (in < source->len && src[in] == c)
             in++;
-        }
-        while (in < source->len && src[in] != c) {
+        while (in < source->len && src[in] != c)
             *++dest = src[in++];
-        }
     }
     dest[1] = 0;  // null-terminate string
     if (in < source->len) in++;
     source->in = in;
-    *here = dest - here;
-    return here;
+    *here = dest - here; // count
+    return here_va;
 }
 

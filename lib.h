@@ -1,40 +1,9 @@
 /* Support library */
 
-#include <ctype.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef LIB_H_INCLUDED
+#define LIB_H_INCLUDED
 
-#define STATIC_ASSERT(cond, msg) \
-    typedef char static_assert_##msg[(cond)?1:-1]
-
-#define TRUE -1
-#define FALSE 0
-#define BL ' '
-
-#define MAXLINE 128
-
-#define SOURCE_CONSOLE      ((FILE*) 0)
-#define SOURCE_EVALUATE     ((FILE*)-1)
-
-struct source {
-    int in;             // current parsing offset (>IN)
-    int len;            // length of input buffer
-    const char *addr;   // input buffer address
-    FILE *file;         // SOURCE-ID: 0=console, -1=evaluate, else file id
-
-    char *buf;          // input buffer for file or console (malloc)
-    char *filename;     // file name during include (malloc)
-    int line;           // line # during include
-    long offset;        // file offset for save/restore
-};
-
-// This is assumed for the memory layout in fvm.c
-STATIC_ASSERT(sizeof(struct source) == 32, source_size);
-
-//extern struct source *source; // current input source
-
+// lib.c
 char *new_string(const char *str, int len);
 void fatal(const char *msg);
 void dump(const uint8_t *m, int a, int n);
@@ -44,11 +13,12 @@ void push_source(FILE *file, const char *filename, int len);
 void pop_source();
 
 // parse.c
-int parse(struct source *source, char c, const char **addr);
-int parse_name(struct source *source, const char **addr);
-char *word2(struct source *source, char c, char *here);
+cell parse(cell source_va, char c, cell *start_addr);
+cell parse_name(cell source_va, cell *start_addr);
+cell word2(cell source_va, char c, cell here_va);
 
 // file.c
-int accept(char *str, int max);
-int refill(struct source *source);
+cell accept(cell addr_va, cell max);
+cell refill(cell source_va);
 
+#endif

@@ -4,34 +4,39 @@
  * Andrew McKewan 2020
  */
 
+#include "fvm.h"
 #include "lib.h"
 #include <readline/readline.h>
 #include <readline/history.h>
 
-int accept(char *str, int max) {
+cell accept(cell addr_va, cell max) {
     char *line = readline(0);
     if (!line) return -1;
 
     int len = strlen(line);
     if (len && line[len-1] == '\n') len--;
     if (len > max) len = max;
-    memcpy(str, line, len);
+    memcpy(phys(addr_va), line, len);
+
     add_history(line);
     free(line);
     return len;
 }
 
 static int refill_tib(struct source *source) {
+    int len = accept(source->buf, MAXLINE);
+    if (len < 0) return FALSE;
     source->addr = source->buf;
-    source->len = accept(source->buf, MAXLINE);
+    source->len = len;
     source->in = 0;
-    return source->len >= 0;
+    return TRUE;
 }
 
 static int refill_file(struct source *source) {
-    if (!fgets(source->buf, MAXLINE, source->file)) return FALSE;
-    int len = strlen(source->buf);
-    if (len && source->buf[len-1] == '\n') len--;
+    char *buf = phys(source->buf);
+    if (!fgets(buf, MAXLINE, source->file)) return FALSE;
+    int len = strlen(buf);
+    if (len && buf[len-1] == '\n') len--;
     source->line++;
     source->addr = source->buf;
     source->len = len;
@@ -39,7 +44,13 @@ static int refill_file(struct source *source) {
     return TRUE;
 }
 
-int refill(struct source *source) {
+cell refill(cell source_va) {
+    struct source *source = phys(source_va);
+    printf("source = %p\n", source);
+    printf("id = %p\n", source->file);
+    printf("buf = 0x%X\n", source->buf);
+    printf("addr = 0x%X\n", source->addr);
+    //exit(0);
     if (source->file == SOURCE_EVALUATE)
         return FALSE;
     if (source->file == SOURCE_CONSOLE)

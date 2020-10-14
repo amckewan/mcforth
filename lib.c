@@ -4,6 +4,7 @@
  * Andrew McKewan 2020
  */
 
+#include "fvm.h"
 #include "lib.h"
 #include <readline/readline.h>
 #include <readline/history.h>

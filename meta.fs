@@ -312,10 +312,15 @@ CODE TYPE  ( a n -- )   type(*sp, top); pop2  NEXT
 : CR     $ 0A EMIT ;
 : SPACE  $ 20 EMIT ;
 
-CODE ACCEPT ( a n -- n )  top = accept((char *)m + *sp--, top);
+CODE .  ( n -- )  printf("%d ", top); pop  NEXT
+CODE H. ( u -- )  printf("0x%X ", top); pop  NEXT
+
+CODE BYE  return;
+
+CODE ACCEPT ( a n -- n )  top = accept(*sp--, top);
 | /* FIXME */ if (top < 0) exit(0)  NEXT
 
-| #define SOURCE (struct source *)(m + M(8))
+| #define SOURCE M(8)
 
 VARIABLE TIB 50 ALLOT-T
 
@@ -340,7 +345,16 @@ ALIGN  HERE-T 8 !-T  20 8 * ALLOT-T ( source stack )
 CODE +M  top += (cell)m  NEXT   // convert to physical address
 CODE -M  top -= (cell)m  NEXT   // convert to absolute address
 
-: QUERY  ( -- )  TIB $ 50 ACCEPT  TIB +M 'TIB !  #TIB !  $ 0 >IN ! ;
+CODE REFILL ( -- f )  push refill(SOURCE)  NEXT
+
+\ : QUERY  ( -- )  TIB $ 50 ACCEPT  TIB +M 'TIB !  #TIB !  $ 0 >IN ! ;
+: QUERY  ( -- )
+    ." SOURCE=" >IN H. >IN +M H.
+    ." TIB=" TIB +M H. ." 'TIB=" 'TIB @ H. ." #TIB=" #TIB @ . ." >IN=" >IN @ . CR
+    TIB >IN $ 10 + !
+    REFILL 0= IF BYE THEN 
+    ." TIB=" TIB +M H. ." 'TIB=" 'TIB @ H. ." #TIB=" #TIB @ . ." >IN=" >IN @ . CR
+    ;
 
 \ CODE NUMBER?  ( addr -- n f )  top = number(top, ++sp);  NEXT
 \ : NUMBER  ( addr -- n )  DUP NUMBER? IF SWAP DROP ELSE
@@ -357,7 +371,7 @@ CODE -NUMBER  ( a -- a t, n f ) w = number(top, ++sp);
 CODE WORD  ( char -- addr )  top = word(top, (Input*)(m+8), m+HERE) - m  NEXT
 [ELSE]
 CODE WORD  ( char -- addr )
-|   top = word2(SOURCE, top, (char*)m + HERE) - (char *)m  NEXT
+|   top = word2(SOURCE, top, HERE)  NEXT
 [THEN]
 
 CODE FIND  ( str -- xt flag | str 0 )
@@ -373,7 +387,6 @@ CODE -FIND  ( str v -- str t | xt f )
 : -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
 : '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
 
-CODE .  ( n -- )  printf("%d ", top); pop  NEXT
 CODE DEPTH ( -- n )  w = sp - stack; push w  NEXT
 CODE .S ( -- )
 |       w = sp - stack;  sp[1] = top;
@@ -400,6 +413,7 @@ FORTH
 \ CODE EXECUTE  ip = m + top, pop  NEXT
 
 : INTERPRET  ( -- )
+    BEGIN BL WORD DUP C@ WHILE COUNT TYPE SPACE REPEAT EXIT
     BEGIN   BL WORD DUP C@
     WHILE   STATE @
         IF  $ 2 -FIND IF  $ 1 -FIND IF  NUMBER ( [COMPILE]) LITERAL
@@ -412,7 +426,6 @@ FORTH
 : OPEN-INCLUDE-FILE  ( str len -- fileid ior )  2DROP $ 0 $ 1 ;
 : >SOURCE ( str len fileid -- )  CR ." Including " DROP TYPE SPACE ;
 : SOURCE> ( -- ) ;
-CODE REFILL ( -- f )  push refill(SOURCE)  NEXT
 
 : INCLUDED  ( str len -- )
     2DUP OPEN-INCLUDE-FILE 0= ABORT" file not found"
@@ -424,8 +437,6 @@ CODE REFILL ( -- f )  push refill(SOURCE)  NEXT
 \   ." hi" CR
 \       WORDS CR
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF  ."  ok"  THEN  AGAIN ;
-
-CODE BYE  return;
 
 ( Compiler )
 : OP,  C, ;

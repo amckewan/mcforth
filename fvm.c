@@ -1,15 +1,9 @@
 // fvm.c
 
+#include "fvm.h"
 #include "lib.h"
 
-#define BL ' '
-#define EOL '\n'
 
-typedef int32_t cell;
-typedef uint32_t ucell;
-typedef unsigned char uchar;
-typedef uint8_t byte;
-typedef uint8_t opcode;
 
 #define CELL sizeof(cell)
 
@@ -25,7 +19,7 @@ typedef struct {
     uchar name[1];
 } Header;
 
-uchar m[0x2000] = {
+byte m[0x2000] = {
 #include "dict.inc"
 };
 
@@ -196,6 +190,8 @@ exec:
 int main(int argc, char *argv[]) {
     printf("sizeof(source) = %u\n", sizeof(struct source));
     fvm();
+    return 0;
+
     const char *filename = "dict.img";
     if (argc > 1) filename = argv[1];
     FILE *f = fopen(filename, "r");
