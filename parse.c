@@ -43,6 +43,7 @@ char *word2(struct source *source, char c, char *here) {
             *++dest = src[in++];
         }
     }
+    dest[1] = 0;  // null-terminate string
     if (in < source->len) in++;
     source->in = in;
     *here = dest - here;

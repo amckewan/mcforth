@@ -308,9 +308,8 @@ CODE C!  ( c a -- )  m[top] = *sp; pop2  NEXT
 CODE KEY   ( -- char )  push getchar()  NEXT
 CODE EMIT  ( char -- )  putchar(top); pop  NEXT
 CODE TYPE  ( a n -- )   type(*sp, top); pop2  NEXT
-\ CODE CR    ( -- )       putchar('\n')  NEXT
 
-: CR  $ A EMIT ;
+: CR     $ 0A EMIT ;
 : SPACE  $ 20 EMIT ;
 
 CODE ACCEPT ( a n -- n )  top = accept((char *)m + *sp--, top);
@@ -323,17 +322,18 @@ VARIABLE TIB 50 ALLOT-T
 04 CONSTANT H
 14 CONSTANT CONTEXT
 
-1 [IF]
-08 CONSTANT 'TIB
+0 [IF]
+08 CONSTANT >IN
 0C CONSTANT #TIB
-10 CONSTANT >IN
+10 CONSTANT 'TIB
 [ELSE]
-08 CONSTANT 'SOURCE
-ALIGN  HERE-T 8 !-T  32 ALLOT-T ( source )
+
+8 CONSTANT 'SOURCE
+ALIGN  HERE-T 8 !-T  20 8 * ALLOT-T ( source stack )
 
 : >IN   'SOURCE @ ;
-: #TIB  >IN CELL+ ;
-: 'TIB  >IN 2 CELLS + ;
+: #TIB  >IN $ 4 + ;
+: 'TIB  >IN $ 8 + ;
 [THEN]
 
 
@@ -353,7 +353,7 @@ CODE -NUMBER  ( a -- a t, n f ) w = number(top, ++sp);
     
 20 CONSTANT BL
 
-1 [IF]
+0 [IF]
 CODE WORD  ( char -- addr )  top = word(top, (Input*)(m+8), m+HERE) - m  NEXT
 [ELSE]
 CODE WORD  ( char -- addr )
@@ -423,7 +423,7 @@ CODE REFILL ( -- f )  push refill(SOURCE)  NEXT
 : QUIT [ HERE-T 201 !-T ]
 \   ." hi" CR
 \       WORDS CR
-    BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF  ." ok"  THEN  AGAIN ;
+    BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF  ."  ok"  THEN  AGAIN ;
 
 CODE BYE  return;
 

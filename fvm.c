@@ -14,9 +14,9 @@ typedef uint8_t opcode;
 #define CELL sizeof(cell)
 
 typedef struct {
-    uchar *addr;
-    cell len;
     cell in;
+    cell len;
+    uchar *addr;
 } Input;
 
 typedef struct {

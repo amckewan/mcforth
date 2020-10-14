@@ -71,7 +71,8 @@ case 0x058:    ip += top ? CELL : *(cell*)ip; pop  NEXT
 /* -M */ case 0x06F:   top -= (cell)m  NEXT   // convert to absolute address
 /* -NUMBER */ case 0x070:   w = number(top, ++sp);
   if (w) top = 0; else *sp = top, top = -1  NEXT
-/* WORD */ case 0x071:    top = word(top, (Input*)(m+8), m+HERE) - m  NEXT
+/* WORD */ case 0x071:  
+  top = word2(SOURCE, top, (char*)m + HERE) - (char *)m  NEXT
 /* FIND */ case 0x072:  
       w = find(top, 1);
       if (w) *++sp = cfa(w), top = -1;
