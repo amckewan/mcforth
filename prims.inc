@@ -70,25 +70,60 @@ case 0x058:    ip += top ? CELL : *(cell*)ip; pop; NEXT
    //printf("R> R=%p top=0x%X", R, top);getchar();
  ; NEXT
 /* R@ */ case 0x06A:          push *rp  ; NEXT
-/* CELLS */ case 0x070:       top *= CELL; NEXT
-/* C@ */ case 0x071:    top = m[top]; NEXT
-/* C! */ case 0x072:    m[top] = *sp; pop2; NEXT
-/* PHYS */ case 0x073:   top += (cell)m; NEXT   // convert to physical address
-/* VIRT */ case 0x074:   top -= (cell)m; NEXT   // convert to absolute address
-/* KEY */ case 0x075:    push getchar(); NEXT
-/* EMIT */ case 0x076:    putchar(top); pop; NEXT
-/* TYPE */ case 0x077:     type(*sp, top); pop2; NEXT
-/* . */ case 0x078:    printf("%d ", top); pop; NEXT
-/* H. */ case 0x079:    printf("0x%X ", top); pop; NEXT
-/* BYE */ case 0x07A:   return;
-/* ACCEPT */ case 0x07B:    top = accept(*sp--, top);
+/* INVERT */ case 0x070:   top = ~top; NEXT
+/* NEGATE */ case 0x071:   top = -top; NEXT
+#define LOWER(u1,u2)  ((uint32_t)(u1) < (uint32_t)(u2))
+/* WITHIN */ case 0x072:  
+  w = *S--,
+  top = LOWER(*S - w, top - w) LOGICAL;
+  S--;
+  NEXT
+/* M* */ case 0x073:   {
+  int64_t d = (int64_t)*S * (int64_t)top;
+  *S = d ;
+  top = d >> 32;
+  NEXT }
+/* UM* */ case 0x074:   {
+  uint64_t u1 = (uint32_t)*sp;
+  uint64_t u2 = (uint32_t)top;
+  uint64_t ud = u1 * u2;
+  *sp = ud ;
+  top = ud >> 32;
+  NEXT }
+/* UM/MOD */ case 0x075:   {
+  uint64_t ud = ((uint64_t)*S << 32) | (uint32_t)S[-1];
+  uint64_t u = (uint32_t)top;
+  uint32_t quot = ud / u;
+  uint32_t rem = ud % u;
+  *--S = rem;
+  top = quot;
+  NEXT }
+/* SM/REM */ case 0x076:   {
+  int64_t d = (((uint64_t)*S) << 32) | ((uint32_t) S[-1]);
+  int32_t quot = d / top;
+  int32_t rem = d % top;
+  *--S = rem;
+  top = quot;
+  NEXT }
+/* CELLS */ case 0x077:       top *= CELL; NEXT
+/* C@ */ case 0x078:    top = m[top]; NEXT
+/* C! */ case 0x079:    m[top] = *sp; pop2; NEXT
+/* MOVE */ case 0x07A:   memmove(phys(*S), phys(S[-1]), top); pop3; NEXT
+/* PHYS */ case 0x07B:   top += (cell)m; NEXT   // convert to physical address
+/* VIRT */ case 0x07C:   top -= (cell)m; NEXT   // convert to absolute address
+/* KEY */ case 0x07D:    push getchar(); NEXT
+/* EMIT */ case 0x07E:    putchar(top); pop; NEXT
+/* TYPE */ case 0x07F:     type(*sp, top); pop2; NEXT
+/* BYE */ case 0x080:   return;
+/* ACCEPT */ case 0x081:    top = accept(*sp--, top);
 /* FIXME */ if (top < 0) exit(0); NEXT
-#define SOURCE M(8)
-/* ALLOCATE */ case 0x07C:    *++S = virt(malloc(top)), top = *S ? 0 : -1; NEXT
-/* RESIZE */ case 0x07D:      *S = virt(realloc(phys(*S), top)), top = *S ? 0 : -1; NEXT
-/* FREE */ case 0x07E:        free(phys(top)), top = 0; NEXT
-/* NEW-STRING */ case 0x07F:  top = new_string(*sp--, top); NEXT
-/* OPEN-FILE */ case 0x080:   {
+#define SOURCE    M(8)
+#define BASE      M(12)
+/* ALLOCATE */ case 0x082:    *++S = virt(malloc(top)), top = *S ? 0 : -1; NEXT
+/* RESIZE */ case 0x083:      *S = virt(realloc(phys(*S), top)), top = *S ? 0 : -1; NEXT
+/* FREE */ case 0x084:        free(phys(top)), top = 0; NEXT
+/* NEW-STRING */ case 0x085:  top = new_string(*sp--, top); NEXT
+/* OPEN-FILE */ case 0x086:   {
   //printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
   char *filename = phys(new_string(S[-1], *S));
   FILE *file = fopen(filename, "r");
@@ -96,30 +131,31 @@ case 0x058:    ip += top ? CELL : *(cell*)ip; pop; NEXT
   free(filename);
   *--S = (cell) file;
   top = file ? 0 : -1; NEXT }
-/* CLOSE-FILE */ case 0x081:    
+/* CLOSE-FILE */ case 0x087:    
   printf("closing %p\n", (FILE*)top);
   top = fclose((FILE*)top); NEXT
-/* REFILL */ case 0x082:    push refill(SOURCE); NEXT
-/* -NUMBER */ case 0x083:   w = number(top, ++sp);
+/* REFILL */ case 0x088:    push refill(SOURCE); NEXT
+/* . */ case 0x089:    printf("%d ", top); pop; NEXT
+/* -NUMBER */ case 0x08A:   w = number(top, ++sp);
   if (w) top = 0; else *sp = top, top = -1; NEXT
-/* WORD */ case 0x084:  
+/* WORD */ case 0x08B:  
   top = word(SOURCE, top, HERE); NEXT
-/* FIND */ case 0x085:  
+/* FIND */ case 0x08C:  
       w = find(top, 1);
       if (w) *++sp = cfa(w), top = -1;
       else push 0; NEXT
-/* -FIND */ case 0x086:  
+/* -FIND */ case 0x08D:  
       w = find(*sp, top);
       if (w) *sp = cfa(w), top = 0;
       else top = -1; NEXT
-/* DEPTH */ case 0x087:    w = sp - stack; push w; NEXT
-/* .S */ case 0x088:  
+/* DEPTH */ case 0x08E:    w = sp - stack; push w; NEXT
+/* .S */ case 0x08F:  
       w = sp - stack;  sp[1] = top;
       printf("[%d] ", w);
       for (int i = 0; i < w; i++)
           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
-    ; NEXT
-/* WORDS */ case 0x089:    words(M(CONTEXT)); NEXT
-/* DUMP */ case 0x08A:    dump(*sp--, top); pop; NEXT
-/* ALIGNED */ case 0x08B:     top = aligned(top); NEXT
-/* PARSE */ case 0x08C:    top = parse(SOURCE, top, ++S); NEXT
+      NEXT
+/* WORDS */ case 0x090:    words(M(CONTEXT)); NEXT
+/* DUMP */ case 0x091:    dump(*sp--, top); pop; NEXT
+/* ALIGNED */ case 0x092:     top = aligned(top); NEXT
+/* PARSE */ case 0x093:    top = parse(SOURCE, top, ++S); NEXT

@@ -314,6 +314,48 @@ CODE R@         push *rp  ; NEXT
 12 BINARY AND       13 BINARY OR        14 BINARY XOR
 15 BINARY LSHIFT    16 BINARY RSHIFT    17 BINARY ARSHIFT
 
+CODE INVERT  top = ~top; NEXT
+CODE NEGATE  top = -top; NEXT
+
+| #define LOWER(u1,u2)  ((uint32_t)(u1) < (uint32_t)(u2))
+
+CODE WITHIN
+|   w = *S--,
+|   top = LOWER(*S - w, top - w) LOGICAL;
+|   S--;
+|   NEXT
+
+CODE M*  ( n1 n2 -- d ) {
+|   int64_t d = (int64_t)*S * (int64_t)top;
+|   *S = d ;
+|   top = d >> 32;
+|   NEXT }
+
+CODE UM* ( u1 u2 -- ud ) {
+|   uint64_t u1 = (uint32_t)*sp;
+|   uint64_t u2 = (uint32_t)top;
+|   uint64_t ud = u1 * u2;
+|   *sp = ud ;
+|   top = ud >> 32;
+|   NEXT }
+
+CODE UM/MOD  ( ud u1 -- rem quot ) {
+|   uint64_t ud = ((uint64_t)*S << 32) | (uint32_t)S[-1];
+|   uint64_t u = (uint32_t)top;
+|   uint32_t quot = ud / u;
+|   uint32_t rem = ud % u;
+|   *--S = rem;
+|   top = quot;
+|   NEXT }
+
+CODE SM/REM  ( d n -- rem quot ) {
+|   int64_t d = (((uint64_t)*S) << 32) | ((uint32_t) S[-1]);
+|   int32_t quot = d / top;
+|   int32_t rem = d % top;
+|   *--S = rem;
+|   top = quot;
+|   NEXT }
+
 : 1+  $ 1 + ;
 : 1-  $ 1 - ;
 
@@ -328,6 +370,8 @@ CODE C!  ( c a -- )  m[top] = *sp; pop2; NEXT
 : 2@    DUP CELL+ @ SWAP @ ;
 : 2!    DUP >R ! R> CELL+ ! ;
 
+CODE MOVE  ( a1 a2 u -- ) memmove(phys(*S), phys(S[-1]), top); pop3; NEXT
+
 CODE PHYS  top += (cell)m; NEXT   // convert to physical address
 CODE VIRT  top -= (cell)m; NEXT   // convert to absolute address
 
@@ -340,23 +384,27 @@ CODE TYPE  ( a n -- )   type(*sp, top); pop2; NEXT
 : CR     $ 0A EMIT ;
 : SPACE  $ 20 EMIT ;
 
-CODE .  ( n -- )  printf("%d ", top); pop; NEXT
-CODE H. ( u -- )  printf("0x%X ", top); pop; NEXT
-
 CODE BYE  return;
 
 CODE ACCEPT ( a n -- n )  top = accept(*sp--, top);
 | /* FIXME */ if (top < 0) exit(0); NEXT
 
 
+\ Variables shared with C code at fixed offsets
 04 CONSTANT H
+08 CONSTANT 'SOURCE
+0C CONSTANT BASE
+10 CONSTANT STATE
 14 CONSTANT CONTEXT
 
-| #define SOURCE M(8)
+| #define SOURCE    M(8)
+| #define BASE      M(12)
+
+\ ********** Input source processig **********
+
 
 \ 8 CONSTANT SOURCE-CELLS ( sizeof )
 
-8 CONSTANT 'SOURCE
 ALIGN  HERE-T 8 !-T  HERE-T 100 ( 20 8 *) ALLOT-T
 CONSTANT SOURCE-STACK
 
@@ -397,12 +445,9 @@ CODE CLOSE-FILE ( fileid -- ior )
 : >SOURCE ( str len fileid -- ) \ CR ." Including " DROP TYPE SPACE ;
     SOURCE-DEPTH $ 7 U> ABORT" nested too deep"
     $ 20 'SOURCE +!
-    DUP 'SOURCE-ID !  FILE? IF
-        $ 80 ALLOCATE DROP SOURCE-BUF !
-        NEW-STRING SOURCE-NAME !
-    ELSE
-        $ 0 DUP SOURCE-BUF ! SOURCE-NAME !
-    THEN
+    DUP 'SOURCE-ID !
+    FILE? IF  $ 80 ALLOCATE DROP  SOURCE-BUF !  THEN
+    DUP IF  NEW-STRING DUP  THEN  SOURCE-NAME ! DROP
     $ 0 SOURCE-LINE ! ;
 
 : SOURCE> ( -- )
@@ -410,18 +455,23 @@ CODE CLOSE-FILE ( fileid -- ior )
     SOURCE-ID FILE? IF
         SOURCE-ID CLOSE-FILE DROP
         SOURCE-BUF @ FREE DROP
-        SOURCE-NAME @ FREE DROP
     THEN
-    $ -20 'SOURCE +! 
-    ;
-
+    SOURCE-NAME @ FREE DROP
+    $ -20 'SOURCE +! ;
 
 CODE REFILL ( -- f )  push refill(SOURCE); NEXT
 
 VARIABLE TIB 80 ALLOT-T
-: QUERY  ( -- )  TIB SOURCE-BUF !  REFILL 0= IF BYE THEN ;
+: QUERY  ( -- )  $ 0 'SOURCE-ID !  TIB SOURCE-BUF !  REFILL 0= IF BYE THEN ;
 
+\ ********** Numbers **********
 
+: DECIMAL   $ 0A BASE ! ;
+: HEX       $ 10 BASE ! ;
+
+CODE .  ( n -- )  printf("%d ", top); pop; NEXT
+
+: ?  @ . ;
 
 
 \ CODE NUMBER?  ( addr -- n f )  top = number(top, ++sp);; NEXT
@@ -431,7 +481,7 @@ VARIABLE TIB 80 ALLOT-T
 CODE -NUMBER  ( a -- a t, n f ) w = number(top, ++sp);
 |   if (w) top = 0; else *sp = top, top = -1; NEXT
 \ : NUMBER  ( a -- n )  -NUMBER IF  COUNT TYPE  $ 1 ABORT"  ?"  THEN ;
-: NUMBER  ( a -- n )  -NUMBER ABORT" ?" ;
+: NUMBER  ( a -- n )  -NUMBER ABORT" ? " ;
     
 20 CONSTANT BL
 
@@ -457,21 +507,22 @@ CODE .S ( -- )
 |       printf("[%d] ", w);
 |       for (int i = 0; i < w; i++)
 |           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
-|     ; NEXT
+|       NEXT
 
 
 CODE WORDS  ( -- )  words(M(CONTEXT)); NEXT
 CODE DUMP  ( a n -- )  dump(*sp--, top); pop; NEXT
-
-VARIABLE STATE
 
 : HERE  H @ ;
 : ALLOT  H +! ;
 : ,   H @ !   $ 4 H +! ;
 : C,  H @ C!  $ 1 H +! ;
 
-: COMPILE,  $ FF C, , ;
+: COMPILE,  ( xt -- )
+    DUP C@ $ 68 $ 70 WITHIN OVER 1+ C@ 0= AND IF  C@ C, EXIT  THEN
+    $ FF C, , ;
 COMPILER
+: [COMPILE]  $ 2 -' ABORT" ?" COMPILE, ;
 : LITERAL  $ 2F C, , ;
 FORTH
 : EXECUTE  PHYS >R ;
@@ -484,7 +535,7 @@ FORTH
         IF  $ 2 -FIND IF  $ 1 -FIND IF  NUMBER ( [COMPILE]) LITERAL
             ELSE  COMPILE,  THEN  ELSE  EXECUTE  THEN
         ELSE  $ 1 -FIND IF  NUMBER  ELSE  EXECUTE  THEN
-        THEN  DEPTH 0< ABORT" stack?"
+        THEN  DEPTH 0< ABORT" stack? "
     REPEAT DROP ;
 
 : QUIT [ HERE-T 201 !-T ]
@@ -515,7 +566,6 @@ CODE PARSE  ( c -- a n )  top = parse(SOURCE, top, ++S); NEXT
 : ",  $ 22 ( [CHAR] ") PARSE  DUP C,  S,  ALIGN  ( 0 ?CODE !) ;
 
 COMPILER
-: test ." testing... " ;
 : ."      $ 9 OP,  ", ;
 : S"      $ A OP,  ", ;
 : ABORT"  $ B OP,  ", ;
@@ -539,7 +589,7 @@ VARIABLE LAST
 COMPILER
 : [  $ 0 STATE ! ;
 : EXIT  $ 0 OP, ;
-T: ;  SMUDGE [COMPILE] EXIT [COMPILE] [ ;
+T: ;  SMUDGE ( [COMPILE]) EXIT ( [COMPILE]) [ ;
 FORTH
 : ]  $ -1 STATE ! ;
 

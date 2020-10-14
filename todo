@@ -1,2 +1,7 @@
-include
 number and . using base
+redefined warning
+
+: \  source >in ! drop ;
+: (  41 parse 2drop ;
+: .( 41 parse type ;
+compiler : \ \ ; : ( ( ; : .( .( ; ( ;-)forth

@@ -25,12 +25,14 @@ byte m[0x2000] = {
 #define push *++sp = top, top =
 #define pop top = *sp--
 #define pop2 top = sp[-1], sp -= 2
+#define pop3 top = sp[-2], sp -= 3
 #define LOGICAL ? -1 : 0
 #define aligned(x) (((cell)(x) + (CELL - 1)) & ~(CELL - 1))
 #define c(x) HERE = x, HERE += CELL
 
 // Memory Map
 #define HERE M(4)
+#define STATE M(16)
 #define CONTEXT 20
 
 cell cfa(cell nfa) // convert nfa to cfa (NAME>)
@@ -111,6 +113,7 @@ void *dotq(void *ip) {
 void dotid(cell nfa) {
     type(nfa + 1, m[nfa] & 31);
     putchar(BL);
+    if ((m[nfa] & 0x20)) printf("(smudged) ");
 }
 
 void words(cell v) {
@@ -130,6 +133,8 @@ void fvm() {
     printf("hi\n");
 
 abort:
+    STATE = 0;
+    M(CONTEXT) = 1;
     sp = stack;
     *sp = top = 0;
     rp = rack;

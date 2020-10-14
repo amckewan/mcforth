@@ -32,7 +32,7 @@ static int refill_tib(struct source *source) {
 }
 
 static int refill_file(struct source *source) {
-    printf("refill file = %p line = %d\n", source->file, source->line);
+    printf("refill %s line %d\n", phys(source->filename), source->line+1);
     char *buf = phys(source->buf);
     if (!fgets(buf, MAXLINE, source->file)) return FALSE;
     int len = strlen(buf);
