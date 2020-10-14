@@ -334,7 +334,7 @@ VARIABLE TIB 50 ALLOT-T
 [ELSE]
 
 8 CONSTANT 'SOURCE
-ALIGN  HERE-T 8 !-T  20 8 * ALLOT-T ( source stack )
+ALIGN  HERE-T 8 !-T  100 ALLOT-T ( source stack )
 
 : >IN   'SOURCE @ ;
 : #TIB  >IN $ 4 + ;
@@ -349,11 +349,11 @@ CODE REFILL ( -- f )  push refill(SOURCE)  NEXT
 
 \ : QUERY  ( -- )  TIB $ 50 ACCEPT  TIB +M 'TIB !  #TIB !  $ 0 >IN ! ;
 : QUERY  ( -- )
-    ." SOURCE=" >IN H. >IN +M H.
-    ." TIB=" TIB +M H. ." 'TIB=" 'TIB @ H. ." #TIB=" #TIB @ . ." >IN=" >IN @ . CR
+    \ ." SOURCE=" >IN H. >IN +M H.
+    \ ." TIB=" TIB +M H. ." 'TIB=" 'TIB @ H. ." #TIB=" #TIB @ . ." >IN=" >IN @ . CR
     TIB >IN $ 10 + !
     REFILL 0= IF BYE THEN 
-    ." TIB=" TIB +M H. ." 'TIB=" 'TIB @ H. ." #TIB=" #TIB @ . ." >IN=" >IN @ . CR
+    \ ." TIB=" TIB +M H. ." 'TIB=" 'TIB @ H. ." #TIB=" #TIB @ . ." >IN=" >IN @ . CR
     ;
 
 \ CODE NUMBER?  ( addr -- n f )  top = number(top, ++sp);  NEXT
@@ -396,7 +396,7 @@ CODE .S ( -- )
 |       NEXT
 
 CODE WORDS  ( -- )  words(M(CONTEXT))  NEXT
-CODE DUMP  ( a n -- )  dump(m, *sp--, top); pop  NEXT
+CODE DUMP  ( a n -- )  dump(*sp--, top); pop  NEXT
 
 VARIABLE STATE
 
@@ -413,7 +413,7 @@ FORTH
 \ CODE EXECUTE  ip = m + top, pop  NEXT
 
 : INTERPRET  ( -- )
-    BEGIN BL WORD DUP C@ WHILE COUNT TYPE SPACE REPEAT EXIT
+    \ BEGIN BL WORD DUP C@ WHILE COUNT TYPE SPACE REPEAT EXIT
     BEGIN   BL WORD DUP C@
     WHILE   STATE @
         IF  $ 2 -FIND IF  $ 1 -FIND IF  NUMBER ( [COMPILE]) LITERAL

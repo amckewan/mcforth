@@ -1,9 +1,6 @@
 // fvm.c
 
 #include "fvm.h"
-#include "lib.h"
-
-
 
 #define CELL sizeof(cell)
 
@@ -36,7 +33,7 @@ byte m[0x2000] = {
 #define HERE M(4)
 #define CONTEXT 20
 
-uchar *word(cell delim, Input *input, uchar *here) {
+uchar *wordxx(cell delim, Input *input, uchar *here) {
     uchar *p = input->addr + input->in;
     cell n = input->len - input->in;
 
@@ -164,7 +161,7 @@ abort:
     sp = stack;
     *sp = top = 0;
     rp = rack;
-    ip = (opcode *)&m[0x200];
+    ip = (opcode *)phys(0x200);
 
 next:
 //printf("ip=%X op=%02X\n", ip-m, *(ip-m));

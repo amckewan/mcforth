@@ -5,7 +5,6 @@
  */
 
 #include "fvm.h"
-#include "lib.h"
 #include <readline/readline.h>
 #include <readline/history.h>
 
@@ -46,10 +45,10 @@ static int refill_file(struct source *source) {
 
 cell refill(cell source_va) {
     struct source *source = phys(source_va);
-    printf("source = %p\n", source);
-    printf("id = %p\n", source->file);
-    printf("buf = 0x%X\n", source->buf);
-    printf("addr = 0x%X\n", source->addr);
+    //printf("source = %p\n", source);
+    //printf("id = %p\n", source->file);
+    //printf("buf = 0x%X\n", source->buf);
+    //printf("addr = 0x%X\n", source->addr);
     //exit(0);
     if (source->file == SOURCE_EVALUATE)
         return FALSE;

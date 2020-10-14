@@ -1,8 +1,5 @@
 /* common definitions */
 
-#ifndef FVM_H_INCLUDED
-#define FVM_H_INCLUDED
-
 #include <ctype.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -50,5 +47,20 @@ struct source {
 // This is assumed for the memory layout in fvm.c
 STATIC_ASSERT(sizeof(struct source) == 32, source_size);
 
+// lib.c
+char *new_string(const char *str, int len);
+void fatal(const char *msg);
+void dump(int a, int n);
 
-#endif
+int source_depth();
+void push_source(FILE *file, const char *filename, int len);
+void pop_source();
+
+// parse.c
+cell parse(cell source_va, char c, cell *start_addr);
+cell parse_name(cell source_va, cell *start_addr);
+cell word2(cell source_va, char c, cell here_va);
+
+// file.c
+cell accept(cell addr_va, cell max);
+cell refill(cell source_va);

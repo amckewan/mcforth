@@ -93,6 +93,6 @@ case 0x058:    ip += top ? CELL : *(cell*)ip; pop  NEXT
           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
       NEXT
 /* WORDS */ case 0x07A:    words(M(CONTEXT))  NEXT
-/* DUMP */ case 0x07B:    dump(m, *sp--, top); pop  NEXT
+/* DUMP */ case 0x07B:    dump(*sp--, top); pop  NEXT
 /* ALIGNED */ case 0x07C:     top = aligned(top)  NEXT
 /* CELLS */ case 0x07D:       top *= CELL  NEXT

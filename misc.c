@@ -1,13 +1,6 @@
-/*
- * FVM support library
- *
- * Andrew McKewan 2020
- */
+/* misc support functions */
 
 #include "fvm.h"
-#include "lib.h"
-#include <readline/readline.h>
-#include <readline/history.h>
 
 #define MAX_SOURCE_DEPTH 8
 
@@ -58,7 +51,7 @@ void fatal(const char *msg) {
     exit(1);
 }
 
-void dump(const uint8_t *m, int a, int n) {
+void dump(int a, int n) {
     int i, j;
     for (i = 0; i < n; i += 16, a += 16) {
         printf("%04X ", a);

@@ -1,9 +1,7 @@
 /* FVM Parsing */
 
 #include "fvm.h"
-#include "lib.h"
 
-//int parse(struct source *source, char c, const char **addr) {
 cell parse(cell source_va, char c, cell *start_addr) {
     struct source *source = phys(source_va);
     const char *src = phys(source->addr);
