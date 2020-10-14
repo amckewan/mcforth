@@ -32,6 +32,7 @@ static int refill_tib(struct source *source) {
 }
 
 static int refill_file(struct source *source) {
+    printf("refill file = %p line = %d\n", source->file, source->line);
     char *buf = phys(source->buf);
     if (!fgets(buf, MAXLINE, source->file)) return FALSE;
     int len = strlen(buf);
@@ -45,8 +46,8 @@ static int refill_file(struct source *source) {
 
 cell refill(cell source_va) {
     struct source *source = phys(source_va);
-    //printf("source = %p\n", source);
-    //printf("id = %p\n", source->file);
+    //printf("refill source = %p\n", source);
+    //printf("file = %p\n", source->file);
     //printf("buf = 0x%X\n", source->buf);
     //printf("addr = 0x%X\n", source->addr);
     //exit(0);

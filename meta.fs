@@ -307,7 +307,8 @@ CODE R>
 CODE R@         push *rp  ; NEXT
 70 OP!
 
-: 2DROP DROP DROP ;
+: 2DUP      OVER OVER ;
+: 2DROP     DROP DROP ;
 
 10 BINARY +         11 BINARY -
 12 BINARY AND       13 BINARY OR        14 BINARY XOR
@@ -323,6 +324,9 @@ CELL-T CONSTANT CELL
 CODE C@  ( a -- c )  top = m[top]; NEXT
 CODE C!  ( c a -- )  m[top] = *sp; pop2; NEXT
 : COUNT  DUP 1+ SWAP C@ ;
+
+: 2@    DUP CELL+ @ SWAP @ ;
+: 2!    DUP >R ! R> CELL+ ! ;
 
 CODE PHYS  top += (cell)m; NEXT   // convert to physical address
 CODE VIRT  top -= (cell)m; NEXT   // convert to absolute address
@@ -364,6 +368,9 @@ CONSTANT SOURCE-STACK
 : SOURCE-NAME   >IN $ 5 CELLS + ;
 : SOURCE-LINE   >IN $ 6 CELLS + ;
 
+: SOURCE        >IN CELL+ 2@ ;
+: SOURCE-ID     'SOURCE-ID @ ;
+
 : SOURCE-DEPTH  >IN SOURCE-STACK -  $ 5 RSHIFT ( 32 /) ;
 
 CODE ALLOCATE   *++S = virt(malloc(top)), top = *S ? 0 : -1; NEXT
@@ -373,27 +380,40 @@ CODE FREE       free(phys(top)), top = 0; NEXT
 CODE NEW-STRING top = new_string(*sp--, top); NEXT
 
 CODE OPEN-FILE ( c-addr u fam -- fileid ior ) {
-|   printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
+|   //printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
 |   char *filename = "meta.fs"; // phys(new_string(S[-1], *S));
 |   FILE *file = fopen(filename, "r");
 |   printf("open %s returned %p\n", filename, file);
 |   *--S = (cell) file;
-|   top = file ? 0 : -1; }
+|   top = file ? 0 : -1; NEXT }
 
-CODE CLOSE-FILE ( fileid -- ior )  top = fclose((FILE*)top); NEXT
+CODE CLOSE-FILE ( fileid -- ior )  
+|   printf("closing %p\n", (FILE*)top);
+|   top = fclose((FILE*)top); NEXT
+
+: FILE?  1+ $ 2 U< NOT ;
 
 : >SOURCE ( str len fileid -- ) \ CR ." Including " DROP TYPE SPACE ;
     SOURCE-DEPTH $ 7 U> ABORT" nested too deep"
     $ 20 'SOURCE +!
-    'SOURCE-ID !
-    NEW-STRING SOURCE-NAME !
-    0 SOURCE-LINE ! ;
+    DUP 'SOURCE-ID !  FILE? IF
+        $ 80 ALLOCATE DROP SOURCE-BUF !
+        NEW-STRING SOURCE-NAME !
+    ELSE
+        $ 0 DUP SOURCE-BUF ! SOURCE-NAME !
+    THEN
+    $ 0 SOURCE-LINE ! ;
 
 : SOURCE> ( -- )
     SOURCE-DEPTH $ 1 < ABORT" trying to pop empty source"
-    SOURCE-ID 1+ $ 2 U< NOT IF  SOURCE-ID CLOSE-FILE DROP  THEN
-    SOURCE-NAME @ FREE DROP
-    $ -20 'SOURCE +! ;
+    SOURCE-ID FILE? IF
+        SOURCE-ID CLOSE-FILE DROP
+        SOURCE-BUF @ FREE DROP
+        SOURCE-NAME @ FREE DROP
+    THEN
+    $ -20 'SOURCE +! 
+    ;
+
 
 CODE REFILL ( -- f )  push refill(SOURCE); NEXT
 
@@ -472,15 +492,13 @@ FORTH
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF  ."  ok"  THEN  AGAIN ;
 
 : INCLUDED  ( str len -- )
-    $ 0 OPEN-FILE .S EXIT ABORT" file not found" DROP EXIT
-
-
+    \ $ 0 OPEN-FILE .S EXIT ABORT" file not found" DROP EXIT
     2DUP $ 0 OPEN-FILE ABORT" file not found"
-    ?DUP IF
-      >SOURCE  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE>
-    ELSE  2DROP  THEN ;
+    >SOURCE  BEGIN REFILL WHILE ( INTERPRET) REPEAT  SOURCE> ;
 
 : INCLUDE  BL WORD COUNT INCLUDED ;
+
+: xx S" meta.fs" INCLUDED ;
 
 ( Compiler )
 : OP,  C, ;

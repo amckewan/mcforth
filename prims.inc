@@ -89,13 +89,15 @@ case 0x058:    ip += top ? CELL : *(cell*)ip; pop; NEXT
 /* FREE */ case 0x07E:        free(phys(top)), top = 0; NEXT
 /* NEW-STRING */ case 0x07F:  top = new_string(*sp--, top); NEXT
 /* OPEN-FILE */ case 0x080:   {
-  printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
+  //printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
   char *filename = "meta.fs"; // phys(new_string(S[-1], *S));
   FILE *file = fopen(filename, "r");
   printf("open %s returned %p\n", filename, file);
   *--S = (cell) file;
-  top = file ? 0 : -1; }
-/* CLOSE-FILE */ case 0x081:    top = fclose((FILE*)top); NEXT
+  top = file ? 0 : -1; NEXT }
+/* CLOSE-FILE */ case 0x081:    
+  printf("closing %p\n", (FILE*)top);
+  top = fclose((FILE*)top); NEXT
 /* REFILL */ case 0x082:    push refill(SOURCE); NEXT
 /* -NUMBER */ case 0x083:   w = number(top, ++sp);
   if (w) top = 0; else *sp = top, top = -1; NEXT
