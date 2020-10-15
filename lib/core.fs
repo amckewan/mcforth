@@ -110,7 +110,7 @@ FORTH
 : */        */MOD NIP ;
 : /MOD      >R S>D R> SM/REM ;
 
-abort
+stop here
 \ : SPACES    0 ?DO  SPACE  LOOP ;
 : SPACES    BEGIN DUP WHILE SPACE 1- REPEAT DROP ;
 

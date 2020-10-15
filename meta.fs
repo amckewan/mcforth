@@ -44,6 +44,7 @@ S" prims.inc" OPEN
 
 CREATE EOL 1 C, 0A C,
 : NEWLINE   EOL COUNT WRITE ;
+: `  1 PARSE WRITE  NEWLINE ;
 : |  1 PARSE WRITE  NEWLINE ;
 
 : WRITE-DICT-IMG
@@ -208,6 +209,9 @@ VARIABLE OP  ( next opcode )
 \ **********************************************************************
 \ FVM Kernel
 
+| #define SOURCE    M(8)
+| #define BASE      M(12)
+
 200 DP-T !
 ( cold start: )  FF OP, 0 ,-T
 
@@ -230,9 +234,9 @@ OP: /* DOVAR */     push (uchar*)ip++ - m; goto xit;
 OP: /* ." */        ip = dotq(ip); NEXT
 OP: /* S" */        push virt(ip) + 1; push *ip; ip = litq(ip); NEXT
 OP: /* abort" */    if (top) {
-                    |   dotq(m + HERE); putchar(BL); dotq(ip);
-                    |   goto abort;
-                    | } ip = litq(ip); pop; NEXT
+                    `   show_error((char*)ip, phys(HERE), phys(SOURCE));
+                    `   goto abort;
+                    ` } ip = litq(ip); pop; NEXT
 
 10 OP!
 
@@ -397,11 +401,7 @@ CODE ACCEPT ( a n -- n )  top = accept(*sp--, top);
 10 CONSTANT STATE
 14 CONSTANT CONTEXT
 
-| #define SOURCE    M(8)
-| #define BASE      M(12)
-
 \ ********** Input source processig **********
-
 
 \ 8 CONSTANT SOURCE-CELLS ( sizeof )
 
@@ -431,13 +431,13 @@ CODE OPEN-FILE ( c-addr u fam -- fileid ior ) {
 |   //printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
 |   char *filename = phys(new_string(S[-1], *S));
 |   FILE *file = fopen(filename, "r");
-|   printf("open %s returned %p\n", filename, file);
+|   //printf("open %s returned %p\n", filename, file);
 |   free(filename);
 |   *--S = (cell) file;
 |   top = file ? 0 : -1; NEXT }
 
 CODE CLOSE-FILE ( fileid -- ior )  
-|   printf("closing %p\n", (FILE*)top);
+|   //printf("closing %p\n", (FILE*)top);
 |   top = fclose((FILE*)top); NEXT
 
 : FILE?  1+ $ 2 U< NOT ;
@@ -489,9 +489,9 @@ CODE WORD  ( char -- addr )
 |   top = word(SOURCE, top, HERE); NEXT
 
 CODE FIND  ( str -- xt flag | str 0 )
-|       w = find(top, 1);
-|       if (w) *++sp = cfa(w), top = -1;
-|       else push 0; NEXT
+`       w = find(top, 1);
+`       if (w) *++sp = cfa(w), top = -1;
+`       else push 0; NEXT
 
 CODE -FIND  ( str v -- str t | xt f )
 |       w = find(*sp, top);

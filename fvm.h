@@ -55,6 +55,7 @@ void dump(int a, int n);
 int source_depth();
 void push_source(FILE *file, const char *filename, int len);
 void pop_source();
+void show_error(const char *msg, const char *here, const struct source *source);
 
 // parse.c
 cell parse(cell source_va, char c, cell *start_addr);

@@ -1,4 +1,4 @@
-include std/core.fs
+include lib/core.fs
 
 : hi ." Hello, shall we test?" CR ;
 hi

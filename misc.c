@@ -73,3 +73,20 @@ void dump(int a, int n) {
     }
 }
 
+void show_error(const char *msg, const char *here, const struct source *source) {
+    int col = source->in - *here;
+    if (col < 1) col = 1;
+    putchar('\n');
+    if (source->file != SOURCE_CONSOLE && source->file != SOURCE_EVALUATE)
+        printf("%s:%d:%d: ", phys(source->filename), source->line, col);
+    int n = *here++;
+    while (n--) putchar(*here++);
+    putchar(' ');
+    if (msg) {
+        n = *msg++;
+        while (n--) putchar(*msg++);
+    }
+    // show the line and position
+//    cr(); type(source->addr, source->len);
+//    cr(); for (int i = 0; i < in; i++) emit(' '); putchar('^');
+}

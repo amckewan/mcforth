@@ -1,3 +1,5 @@
+#define SOURCE    M(8)
+#define BASE      M(12)
 #define S sp
 #define R rp
 #define I ip
@@ -13,7 +15,7 @@ case 0x008:  /* DOVAR */     push (uchar*)ip++ - m; goto xit;
 case 0x009:  /* ." */        ip = dotq(ip); NEXT
 case 0x00A:  /* S" */        push virt(ip) + 1; push *ip; ip = litq(ip); NEXT
 case 0x00B:  /* abort" */    if (top) {
-  dotq(m + HERE); putchar(BL); dotq(ip);
+  show_error((char*)ip, phys(HERE), phys(SOURCE));
   goto abort;
 } ip = litq(ip); pop; NEXT
 /* + */ case 0x010:           top += *sp--; NEXT
@@ -117,8 +119,6 @@ case 0x058:    ip += top ? CELL : *(cell*)ip; pop; NEXT
 /* BYE */ case 0x080:   return;
 /* ACCEPT */ case 0x081:    top = accept(*sp--, top);
 /* FIXME */ if (top < 0) exit(0); NEXT
-#define SOURCE    M(8)
-#define BASE      M(12)
 /* ALLOCATE */ case 0x082:    *++S = virt(malloc(top)), top = *S ? 0 : -1; NEXT
 /* RESIZE */ case 0x083:      *S = virt(realloc(phys(*S), top)), top = *S ? 0 : -1; NEXT
 /* FREE */ case 0x084:        free(phys(top)), top = 0; NEXT
@@ -127,12 +127,12 @@ case 0x058:    ip += top ? CELL : *(cell*)ip; pop; NEXT
   //printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
   char *filename = phys(new_string(S[-1], *S));
   FILE *file = fopen(filename, "r");
-  printf("open %s returned %p\n", filename, file);
+  //printf("open %s returned %p\n", filename, file);
   free(filename);
   *--S = (cell) file;
   top = file ? 0 : -1; NEXT }
 /* CLOSE-FILE */ case 0x087:    
-  printf("closing %p\n", (FILE*)top);
+  //printf("closing %p\n", (FILE*)top);
   top = fclose((FILE*)top); NEXT
 /* REFILL */ case 0x088:    push refill(SOURCE); NEXT
 /* . */ case 0x089:    printf("%d ", top); pop; NEXT
