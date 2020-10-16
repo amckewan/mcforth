@@ -31,7 +31,10 @@ byte m[0x2000] = {
 #define c(x) HERE = x, HERE += CELL
 
 // Memory Map
+#define BOOT M(0)
 #define HERE M(4)
+#define SOURCE M(8)
+#define BASE M(12)
 #define STATE M(16)
 #define CONTEXT 20
 
@@ -131,6 +134,7 @@ void fvm() {
     cell w;
 
     printf("hi\n");
+    BASE = 10;
 
 abort:
     STATE = 0;

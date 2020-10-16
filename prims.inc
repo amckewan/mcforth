@@ -1,15 +1,25 @@
-#define SOURCE    M(8)
-#define BASE      M(12)
 #define S sp
 #define R rp
 #define I ip
 case 0x000:  /* EXIT */  xit:  ip = (opcode*) *rp--; NEXT
 /* EXECUTEX */ case 0x001:        w = top; pop; goto exec;
-case 0x002:  /* BRANCH */    ip += *(cell*)ip; NEXT
-case 0x003:  /* DO */        ; NEXT // TODO
-case 0x004:  /* ?DO */       ; NEXT // TODO
-case 0x005:  /* LOOP */      ; NEXT // TODO
-case 0x006:  /* +LOOP */     ; NEXT // TODO
+#define OFFSET    *(cell*)I
+#define BRANCH    I += OFFSET
+#define NOBRANCH  I += CELL
+case 0x002:  /* BRANCH */    BRANCH; NEXT
+case 0x003:  /* DO */        *++R = (cell)I + OFFSET, *++R = *S, *++R = top - *S--, pop;
+                  //printf("DO R=%p I=%d %d\n", R, R[0], R[-1]);
+                  NOBRANCH; NEXT
+case 0x004:  /* ?DO */       if (top == *S) BRANCH;
+                  else *++R = (cell)I + OFFSET,
+                      *++R = *S, *++R = top - *S, NOBRANCH;
+                  S--, pop; NEXT
+case 0x005:  /* LOOP */      //printf("LOOP R=%p I=%d %d\n", R, R[0], R[-1]);
+                  if ((++ *R) == 0) NOBRANCH, R -= 3;
+                  else BRANCH; NEXT 
+case 0x006:  /* +LOOP */     w = *R, *R += top;
+                  if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R -= 3;
+                  else BRANCH; pop; NEXT
 case 0x007:  /* DLIT */      push *ip++; push *ip++; NEXT
 case 0x008:  /* DOVAR */     push (uchar*)ip++ - m; goto xit;
 case 0x009:  /* ." */        ip = dotq(ip); NEXT
@@ -54,7 +64,25 @@ case 0x04C:  /* >=  */   top = (*sp-- >= top) LOGICAL; NEXT
 case 0x04D:  /* <=  */   top = (*sp-- <= top) LOGICAL; NEXT
 case 0x04E:  /* U>= */   top = ((ucell)*sp-- >= (ucell)top) LOGICAL; NEXT
 case 0x04F:  /* U<= */   top = ((ucell)*sp-- <= (ucell)top) LOGICAL; NEXT
-case 0x058:    ip += top ? CELL : *(cell*)ip; pop; NEXT
+#define IF(cond)  if (cond) NOBRANCH; else BRANCH
+#define IF1(cond) IF(cond); pop; NEXT
+#define IF2(cond) IF(cond); pop2; NEXT
+case 0x050:  /* 0= IF */     IF1(top == 0)
+case 0x051:  /* 0< IF */     IF1(top < 0)
+case 0x052:  /* 0> IF */     IF1(top > 0)
+case 0x053:  /* = IF */      IF2(*S == top)
+case 0x054:  /* < IF */      IF2(*S < top)
+case 0x055:  /* > IF */      IF2(*S > top)
+case 0x056:  /* U< IF */     IF2((ucell)*S < (ucell)top)
+case 0x057:  /* U> IF */     IF2((ucell)*S > (ucell)top)
+case 0x058:  /* 0<> IF */    IF1(top != 0)
+case 0x059:  /* 0>= IF */    IF1(top >= 0)
+case 0x05A:  /* 0<= IF */    IF1(top <= 0)
+case 0x05B:  /* <> IF */     IF2(*S != top)
+case 0x05C:  /* >= IF */     IF2(*S >= top)
+case 0x05D:  /* <= IF */     IF2(*S <= top)
+case 0x05E:  /* U>= IF */    IF2((ucell)*S >= (ucell)top)
+case 0x05F:  /* U<= IF */    IF2((ucell)*S <= (ucell)top)
 /* DROP */ case 0x060:        pop; NEXT
 /* DUP */ case 0x061:         *++sp = top; NEXT
 /* NIP */ case 0x062:         sp--; NEXT
@@ -72,6 +100,10 @@ case 0x058:    ip += top ? CELL : *(cell*)ip; pop; NEXT
    //printf("R> R=%p top=0x%X", R, top);getchar();
  ; NEXT
 /* R@ */ case 0x06A:          push *rp  ; NEXT
+/* I */ case 0x06B:           push R[0] + R[-1]; NEXT
+/* J */ case 0x06C:           push R[-3] + R[-4]; NEXT
+/* LEAVE */ case 0x06D:       I = (byte*)R[-2];
+/* UNLOOP */ case 0x06E:      R -= 3; NEXT
 /* INVERT */ case 0x070:   top = ~top; NEXT
 /* NEGATE */ case 0x071:   top = -top; NEXT
 #define LOWER(u1,u2)  ((uint32_t)(u1) < (uint32_t)(u2))

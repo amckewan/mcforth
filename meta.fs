@@ -208,9 +208,6 @@ VARIABLE OP  ( next opcode )
 \ **********************************************************************
 \ FVM Kernel
 
-` #define SOURCE    M(8)
-` #define BASE      M(12)
-
 200 DP-T !
 ( cold start: )  FF OP, 0 ,-T
 
@@ -222,11 +219,26 @@ VARIABLE OP  ( next opcode )
 
 OP: /* EXIT */  xit:  ip = (opcode*) *rp--; NEXT
 CODE EXECUTEX       w = top; pop; goto exec;
-OP: /* BRANCH */    ip += *(cell*)ip; NEXT
-OP: /* DO */        ; NEXT // TODO
-OP: /* ?DO */       ; NEXT // TODO
-OP: /* LOOP */      ; NEXT // TODO
-OP: /* +LOOP */     ; NEXT // TODO
+
+` #define OFFSET    *(cell*)I
+` #define BRANCH    I += OFFSET
+` #define NOBRANCH  I += CELL
+
+OP: /* BRANCH */    BRANCH; NEXT
+OP: /* DO */        *++R = (cell)I + OFFSET, *++R = *S, *++R = top - *S--, pop;
+`                   //printf("DO R=%p I=%d %d\n", R, R[0], R[-1]);
+`                   NOBRANCH; NEXT
+OP: /* ?DO */       if (top == *S) BRANCH;
+`                   else *++R = (cell)I + OFFSET,
+`                       *++R = *S, *++R = top - *S, NOBRANCH;
+`                   S--, pop; NEXT
+OP: /* LOOP */      //printf("LOOP R=%p I=%d %d\n", R, R[0], R[-1]);
+`                   if ((++ *R) == 0) NOBRANCH, R -= 3;
+`                   else BRANCH; NEXT 
+OP: /* +LOOP */     w = *R, *R += top;
+`                   if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R -= 3;
+`                   else BRANCH; pop; NEXT
+
 OP: /* DLIT */      push *ip++; push *ip++; NEXT
 ( DOVAR must be 8!)
 OP: /* DOVAR */     push (uchar*)ip++ - m; goto xit;
@@ -283,8 +295,29 @@ OP: /* <=  */   top = (*sp-- <= top) LOGICAL; NEXT
 OP: /* U>= */   top = ((ucell)*sp-- >= (ucell)top) LOGICAL; NEXT
 OP: /* U<= */   top = ((ucell)*sp-- <= (ucell)top) LOGICAL; NEXT
 
-58 OP!
-OP: ( 0<> IF )  ip += top ? CELL : *(cell*)ip; pop; NEXT
+50 OP!  ( cond IF, must be in the same order as above )
+
+` #define IF(cond)  if (cond) NOBRANCH; else BRANCH
+` #define IF1(cond) IF(cond); pop; NEXT
+` #define IF2(cond) IF(cond); pop2; NEXT
+
+OP: /* 0= IF */     IF1(top == 0)
+OP: /* 0< IF */     IF1(top < 0)
+OP: /* 0> IF */     IF1(top > 0)
+OP: /* = IF */      IF2(*S == top)
+OP: /* < IF */      IF2(*S < top)
+OP: /* > IF */      IF2(*S > top)
+OP: /* U< IF */     IF2((ucell)*S < (ucell)top)
+OP: /* U> IF */     IF2((ucell)*S > (ucell)top)
+
+OP: /* 0<> IF */    IF1(top != 0)
+OP: /* 0>= IF */    IF1(top >= 0)
+OP: /* 0<= IF */    IF1(top <= 0)
+OP: /* <> IF */     IF2(*S != top)
+OP: /* >= IF */     IF2(*S >= top)
+OP: /* <= IF */     IF2(*S <= top)
+OP: /* U>= IF */    IF2((ucell)*S >= (ucell)top)
+OP: /* U<= IF */    IF2((ucell)*S <= (ucell)top)
 
 60 OP!
 CODE DROP       pop; NEXT
@@ -308,6 +341,13 @@ CODE R>
 `    //printf("R> R=%p top=0x%X", R, top);getchar();
 `  ; NEXT
 CODE R@         push *rp  ; NEXT
+
+
+CODE I          push R[0] + R[-1]; NEXT
+CODE J          push R[-3] + R[-4]; NEXT
+CODE LEAVE      I = (byte*)R[-2];
+CODE UNLOOP     R -= 3; NEXT
+
 70 OP!
 
 : 2DUP      OVER OVER ;
@@ -465,13 +505,8 @@ VARIABLE TIB 80 ALLOT-T
 
 \ ********** Numbers **********
 
-: DECIMAL   $ 0A BASE ! ;
-: HEX       $ 10 BASE ! ;
-
 CODE .  ( n -- )  printf("%d ", top); pop; NEXT
-
 : ?  @ . ;
-
 
 \ CODE NUMBER?  ( addr -- n f )  top = number(top, ++sp);; NEXT
 \ : NUMBER  ( addr -- n )  DUP NUMBER? IF SWAP DROP ELSE
@@ -539,6 +574,7 @@ FORTH
 
 : QUIT [ HERE-T 201 !-T ]
     BEGIN SOURCE-DEPTH 0> WHILE SOURCE> REPEAT
+    \ RP0 @ RP!
 \   ." hi" CR
 \       WORDS CR
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF  ."  ok"  THEN  AGAIN ;

@@ -1,20 +1,23 @@
-compiler
-: \  source >in ! drop ;
-: (  41 parse 2drop ;
-: .( 41 parse type ;
-forth
+COMPILER
+: \  SOURCE >IN ! DROP ;
+: (  41 PARSE 2DROP ;
+: .( 41 PARSE TYPE ;
+FORTH
 : \  [COMPILE] \ ;
 : (  [COMPILE] ( ;
 : .( [COMPILE] .( ;
 
-\ Standard core words (most of them)
+\ Now we can relax a bit...
+
+5 5 + BASE !
+: DECIMAL   10 BASE ! ;
+: HEX       16 BASE ! ;
 
 -1 CONSTANT TRUE
  0 CONSTANT FALSE
 
- \ not standard but convenient
- : ON   TRUE  SWAP ! ;
- : OFF  FALSE SWAP ! ;
+: ON        TRUE  SWAP ! ;
+: OFF       FALSE SWAP ! ;
 
 : NIP       SWAP DROP ;
 : TUCK      SWAP OVER ;
@@ -35,17 +38,14 @@ forth
 : SPACE  BL EMIT ;
 : CR  10 EMIT ;
 
-: DECIMAL  10 BASE ! ;
-: HEX  16 BASE ! ;
-
 : 1+  1 + ;
 : 1-  1 - ;
 
-: 0<>  0= 0= ;
+: NOT  0= ;
+: 0<>  0= NOT ;
 : 0<  0 < ;
 : 0>  0 > ;
-: <>  = 0= ;
-: NOT  0= ;
+: <>  = NOT ;
 
 : CELL+  1 CELLS + ;
 : COUNT  DUP 1 +  SWAP C@ ;
@@ -55,8 +55,8 @@ COMPILER
 : [CHAR]  CHAR [COMPILE] LITERAL ;
 : [']     ' [COMPILE] LITERAL ;
 FORTH
-: CHAR+  1 + ;
-: CHARS  ;
+: CHARS  ; \ useless
+: CHAR+  1 + ; \ almost useless
 
 : PLACE  ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;
 
@@ -69,37 +69,36 @@ VARIABLE ?CODE
 ( *** Branching and Looping *** )
 : ?CONDITION  INVERT ABORT" unbalanced" ;
 : MARK  ( -- here )  HERE  0 ?CODE ! ;
-: ?>MARK      ( -- f addr )   TRUE  MARK   0 , ;
-: ?>RESOLVE   ( f addr -- )   MARK  OVER -  SWAP !   ?CONDITION ;
-: ?<MARK      ( -- f addr )   TRUE  MARK ;
-: ?<RESOLVE   ( f addr -- )   MARK  - ,   ?CONDITION ;
+: >MARK      ( -- f addr )   TRUE  MARK   0 , ;
+: >RESOLVE   ( f addr -- )   MARK  OVER -  SWAP !   ?CONDITION ;
+: <MARK      ( -- f addr )   TRUE  MARK ;
+: <RESOLVE   ( f addr -- )   MARK  - ,   ?CONDITION ;
 
 \ HEX ( does nothing)
 : CONDITION  ( optimizer todo )
     88 OP, ;
 
-\ : NOT  ( invert last conditional op )  LATEST 40 48 WITHIN
-\     IF  LATEST 8 + PATCH  ELSE  40 OP,  THEN ; IMMEDIATE
-: NOT 0= ;
+COMPILER
+\ : NOT  ( invert last conditional op )  LATEST 40 50 WITHIN
+\     IF  LATEST 8 XOR PATCH  ELSE  40 ( 0= ) OP, THEN ; IMMEDIATE
 \ DECIMAL
 
-COMPILER
-: IF        CONDITION  ?>MARK ;
-: THEN      ?>RESOLVE ;
-: ELSE      2 OP,  ?>MARK  2SWAP ?>RESOLVE ;
-: BEGIN     ?<MARK ;
-: UNTIL     CONDITION  ?<RESOLVE ;
-: AGAIN     2 OP,  ?<RESOLVE ;
+: IF        CONDITION  >MARK ;
+: THEN      >RESOLVE ;
+: ELSE      2 OP,  >MARK  2SWAP >RESOLVE ;
+: BEGIN     <MARK ;
+: UNTIL     CONDITION  <RESOLVE ;
+: AGAIN     2 OP,  <RESOLVE ;
 : WHILE     [COMPILE] IF  2SWAP ;
 : REPEAT    [COMPILE] AGAIN  [COMPILE] THEN ;
+
+: DO        3 OP,  >MARK  <MARK ;
+: ?DO       4 OP,  >MARK  <MARK ;
+: LOOP      5 OP,  <RESOLVE  >RESOLVE ;
+: +LOOP     6 OP,  <RESOLVE  >RESOLVE ;
 FORTH
 
-\ : DO     COMPILE (DO)     >MARK <MARK ; IMMEDIATE
-\ : ?DO    COMPILE (?DO)    >MARK <MARK ; IMMEDIATE
-\ : LOOP   COMPILE (LOOP)   <RESOLVE >RESOLVE ; IMMEDIATE
-\ : +LOOP  COMPILE (+LOOP)  <RESOLVE >RESOLVE ; IMMEDIATE
-
-( *** xxx *** )
+( *** more stuff *** )
 : ?DUP      DUP IF DUP THEN ;
 : ABS       DUP 0< IF NEGATE THEN ;
 : MIN       2DUP > IF SWAP THEN DROP ;
@@ -110,9 +109,10 @@ FORTH
 : */        */MOD NIP ;
 : /MOD      >R S>D R> SM/REM ;
 
-stop here
-\ : SPACES    0 ?DO  SPACE  LOOP ;
-: SPACES    BEGIN DUP WHILE SPACE 1- REPEAT DROP ;
+: SPACES    0 ?DO  SPACE  LOOP ;
+\ : SPACES    BEGIN DUP WHILE SPACE 1- REPEAT DROP ;
+
+: \S  [COMPILE] \  BEGIN REFILL 0= UNTIL ;
 
 \ : POSTPONE  (') 0< IF  COMPILE COMPILE ,  ELSE  COMPILE,  THEN ; IMMEDIATE
 
