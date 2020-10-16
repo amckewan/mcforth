@@ -45,7 +45,6 @@ S" prims.inc" OPEN
 CREATE EOL 1 C, 0A C,
 : NEWLINE   EOL COUNT WRITE ;
 : `  1 PARSE WRITE  NEWLINE ;
-: |  1 PARSE WRITE  NEWLINE ;
 
 : WRITE-DICT-IMG
     S" dict.img" R/W CREATE-FILE ?ERR
@@ -146,7 +145,7 @@ VARIABLE OP  ( next opcode )
 : OP!  OP ! ;
 : OP:  ( output opcode case statement )
     S" case 0x" WRITE  OP @ 0 <# # # # #> WRITE  S" :  " WRITE
-    ?COMMENT | ( copy rest of line )  1 OP +! ;
+    ?COMMENT ` ( copy rest of line )  1 OP +! ;
 
 : (PRIM)   OP @ OP,  [COMPILE] EXIT  OP: ;
 : PRIM   C-COMMENT  HEADER (PRIM) ;  ( in target only )
@@ -209,15 +208,15 @@ VARIABLE OP  ( next opcode )
 \ **********************************************************************
 \ FVM Kernel
 
-| #define SOURCE    M(8)
-| #define BASE      M(12)
+` #define SOURCE    M(8)
+` #define BASE      M(12)
 
 200 DP-T !
 ( cold start: )  FF OP, 0 ,-T
 
-| #define S sp
-| #define R rp
-| #define I ip
+` #define S sp
+` #define R rp
+` #define I ip
 
 0 OP!
 
@@ -299,15 +298,15 @@ CODE ROT        w = S[-1], S[-1] = *S, *S = top, top = w; NEXT
 68 OP!
 \ 68-6F must be inlined
 CODE >R         
-|    //printf(">R R=%p top=0x%X", R, top);getchar();
-|    *++rp = top, pop;
-|    //printf(">R R=%p *R=0x%X", R, *R);getchar();
-|  ; NEXT
+`    //printf(">R R=%p top=0x%X", R, top);getchar();
+`    *++rp = top, pop;
+`    //printf(">R R=%p *R=0x%X", R, *R);getchar();
+`  ; NEXT
 CODE R>         
-|    //printf("R> R=%p *R=0x%X", R, *R);getchar();
-|    push *rp--; 
-|    //printf("R> R=%p top=0x%X", R, top);getchar();
-|  ; NEXT
+`    //printf("R> R=%p *R=0x%X", R, *R);getchar();
+`    push *rp--; 
+`    //printf("R> R=%p top=0x%X", R, top);getchar();
+`  ; NEXT
 CODE R@         push *rp  ; NEXT
 70 OP!
 
@@ -321,44 +320,44 @@ CODE R@         push *rp  ; NEXT
 CODE INVERT  top = ~top; NEXT
 CODE NEGATE  top = -top; NEXT
 
-| #define LOWER(u1,u2)  ((uint32_t)(u1) < (uint32_t)(u2))
+` #define LOWER(u1,u2)  ((uint32_t)(u1) < (uint32_t)(u2))
 
 CODE WITHIN
-|   w = *S--,
-|   top = LOWER(*S - w, top - w) LOGICAL;
-|   S--;
-|   NEXT
+`   w = *S--,
+`   top = LOWER(*S - w, top - w) LOGICAL;
+`   S--;
+`   NEXT
 
 CODE M*  ( n1 n2 -- d ) {
-|   int64_t d = (int64_t)*S * (int64_t)top;
-|   *S = d ;
-|   top = d >> 32;
-|   NEXT }
+`   int64_t d = (int64_t)*S * (int64_t)top;
+`   *S = d ;
+`   top = d >> 32;
+`   NEXT }
 
 CODE UM* ( u1 u2 -- ud ) {
-|   uint64_t u1 = (uint32_t)*sp;
-|   uint64_t u2 = (uint32_t)top;
-|   uint64_t ud = u1 * u2;
-|   *sp = ud ;
-|   top = ud >> 32;
-|   NEXT }
+`   uint64_t u1 = (uint32_t)*sp;
+`   uint64_t u2 = (uint32_t)top;
+`   uint64_t ud = u1 * u2;
+`   *sp = ud ;
+`   top = ud >> 32;
+`   NEXT }
 
 CODE UM/MOD  ( ud u1 -- rem quot ) {
-|   uint64_t ud = ((uint64_t)*S << 32) | (uint32_t)S[-1];
-|   uint64_t u = (uint32_t)top;
-|   uint32_t quot = ud / u;
-|   uint32_t rem = ud % u;
-|   *--S = rem;
-|   top = quot;
-|   NEXT }
+`   uint64_t ud = ((uint64_t)*S << 32) | (uint32_t)S[-1];
+`   uint64_t u = (uint32_t)top;
+`   uint32_t quot = ud / u;
+`   uint32_t rem = ud % u;
+`   *--S = rem;
+`   top = quot;
+`   NEXT }
 
 CODE SM/REM  ( d n -- rem quot ) {
-|   int64_t d = (((uint64_t)*S) << 32) | ((uint32_t) S[-1]);
-|   int32_t quot = d / top;
-|   int32_t rem = d % top;
-|   *--S = rem;
-|   top = quot;
-|   NEXT }
+`   int64_t d = (((uint64_t)*S) << 32) | ((uint32_t) S[-1]);
+`   int32_t quot = d / top;
+`   int32_t rem = d % top;
+`   *--S = rem;
+`   top = quot;
+`   NEXT }
 
 : 1+  $ 1 + ;
 : 1-  $ 1 - ;
@@ -391,7 +390,7 @@ CODE TYPE  ( a n -- )   type(*sp, top); pop2; NEXT
 CODE BYE  return;
 
 CODE ACCEPT ( a n -- n )  top = accept(*sp--, top);
-| /* FIXME */ if (top < 0) exit(0); NEXT
+` /* FIXME */ if (top < 0) exit(0); NEXT
 
 
 \ Variables shared with C code at fixed offsets
@@ -428,17 +427,17 @@ CODE FREE       free(phys(top)), top = 0; NEXT
 CODE NEW-STRING top = new_string(*sp--, top); NEXT
 
 CODE OPEN-FILE ( c-addr u fam -- fileid ior ) {
-|   //printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
-|   char *filename = phys(new_string(S[-1], *S));
-|   FILE *file = fopen(filename, "r");
-|   //printf("open %s returned %p\n", filename, file);
-|   free(filename);
-|   *--S = (cell) file;
-|   top = file ? 0 : -1; NEXT }
+`   //printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
+`   char *filename = phys(new_string(S[-1], *S));
+`   FILE *file = fopen(filename, "r");
+`   //printf("open %s returned %p\n", filename, file);
+`   free(filename);
+`   *--S = (cell) file;
+`   top = file ? 0 : -1; NEXT }
 
 CODE CLOSE-FILE ( fileid -- ior )  
-|   //printf("closing %p\n", (FILE*)top);
-|   top = fclose((FILE*)top); NEXT
+`   //printf("closing %p\n", (FILE*)top);
+`   top = fclose((FILE*)top); NEXT
 
 : FILE?  1+ $ 2 U< NOT ;
 
@@ -479,35 +478,35 @@ CODE .  ( n -- )  printf("%d ", top); pop; NEXT
 \   DROP COUNT TYPE ABORT"  ?"  THEN ;
 
 CODE -NUMBER  ( a -- a t, n f ) w = number(top, ++sp);
-|   if (w) top = 0; else *sp = top, top = -1; NEXT
+`   if (w) top = 0; else *sp = top, top = -1; NEXT
 \ : NUMBER  ( a -- n )  -NUMBER IF  COUNT TYPE  $ 1 ABORT"  ?"  THEN ;
 : NUMBER  ( a -- n )  -NUMBER ABORT" ? " ;
     
 20 CONSTANT BL
 
 CODE WORD  ( char -- addr )
-|   top = word(SOURCE, top, HERE); NEXT
+`   top = word(SOURCE, top, HERE); NEXT
 
-CODE FIND  ( str -- xt flag | str 0 )
+CODE FIND  ( str -- xt flag ` str 0 )
 `       w = find(top, 1);
 `       if (w) *++sp = cfa(w), top = -1;
 `       else push 0; NEXT
 
-CODE -FIND  ( str v -- str t | xt f )
-|       w = find(*sp, top);
-|       if (w) *sp = cfa(w), top = 0;
-|       else top = -1; NEXT
+CODE -FIND  ( str v -- str t ` xt f )
+`       w = find(*sp, top);
+`       if (w) *sp = cfa(w), top = 0;
+`       else top = -1; NEXT
 
 : -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
 : '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
 
 CODE DEPTH ( -- n )  w = sp - stack; push w; NEXT
 CODE .S ( -- )
-|       w = sp - stack;  sp[1] = top;
-|       printf("[%d] ", w);
-|       for (int i = 0; i < w; i++)
-|           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
-|       NEXT
+`       w = sp - stack;  sp[1] = top;
+`       printf("[%d] ", w);
+`       for (int i = 0; i < w; i++)
+`           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
+`       NEXT
 
 
 CODE WORDS  ( -- )  words(M(CONTEXT)); NEXT
