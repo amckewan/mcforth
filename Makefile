@@ -10,3 +10,6 @@ prims.inc dict.inc: meta.fs
 
 test: fvm
 	./fvm
+
+testv: fvm
+	./fvm -v

@@ -32,9 +32,13 @@ static int refill_tib(struct source *source) {
 }
 
 static int refill_file(struct source *source) {
-    //printf("refill %s line %d\n", phys(source->filename), source->line+1);
+    if (verbose) printf("refill %s line %d\n", phys(source->filename), source->line+1);
     char *buf = phys(source->buf);
-    if (!fgets(buf, MAXLINE, source->file)) return FALSE;
+    if (!fgets(buf, MAXLINE, source->file)) {
+        source->len = 0;
+        source->in = 0;
+        return FALSE;
+    }
     int len = strlen(buf);
     if (len && buf[len-1] == '\n') len--;
     source->line++;

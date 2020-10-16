@@ -189,5 +189,6 @@ case 0x05F:  /* U<= IF */    IF2((ucell)*S <= (ucell)top)
       NEXT
 /* WORDS */ case 0x090:    words(M(CONTEXT)); NEXT
 /* DUMP */ case 0x091:    dump(*sp--, top); pop; NEXT
-/* ALIGNED */ case 0x092:     top = aligned(top); NEXT
-/* PARSE */ case 0x093:    top = parse(SOURCE, top, ++S); NEXT
+/* LIMIT */ case 0x092:   push sizeof m; NEXT
+/* ALIGNED */ case 0x093:     top = aligned(top); NEXT
+/* PARSE */ case 0x094:    top = parse(SOURCE, top, ++S); NEXT

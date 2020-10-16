@@ -547,6 +547,8 @@ CODE .S ( -- )
 CODE WORDS  ( -- )  words(M(CONTEXT)); NEXT
 CODE DUMP  ( a n -- )  dump(*sp--, top); pop; NEXT
 
+CODE LIMIT  push sizeof m; NEXT
+
 : HERE  H @ ;
 : ALLOT  H +! ;
 : ,   H @ !   $ 4 H +! ;

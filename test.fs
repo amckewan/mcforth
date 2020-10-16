@@ -11,6 +11,7 @@ hi
 : yy 10 0 do i . i 5 = if leave ." oops " then loop ;
 : zz 10 0 do i . i 5 = if unloop exit then loop ." oops " ;
 
-\ include test/tester.fs
+include test/tester.fs
 
+decimal
 CR .( testing finished! )

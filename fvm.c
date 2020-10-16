@@ -16,9 +16,12 @@ typedef struct {
     uchar name[1];
 } Header;
 
-byte m[0x2000] = {
+byte dict[10000] = {
 #include "dict.inc"
 };
+byte m[100000];
+int verbose;
+
 
 #define M(n) *(cell *)&m[n]
 #define NEXT ; goto next;
@@ -128,8 +131,8 @@ void words(cell v) {
 }
 
 void fvm() {
-    cell stack[100], *sp, top;
-    cell rack[100], *rp;
+    cell stack[1000], *sp, top;
+    cell rack[1000], *rp;
     opcode *ip;
     cell w;
 
@@ -166,7 +169,15 @@ exec:
 }
 
 int main(int argc, char *argv[]) {
-    printf("sizeof(source) = %u\n", sizeof(struct source));
+    memcpy(m, dict, sizeof dict);
+    for (int i = 1; i < argc; i++) {
+        if (!strcmp(argv[i], "-v")) {
+            verbose = 1;
+        } else {
+//            include_file(argv[i]);
+        }
+    }
+    if (verbose) printf("sizeof(source) = %u\n", sizeof(struct source));
     fvm();
     return 0;
 

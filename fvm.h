@@ -18,6 +18,7 @@ typedef uint8_t byte;
 typedef uint8_t opcode;
 
 extern byte m[]; // forth memory
+extern int verbose;
 
 #define phys(va)    (void *)(m + (va))
 #define virt(pa)    (cell)((byte*)(pa) - m)
