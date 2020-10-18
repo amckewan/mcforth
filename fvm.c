@@ -80,15 +80,27 @@ cell find(cell name, cell v) {
     return 0;
 }
 
-cell number(cell addr, cell *n) {
-    char *p = (char *)(m + addr + 1);
-    char *endptr;
-    if (*p == '-')
-        *n = strtol(p, &endptr, 10);
-    else
-        *n = strtoul(p, &endptr, 10);
-    return (*endptr == 0);
+static int digit(char c) {
+    return (c <= '9') ? c - '0' : 10 + toupper(c) - 'A';
 }
+
+cell number(const char *str, cell *num) {
+    int len = *str++;
+    int n = 0;
+    int sign = 1;
+    if (len > 1 && *str == '-') {
+        str++, len--;
+        sign = -1;
+    }
+    for (int i = 0; i < len; i++) {
+        int d = digit(str[i]);
+        if (d < 0 || d >= BASE) return FALSE;
+        n = n * BASE + d;
+    }
+    *num = n * sign;
+    return TRUE;
+}
+
 
 /*
 header *find(char *name)

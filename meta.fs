@@ -257,8 +257,7 @@ PRIM AND        top &= *sp--; NEXT
 PRIM OR         top |= *sp--; NEXT
 PRIM XOR        top ^= *sp--; NEXT
 PRIM LSHIFT     top = *sp-- << top; NEXT
-PRIM RSHIFT     top = (cell) ((ucell)(*sp--) >> top); NEXT
-PRIM ARSHIFT    top = *sp-- >> top; NEXT
+PRIM RSHIFT     top = ((ucell)*sp--) >> top; NEXT
 CODE SWAP       w = top; top = *sp; *sp = w; NEXT
 CODE PICK       top = sp[-top]; NEXT
 CODE @          top = M(top); NEXT
@@ -266,7 +265,7 @@ CODE !          M(top) = *sp; pop2; NEXT
 CODE +!         M(top) += *sp; pop2; NEXT
 CODE *          top *= *sp--; NEXT
 CODE /          top = *sp-- / top; NEXT
-CODE NOP      ; NEXT
+CODE NOP        NEXT
 
 OP: ( LIT + )   top += *ip++; NEXT
 OP: ( LIT - )   top -= *ip++; NEXT
@@ -348,17 +347,18 @@ CODE J          push R[-3] + R[-4]; NEXT
 CODE LEAVE      I = (byte*)R[-2];
 CODE UNLOOP     R -= 3; NEXT
 
-70 OP!
-
 : 2DUP      OVER OVER ;
 : 2DROP     DROP DROP ;
 
+70 OP!
 10 BINARY +         11 BINARY -
 12 BINARY AND       13 BINARY OR        14 BINARY XOR
 15 BINARY LSHIFT    16 BINARY RSHIFT    17 BINARY ARSHIFT
 
 CODE INVERT  top = ~top; NEXT
 CODE NEGATE  top = -top; NEXT
+
+CODE MOD  top = *S-- % top;  NEXT
 
 ` #define LOWER(u1,u2)  ((uint32_t)(u1) < (uint32_t)(u2))
 
@@ -399,8 +399,10 @@ CODE SM/REM  ( d n -- rem quot ) {
 `   top = quot;
 `   NEXT }
 
-: 1+  $ 1 + ;
-: 1-  $ 1 - ;
+CODE 1+     top += 1; NEXT
+CODE 1-     top -= 1; NEXT
+CODE 2*     top <<= 1; NEXT
+CODE 2/     top >>= 1; NEXT
 
 CODE CELLS      top *= CELL; NEXT
 CELL-T CONSTANT CELL
@@ -508,13 +510,8 @@ VARIABLE TIB 80 ALLOT-T
 CODE .  ( n -- )  printf("%d ", top); pop; NEXT
 : ?  @ . ;
 
-\ CODE NUMBER?  ( addr -- n f )  top = number(top, ++sp);; NEXT
-\ : NUMBER  ( addr -- n )  DUP NUMBER? IF SWAP DROP ELSE
-\   DROP COUNT TYPE ABORT"  ?"  THEN ;
-
-CODE -NUMBER  ( a -- a t, n f ) w = number(top, ++sp);
+CODE -NUMBER  ( a -- a t, n f ) w = number(phys(top), ++sp);
 `   if (w) top = 0; else *sp = top, top = -1; NEXT
-\ : NUMBER  ( a -- n )  -NUMBER IF  COUNT TYPE  $ 1 ABORT"  ?"  THEN ;
 : NUMBER  ( a -- n )  -NUMBER ABORT" ? " ;
     
 20 CONSTANT BL
@@ -522,12 +519,12 @@ CODE -NUMBER  ( a -- a t, n f ) w = number(top, ++sp);
 CODE WORD  ( char -- addr )
 `   top = word(SOURCE, top, HERE); NEXT
 
-CODE FIND  ( str -- xt flag ` str 0 )
+CODE FIND  ( str -- xt flag | str 0 )
 `       w = find(top, 1);
 `       if (w) *++sp = cfa(w), top = -1;
 `       else push 0; NEXT
 
-CODE -FIND  ( str v -- str t ` xt f )
+CODE -FIND  ( str v -- str t | xt f )
 `       w = find(*sp, top);
 `       if (w) *sp = cfa(w), top = 0;
 `       else top = -1; NEXT

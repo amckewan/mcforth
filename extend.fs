@@ -144,3 +144,31 @@ VARIABLE HLD
 : U.        0 <# #S #> TYPE   SPACE ;
 : U.R       >R 0 <# #S #> R> OVER - SPACES  TYPE ;
 : ?         @ . ;
+
+\ stuff for core test
+: fm/mod sm/rem ; \ wrong behavior
+
+' compile, constant compile,-xt
+compiler
+: postpone  bl word
+    2 -find if
+        1 -find abort" ?"
+        [compile] literal  [ forth ' compile, compiler ] literal compile,
+    else
+        compile,
+    then ;
+forth
+
+\ for immediate, we need to create a compiler word
+\ that executes the latest forth word
+: "header ( a n -- )
+    ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
+    ( HERE LAST ! )  HERE OVER 1+ ALLOT PLACE  ALIGN ;
+: immediate
+    last @ count 31 and
+    compiler
+    2dup "header + aligned compile, [compile] exit
+    forth ;
+: recurse  last @ count 31 and + aligned compile, ;
+
+
