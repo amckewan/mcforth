@@ -62,6 +62,7 @@ FORTH
 
 \ : >BODY  2 CELLS + ;
 \ : DOES>  COMPILE (DOES>)  [COMPILE] EXIT ; IMMEDIATE
+: >BODY  5 + ;
 
 VARIABLE ?CODE
 : OP,  HERE ?CODE ! C, ;
@@ -145,7 +146,9 @@ VARIABLE HLD
 : U.R       >R 0 <# #S #> R> OVER - SPACES  TYPE ;
 : ?         @ . ;
 
+\ ===============================================
 \ stuff for core test
+
 : fm/mod sm/rem ; \ wrong behavior
 
 ' compile, constant compile,-xt
@@ -169,6 +172,6 @@ forth
     compiler
     2dup "header + aligned compile, [compile] exit
     forth ;
-: recurse  last @ count 31 and + aligned compile, ;
+: recurse  previous 31 and + 1+ aligned compile, ;
 
 

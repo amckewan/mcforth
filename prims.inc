@@ -1,7 +1,7 @@
 #define S sp
 #define R rp
 #define I ip
-case 0x000:  /* EXIT */  xit:  ip = (opcode*) *rp--; NEXT
+case 0x000:  /* EXIT */  Exit:  ip = (opcode*) *rp--; NEXT
 /* EXECUTEX */ case 0x001:        w = top; pop; goto exec;
 #define OFFSET    *(cell*)I
 #define BRANCH    I += OFFSET
@@ -21,7 +21,7 @@ case 0x006:  /* +LOOP */     w = *R, *R += top;
                   if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R -= 3;
                   else BRANCH; pop; NEXT
 case 0x007:  /* DLIT */      push *ip++; push *ip++; NEXT
-case 0x008:  /* DOVAR */     push (uchar*)ip++ - m; goto xit;
+case 0x008:  /* DOVAR */     push (uchar*)ip++ - m; goto Exit;
 case 0x009:  /* ." */        ip = dotq(ip); NEXT
 case 0x00A:  /* S" */        push virt(ip) + 1; push *ip; ip = litq(ip); NEXT
 case 0x00B:  /* abort" */    if (top) {
@@ -196,3 +196,7 @@ case 0x05F:  /* U<= IF */    IF2((ucell)*S <= (ucell)top)
 /* LIMIT */ case 0x097:   push sizeof m; NEXT
 /* ALIGNED */ case 0x098:     top = aligned(top); NEXT
 /* PARSE */ case 0x099:    top = parse(SOURCE, top, ++S); NEXT
+case 0x0F0:  /* docreate */
+push ip + CELL - m;
+w = *(cell*)ip;
+if (!w) goto Exit; ip = phys(w); NEXT

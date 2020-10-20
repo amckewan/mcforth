@@ -217,7 +217,7 @@ VARIABLE OP  ( next opcode )
 
 0 OP!
 
-OP: /* EXIT */  xit:  ip = (opcode*) *rp--; NEXT
+OP: /* EXIT */  Exit:  ip = (opcode*) *rp--; NEXT
 CODE EXECUTEX       w = top; pop; goto exec;
 
 ` #define OFFSET    *(cell*)I
@@ -241,7 +241,7 @@ OP: /* +LOOP */     w = *R, *R += top;
 
 OP: /* DLIT */      push *ip++; push *ip++; NEXT
 ( DOVAR must be 8!)
-OP: /* DOVAR */     push (uchar*)ip++ - m; goto xit;
+OP: /* DOVAR */     push (uchar*)ip++ - m; goto Exit;
 OP: /* ." */        ip = dotq(ip); NEXT
 OP: /* S" */        push virt(ip) + 1; push *ip; ip = litq(ip); NEXT
 OP: /* abort" */    if (top) {
@@ -612,13 +612,22 @@ VARIABLE LAST
     HERE LAST !  BL WORD C@ 1+ ALLOT  ALIGN ;
 
 : CONSTANT  HEADER  ( [COMPILE]) LITERAL  $ 0 OP, ;
-: CREATE    HEADER  $ 8 OP, ;
-: VARIABLE  CREATE $ 0 , ;
+: VARIABLE  HEADER  $ 8 OP,  $ 0 , ;
+
+\ | opc | ip for does | data
+\ OP: /* DOVAR */     push (uchar*)ip++ - m; goto Exit;
+F0 OP!
+OP: /* docreate */
+` push ip + CELL - m;
+` w = *(cell*)ip;
+` if (!w) goto Exit; ip = phys(w); NEXT
+
+: CREATE  HEADER $ F0 C, $ 0 , ;
 
 : PREVIOUS  ( -- nfa count )  CONTEXT @ HASH @  CELL+ DUP C@ ;
-\ : USE  ( a -- )  PREVIOUS $ 1F AND + ALIGNED ! ;
-\ : DOES   R> USE ;
-: SMUDGE  PREVIOUS $ 20 XOR SWAP C! ;
+: USE  ( a -- )  PREVIOUS $ 1F AND + $ 1 + ALIGNED ! ;
+: DOES>   R> USE ;
+: SMUDGE  PREVIOUS $ 20 XOR SWAP C! ; 
 
 COMPILER
 : [  $ 0 STATE ! ;
