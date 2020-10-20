@@ -54,7 +54,7 @@ CREATE EOL 1 C, 0A C,
 : WRITE-DICT \ write dict.c
     S" dict.inc" OPEN
     HERE-T 0 DO
-        S" /* " WRITE  I 0 <# # # # # #> WRITE  S"  */ " WRITE  
+        S" /* " WRITE  I 0 <# # # # # #> WRITE  S"  */ " WRITE
         I THERE 10 0 DO
             S" 0x" WRITE  COUNT 0 <# # # #> WRITE  S" , " WRITE
         LOOP DROP
@@ -68,7 +68,7 @@ CREATE EOL 1 C, 0A C,
         I 0 <# [CHAR] : HOLD # # # # #> WRITE
         I THERE 10 0 DO
             I 3 AND 0= IF S"  " WRITE THEN
-            COUNT 0 <# BL HOLD # # #> WRITE 
+            COUNT 0 <# BL HOLD # # #> WRITE
         LOOP DROP
         I THERE 10 0 DO  COUNT 0 <# OVER PRINTABLE HOLD #> WRITE  LOOP DROP
         NEWLINE
@@ -216,7 +216,7 @@ VARIABLE OP  ( next opcode )
 
 0 OP!
 
-OP: /* EXIT */  Exit:  ip = (opcode*) *R--; NEXT
+OP: /* EXIT */  Exit:  ip = (opcode*) *R++; NEXT
 CODE EXECUTEX       w = top; pop; goto exec;
 
 ` #define OFFSET    *(cell*)I
@@ -224,18 +224,18 @@ CODE EXECUTEX       w = top; pop; goto exec;
 ` #define NOBRANCH  I += CELL
 
 OP: /* BRANCH */    BRANCH; NEXT
-OP: /* DO */        *++R = (cell)I + OFFSET, *++R = *S, *++R = top - *S--, pop;
-`                   //printf("DO R=%p I=%d %d\n", R, R[0], R[-1]);
+OP: /* DO */        *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S--, pop;
+`                   //printf("DO R=%p I=%d %d\n", R, R[0], R[1]);
 `                   NOBRANCH; NEXT
 OP: /* ?DO */       if (top == *S) BRANCH;
-`                   else *++R = (cell)I + OFFSET,
-`                       *++R = *S, *++R = top - *S, NOBRANCH;
+`                   else *--R = (cell)I + OFFSET,
+`                       *--R = *S, *--R = top - *S, NOBRANCH;
 `                   S--, pop; NEXT
-OP: /* LOOP */      //printf("LOOP R=%p I=%d %d\n", R, R[0], R[-1]);
-`                   if ((++ *R) == 0) NOBRANCH, R -= 3;
-`                   else BRANCH; NEXT 
+OP: /* LOOP */      //printf("LOOP R=%p I=%d %d\n", R, R[0], R[1]);
+`                   if ((++ *R) == 0) NOBRANCH, R += 3;
+`                   else BRANCH; NEXT
 OP: /* +LOOP */     w = *R, *R += top;
-`                   if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R -= 3;
+`                   if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
 `                   else BRANCH; pop; NEXT
 
 OP: /* DLIT */      push *ip++; push *ip++; NEXT
@@ -329,23 +329,15 @@ CODE ROT        w = S[-1], S[-1] = *S, *S = top, top = w; NEXT
 
 68 OP!
 \ 68-6F must be inlined
-CODE >R         
-`    //printf(">R R=%p top=0x%X", R, top);getchar();
-`    *++R = top, pop;
-`    //printf(">R R=%p *R=0x%X", R, *R);getchar();
-`  ; NEXT
-CODE R>         
-`    //printf("R> R=%p *R=0x%X", R, *R);getchar();
-`    push *R--; 
-`    //printf("R> R=%p top=0x%X", R, top);getchar();
-`  ; NEXT
+CODE >R         *--R = top, pop; NEXT
+CODE R>         push *R++; NEXT
 CODE R@         push *R  ; NEXT
 
 
-CODE I          push R[0] + R[-1]; NEXT
-CODE J          push R[-3] + R[-4]; NEXT
-CODE LEAVE      I = (byte*)R[-2];
-CODE UNLOOP     R -= 3; NEXT
+CODE I          push R[0] + R[1]; NEXT
+CODE J          push R[3] + R[4]; NEXT
+CODE LEAVE      I = (byte*)R[2];
+CODE UNLOOP     R += 3; NEXT
 
 : 2DUP      OVER OVER ;
 : 2DROP     DROP DROP ;
@@ -477,7 +469,7 @@ CODE OPEN-FILE ( c-addr u fam -- fileid ior ) {
 `   *--S = (cell) file;
 `   top = file ? 0 : -1; NEXT }
 
-CODE CLOSE-FILE ( fileid -- ior )  
+CODE CLOSE-FILE ( fileid -- ior )
 `   //printf("closing %p\n", (FILE*)top);
 `   top = fclose((FILE*)top); NEXT
 
@@ -513,7 +505,7 @@ CODE .  ( n -- )  printf("%d ", top); pop; NEXT
 CODE -NUMBER  ( a -- a t, n f ) w = number(phys(top), ++sp);
 `   if (w) top = 0; else *sp = top, top = -1; NEXT
 : NUMBER  ( a -- n )  -NUMBER ABORT" ? " ;
-    
+
 20 CONSTANT BL
 
 CODE WORD  ( char -- addr )
@@ -627,7 +619,7 @@ FF OP!
 OP: /* call */
     ` w = *(cell*)ip;
     ` //printf("call 0x%x\n", w);
-    ` *++R = (cell)ip + CELL;
+    ` *--R = (cell)ip + CELL;
     ` ip = (opcode*)(m + w);
     ` NEXT
 
@@ -636,7 +628,7 @@ OP: /* call */
 : PREVIOUS  ( -- nfa count )  CONTEXT @ HASH @  CELL+ DUP C@ ;
 : USE  ( a -- )  PREVIOUS $ 1F AND + $ 1 + ALIGNED ! ;
 : DOES>   R> USE ;
-: SMUDGE  PREVIOUS $ 20 XOR SWAP C! ; 
+: SMUDGE  PREVIOUS $ 20 XOR SWAP C! ;
 
 COMPILER
 : [  $ 0 STATE ! ;

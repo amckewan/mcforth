@@ -1,23 +1,23 @@
 #define S sp
 #define I ip
-case 0x000:  /* EXIT */  Exit:  ip = (opcode*) *R--; NEXT
+case 0x000:  /* EXIT */  Exit:  ip = (opcode*) *R++; NEXT
 /* EXECUTEX */ case 0x001:        w = top; pop; goto exec;
 #define OFFSET    *(cell*)I
 #define BRANCH    I += OFFSET
 #define NOBRANCH  I += CELL
 case 0x002:  /* BRANCH */    BRANCH; NEXT
-case 0x003:  /* DO */        *++R = (cell)I + OFFSET, *++R = *S, *++R = top - *S--, pop;
-                  //printf("DO R=%p I=%d %d\n", R, R[0], R[-1]);
+case 0x003:  /* DO */        *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S--, pop;
+                  //printf("DO R=%p I=%d %d\n", R, R[0], R[1]);
                   NOBRANCH; NEXT
 case 0x004:  /* ?DO */       if (top == *S) BRANCH;
-                  else *++R = (cell)I + OFFSET,
-                      *++R = *S, *++R = top - *S, NOBRANCH;
+                  else *--R = (cell)I + OFFSET,
+                      *--R = *S, *--R = top - *S, NOBRANCH;
                   S--, pop; NEXT
-case 0x005:  /* LOOP */      //printf("LOOP R=%p I=%d %d\n", R, R[0], R[-1]);
-                  if ((++ *R) == 0) NOBRANCH, R -= 3;
-                  else BRANCH; NEXT 
+case 0x005:  /* LOOP */      //printf("LOOP R=%p I=%d %d\n", R, R[0], R[1]);
+                  if ((++ *R) == 0) NOBRANCH, R += 3;
+                  else BRANCH; NEXT
 case 0x006:  /* +LOOP */     w = *R, *R += top;
-                  if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R -= 3;
+                  if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
                   else BRANCH; pop; NEXT
 case 0x007:  /* DLIT */      push *ip++; push *ip++; NEXT
 case 0x008:  /* DOVAR */     push (uchar*)ip++ - m; goto Exit;
@@ -87,21 +87,13 @@ case 0x05F:  /* U<= IF */    IF2((ucell)*S <= (ucell)top)
 /* ?DUP */ case 0x063:        if (top) *++sp = top; NEXT
 /* OVER */ case 0x064:        push sp[-1]; NEXT
 /* ROT */ case 0x065:         w = S[-1], S[-1] = *S, *S = top, top = w; NEXT
-/* >R */ case 0x068:          
-   //printf(">R R=%p top=0x%X", R, top);getchar();
-   *++R = top, pop;
-   //printf(">R R=%p *R=0x%X", R, *R);getchar();
- ; NEXT
-/* R> */ case 0x069:          
-   //printf("R> R=%p *R=0x%X", R, *R);getchar();
-   push *R--; 
-   //printf("R> R=%p top=0x%X", R, top);getchar();
- ; NEXT
+/* >R */ case 0x068:          *--R = top, pop; NEXT
+/* R> */ case 0x069:          push *R++; NEXT
 /* R@ */ case 0x06A:          push *R  ; NEXT
-/* I */ case 0x06B:           push R[0] + R[-1]; NEXT
-/* J */ case 0x06C:           push R[-3] + R[-4]; NEXT
-/* LEAVE */ case 0x06D:       I = (byte*)R[-2];
-/* UNLOOP */ case 0x06E:      R -= 3; NEXT
+/* I */ case 0x06B:           push R[0] + R[1]; NEXT
+/* J */ case 0x06C:           push R[3] + R[4]; NEXT
+/* LEAVE */ case 0x06D:       I = (byte*)R[2];
+/* UNLOOP */ case 0x06E:      R += 3; NEXT
 /* INVERT */ case 0x070:   top = ~top; NEXT
 /* NEGATE */ case 0x071:   top = -top; NEXT
 /* MOD */ case 0x072:   top = *S-- % top;  NEXT
@@ -166,7 +158,7 @@ case 0x05F:  /* U<= IF */    IF2((ucell)*S <= (ucell)top)
   free(filename);
   *--S = (cell) file;
   top = file ? 0 : -1; NEXT }
-/* CLOSE-FILE */ case 0x08C:    
+/* CLOSE-FILE */ case 0x08C:  
   //printf("closing %p\n", (FILE*)top);
   top = fclose((FILE*)top); NEXT
 /* REFILL */ case 0x08D:    push refill(SOURCE); NEXT
@@ -202,6 +194,6 @@ if (!w) goto Exit; ip = phys(w); NEXT
 case 0x0FF:  /* call */
 w = *(cell*)ip;
 //printf("call 0x%x\n", w);
-*++R = (cell)ip + CELL;
+*--R = (cell)ip + CELL;
 ip = (opcode*)(m + w);
 NEXT

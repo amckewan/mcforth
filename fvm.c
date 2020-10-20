@@ -27,6 +27,8 @@ static cell M[DATASIZE];
 byte * const m = (byte *)M;
 int verbose;
 
+// return stack grows down from top of memory
+cell *const R0 = M + DATASIZE;
 
 #define NEXT ; goto next;
 #define push *++sp = top, top =
@@ -148,7 +150,7 @@ void words(cell v) {
 
 void fvm() {
     cell stack[1000], *sp, top;
-    cell rack[1000], *R;
+    cell *R;
     opcode *ip;
     cell w;
 
@@ -160,7 +162,7 @@ abort:
     M[CONTEXT] = 1;
     sp = stack;
     *sp = top = 0;
-    R = rack;
+    R = R0;
     ip = (opcode *)phys(0x200);
 
 next:
