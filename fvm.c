@@ -25,16 +25,22 @@ byte dict[10000] = {
 
 static cell M[DATASIZE];
 byte * const m = (byte *)M;
-int verbose;
 
-// return stack grows down from top of memory
+// data stack, grows down
+static cell stak[STACKSIZE+100]; // a bit of underflow not tragic
+cell * const S0 = stak + STACKSIZE;
+
+// return stack, grows down from top of memory
 cell *const R0 = M + DATASIZE;
 
+int verbose;
+
+
 #define NEXT ; goto next;
-#define push *++sp = top, top =
-#define pop top = *sp--
-#define pop2 top = sp[-1], sp -= 2
-#define pop3 top = sp[-2], sp -= 3
+#define push *++S = top, top =
+#define pop top = *S--
+#define pop2 top = S[-1], S -= 2
+#define pop3 top = S[-2], S -= 3
 #define LOGICAL ? -1 : 0
 #define aligned(x) (((cell)(x) + (CELL - 1)) & ~(CELL - 1))
 #define c(x) HERE = x, HERE += CELL
@@ -122,13 +128,13 @@ void type(cell addr, cell len) {
     while (len--) putchar(m[addr++]);
 }
 
-void *litq(void *ip) {
-    uchar *p = (uchar *)ip;
+void *litq(void *I) {
+    uchar *p = (uchar *)I;
     return (cell *)aligned(p + *p + 1);
 }
 
-void *dotq(void *ip) {
-    char *p = (char *)ip;
+void *dotq(void *I) {
+    char *p = (char *)I;
     int n = *p++;
     while (n--) putchar(*p++);
     return (cell *)aligned(p);
@@ -149,9 +155,9 @@ void words(cell v) {
 }
 
 void fvm() {
-    cell stack[1000], *sp, top;
+    cell stack[1000], *S, top;
     cell *R;
-    opcode *ip;
+    opcode *I;
     cell w;
 
     printf("hi\n");
@@ -160,14 +166,14 @@ void fvm() {
 abort:
     STATE = 0;
     M[CONTEXT] = 1;
-    sp = stack;
-    *sp = top = 0;
+    S = stack;
+    *S = top = 0;
     R = R0;
-    ip = (opcode *)phys(0x200);
+    I = (opcode *)phys(0x200);
 
 next:
-//printf("ip=%X op=%02X\n", ip-m, *(ip-m));
-    w = *ip++;
+//printf("I=%X op=%02X\n", I-m, *(I-m));
+    w = *I++;
 exec:
     switch (w) {
 

@@ -1,6 +1,4 @@
-#define S sp
-#define I ip
-case 0x000:  /* EXIT */  Exit:  ip = (opcode*) *R++; NEXT
+case 0x000:  /* EXIT */  Exit:  I = (opcode*) *R++; NEXT
 /* EXECUTEX */ case 0x001:        w = top; pop; goto exec;
 #define OFFSET    *(cell*)I
 #define BRANCH    I += OFFSET
@@ -19,49 +17,49 @@ case 0x005:  /* LOOP */      //printf("LOOP R=%p I=%d %d\n", R, R[0], R[1]);
 case 0x006:  /* +LOOP */     w = *R, *R += top;
                   if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
                   else BRANCH; pop; NEXT
-case 0x007:  /* DLIT */      push *ip++; push *ip++; NEXT
-case 0x008:  /* DOVAR */     push (uchar*)ip++ - m; goto Exit;
-case 0x009:  /* ." */        ip = dotq(ip); NEXT
-case 0x00A:  /* S" */        push virt(ip) + 1; push *ip; ip = litq(ip); NEXT
+case 0x007:  /* DLIT */      push *I++; push *I++; NEXT
+case 0x008:  /* DOVAR */     push (uchar*)I++ - m; goto Exit;
+case 0x009:  /* ." */        I = dotq(I); NEXT
+case 0x00A:  /* S" */        push virt(I) + 1; push *I; I = litq(I); NEXT
 case 0x00B:  /* abort" */    if (top) {
-  show_error((char*)ip, phys(HERE), phys(SOURCE));
+  show_error((char*)I, phys(HERE), phys(SOURCE));
   goto abort;
-} ip = litq(ip); pop; NEXT
-/* + */ case 0x010:           top += *sp--; NEXT
-/* - */ case 0x011:           top = *sp-- - top; NEXT
-/* AND */ case 0x012:         top &= *sp--; NEXT
-/* OR */ case 0x013:          top |= *sp--; NEXT
-/* XOR */ case 0x014:         top ^= *sp--; NEXT
-/* LSHIFT */ case 0x015:      top = *sp-- << top; NEXT
-/* RSHIFT */ case 0x016:      top = ((ucell)*sp--) >> top; NEXT
-/* SWAP */ case 0x017:        w = top; top = *sp; *sp = w; NEXT
-/* PICK */ case 0x018:        top = sp[-top]; NEXT
+} I = litq(I); pop; NEXT
+/* + */ case 0x010:           top += *S--; NEXT
+/* - */ case 0x011:           top = *S-- - top; NEXT
+/* AND */ case 0x012:         top &= *S--; NEXT
+/* OR */ case 0x013:          top |= *S--; NEXT
+/* XOR */ case 0x014:         top ^= *S--; NEXT
+/* LSHIFT */ case 0x015:      top = *S-- << top; NEXT
+/* RSHIFT */ case 0x016:      top = ((ucell)*S--) >> top; NEXT
+/* SWAP */ case 0x017:        w = top; top = *S; *S = w; NEXT
+/* PICK */ case 0x018:        top = S[-top]; NEXT
 /* @ */ case 0x019:           top = *(cell *)(m + top); NEXT
-/* ! */ case 0x01A:           *(cell *)(m + top) = *sp; pop2; NEXT
-/* +! */ case 0x01B:          *(cell *)(m + top) += *sp; pop2; NEXT
-/* * */ case 0x01C:           top *= *sp--; NEXT
-/* / */ case 0x01D:           top = *sp-- / top; NEXT
+/* ! */ case 0x01A:           *(cell *)(m + top) = *S; pop2; NEXT
+/* +! */ case 0x01B:          *(cell *)(m + top) += *S; pop2; NEXT
+/* * */ case 0x01C:           top *= *S--; NEXT
+/* / */ case 0x01D:           top = *S-- / top; NEXT
 /* NOP */ case 0x01E:         NEXT
-case 0x01F:     top += *ip++; NEXT
-case 0x020:     top -= *ip++; NEXT
-case 0x021:   top &= *ip++; NEXT
-case 0x02F:      push *(cell*)ip; ip += CELL; NEXT
+case 0x01F:     top += *I++; NEXT
+case 0x020:     top -= *I++; NEXT
+case 0x021:   top &= *I++; NEXT
+case 0x02F:      push *(cell*)I; I += CELL; NEXT
 /* 0= */ case 0x040:          top = (top == 0) LOGICAL; NEXT
 /* 0< */ case 0x041:          top = (top < 0) LOGICAL; NEXT
 /* 0> */ case 0x042:          top = (top > 0) LOGICAL; NEXT
-/* = */ case 0x043:           top = (*sp-- == top) LOGICAL; NEXT
-/* < */ case 0x044:           top = (*sp-- < top) LOGICAL; NEXT
-/* > */ case 0x045:           top = (*sp-- > top) LOGICAL; NEXT
-/* U< */ case 0x046:          top = ((ucell)*sp-- < (ucell)top) LOGICAL; NEXT
-/* U> */ case 0x047:          top = ((ucell)*sp-- > (ucell)top) LOGICAL; NEXT
+/* = */ case 0x043:           top = (*S-- == top) LOGICAL; NEXT
+/* < */ case 0x044:           top = (*S-- < top) LOGICAL; NEXT
+/* > */ case 0x045:           top = (*S-- > top) LOGICAL; NEXT
+/* U< */ case 0x046:          top = ((ucell)*S-- < (ucell)top) LOGICAL; NEXT
+/* U> */ case 0x047:          top = ((ucell)*S-- > (ucell)top) LOGICAL; NEXT
 case 0x048:  /* 0<> */   top = (top != 0) LOGICAL; NEXT
 case 0x049:  /* 0>= */   top = (top >= 0) LOGICAL; NEXT
 case 0x04A:  /* 0<= */   top = (top <= 0) LOGICAL; NEXT
-case 0x04B:  /* <>  */   top = (*sp-- != top) LOGICAL; NEXT
-case 0x04C:  /* >=  */   top = (*sp-- >= top) LOGICAL; NEXT
-case 0x04D:  /* <=  */   top = (*sp-- <= top) LOGICAL; NEXT
-case 0x04E:  /* U>= */   top = ((ucell)*sp-- >= (ucell)top) LOGICAL; NEXT
-case 0x04F:  /* U<= */   top = ((ucell)*sp-- <= (ucell)top) LOGICAL; NEXT
+case 0x04B:  /* <>  */   top = (*S-- != top) LOGICAL; NEXT
+case 0x04C:  /* >=  */   top = (*S-- >= top) LOGICAL; NEXT
+case 0x04D:  /* <=  */   top = (*S-- <= top) LOGICAL; NEXT
+case 0x04E:  /* U>= */   top = ((ucell)*S-- >= (ucell)top) LOGICAL; NEXT
+case 0x04F:  /* U<= */   top = ((ucell)*S-- <= (ucell)top) LOGICAL; NEXT
 #define IF(cond)  if (cond) NOBRANCH; else BRANCH
 #define IF1(cond) IF(cond); pop; NEXT
 #define IF2(cond) IF(cond); pop2; NEXT
@@ -82,10 +80,10 @@ case 0x05D:  /* <= IF */     IF2(*S <= top)
 case 0x05E:  /* U>= IF */    IF2((ucell)*S >= (ucell)top)
 case 0x05F:  /* U<= IF */    IF2((ucell)*S <= (ucell)top)
 /* DROP */ case 0x060:        pop; NEXT
-/* DUP */ case 0x061:         *++sp = top; NEXT
-/* NIP */ case 0x062:         sp--; NEXT
-/* ?DUP */ case 0x063:        if (top) *++sp = top; NEXT
-/* OVER */ case 0x064:        push sp[-1]; NEXT
+/* DUP */ case 0x061:         *++S = top; NEXT
+/* NIP */ case 0x062:         S--; NEXT
+/* ?DUP */ case 0x063:        if (top) *++S = top; NEXT
+/* OVER */ case 0x064:        push S[-1]; NEXT
 /* ROT */ case 0x065:         w = S[-1], S[-1] = *S, *S = top, top = w; NEXT
 /* >R */ case 0x068:          *--R = top, pop; NEXT
 /* R> */ case 0x069:          push *R++; NEXT
@@ -109,10 +107,10 @@ case 0x05F:  /* U<= IF */    IF2((ucell)*S <= (ucell)top)
   top = d >> 32;
   NEXT }
 /* UM* */ case 0x075:   {
-  uint64_t u1 = (uint32_t)*sp;
+  uint64_t u1 = (uint32_t)*S;
   uint64_t u2 = (uint32_t)top;
   uint64_t ud = u1 * u2;
-  *sp = ud ;
+  *S = ud ;
   top = ud >> 32;
   NEXT }
 /* UM/MOD */ case 0x076:   {
@@ -136,20 +134,20 @@ case 0x05F:  /* U<= IF */    IF2((ucell)*S <= (ucell)top)
 /* 2/ */ case 0x07B:      top >>= 1; NEXT
 /* CELLS */ case 0x07C:       top *= CELL; NEXT
 /* C@ */ case 0x07D:    top = m[top]; NEXT
-/* C! */ case 0x07E:    m[top] = *sp; pop2; NEXT
+/* C! */ case 0x07E:    m[top] = *S; pop2; NEXT
 /* MOVE */ case 0x07F:   memmove(phys(*S), phys(S[-1]), top); pop3; NEXT
 /* PHYS */ case 0x080:   top += (cell)m; NEXT   // convert to physical address
 /* VIRT */ case 0x081:   top -= (cell)m; NEXT   // convert to absolute address
 /* KEY */ case 0x082:    push getchar(); NEXT
 /* EMIT */ case 0x083:    putchar(top); pop; NEXT
-/* TYPE */ case 0x084:     type(*sp, top); pop2; NEXT
+/* TYPE */ case 0x084:     type(*S, top); pop2; NEXT
 /* BYE */ case 0x085:   return;
-/* ACCEPT */ case 0x086:    top = accept(*sp--, top);
+/* ACCEPT */ case 0x086:    top = accept(*S--, top);
 /* FIXME */ if (top < 0) exit(0); NEXT
 /* ALLOCATE */ case 0x087:    *++S = virt(malloc(top)), top = *S ? 0 : -1; NEXT
 /* RESIZE */ case 0x088:      *S = virt(realloc(phys(*S), top)), top = *S ? 0 : -1; NEXT
 /* FREE */ case 0x089:        free(phys(top)), top = 0; NEXT
-/* NEW-STRING */ case 0x08A:  top = new_string(*sp--, top); NEXT
+/* NEW-STRING */ case 0x08A:  top = new_string(*S--, top); NEXT
 /* OPEN-FILE */ case 0x08B:   {
   //printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
   char *filename = phys(new_string(S[-1], *S));
@@ -163,37 +161,37 @@ case 0x05F:  /* U<= IF */    IF2((ucell)*S <= (ucell)top)
   top = fclose((FILE*)top); NEXT
 /* REFILL */ case 0x08D:    push refill(SOURCE); NEXT
 /* . */ case 0x08E:    printf("%d ", top); pop; NEXT
-/* -NUMBER */ case 0x08F:   w = number(phys(top), ++sp);
-  if (w) top = 0; else *sp = top, top = -1; NEXT
+/* -NUMBER */ case 0x08F:   w = number(phys(top), ++S);
+  if (w) top = 0; else *S = top, top = -1; NEXT
 /* WORD */ case 0x090:  
   top = word(SOURCE, top, HERE); NEXT
 /* FIND */ case 0x091:  
       w = find(top, 1);
-      if (w) *++sp = cfa(w), top = -1;
+      if (w) *++S = cfa(w), top = -1;
       else push 0; NEXT
 /* -FIND */ case 0x092:  
-      w = find(*sp, top);
-      if (w) *sp = cfa(w), top = 0;
+      w = find(*S, top);
+      if (w) *S = cfa(w), top = 0;
       else top = -1; NEXT
-/* DEPTH */ case 0x093:    w = sp - stack; push w; NEXT
+/* DEPTH */ case 0x093:    w = S - stack; push w; NEXT
 /* .S */ case 0x094:  
-      w = sp - stack;  sp[1] = top;
+      w = S - stack;  S[1] = top;
       printf("[%d] ", w);
       for (int i = 0; i < w; i++)
           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
       NEXT
 /* WORDS */ case 0x095:    words(M[CONTEXT]); NEXT
-/* DUMP */ case 0x096:    dump(*sp--, top); pop; NEXT
+/* DUMP */ case 0x096:    dump(*S--, top); pop; NEXT
 /* LIMIT */ case 0x097:   push sizeof m; NEXT
 /* ALIGNED */ case 0x098:     top = aligned(top); NEXT
 /* PARSE */ case 0x099:    top = parse(SOURCE, top, ++S); NEXT
 case 0x0F0:  /* docreate */
-push ip + CELL - m;
-w = *(cell*)ip;
-if (!w) goto Exit; ip = phys(w); NEXT
+push I + CELL - m;
+w = *(cell*)I;
+if (!w) goto Exit; I = phys(w); NEXT
 case 0x0FF:  /* call */
-w = *(cell*)ip;
+w = *(cell*)I;
 //printf("call 0x%x\n", w);
-*--R = (cell)ip + CELL;
-ip = (opcode*)(m + w);
+*--R = (cell)I + CELL;
+I = (opcode*)(m + w);
 NEXT

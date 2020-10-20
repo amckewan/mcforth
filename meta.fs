@@ -211,12 +211,9 @@ VARIABLE OP  ( next opcode )
 200 DP-T !
 ( cold start: )  FF OP, 0 ,-T
 
-` #define S sp
-` #define I ip
-
 0 OP!
 
-OP: /* EXIT */  Exit:  ip = (opcode*) *R++; NEXT
+OP: /* EXIT */  Exit:  I = (opcode*) *R++; NEXT
 CODE EXECUTEX       w = top; pop; goto exec;
 
 ` #define OFFSET    *(cell*)I
@@ -238,61 +235,61 @@ OP: /* +LOOP */     w = *R, *R += top;
 `                   if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
 `                   else BRANCH; pop; NEXT
 
-OP: /* DLIT */      push *ip++; push *ip++; NEXT
+OP: /* DLIT */      push *I++; push *I++; NEXT
 ( DOVAR must be 8!)
-OP: /* DOVAR */     push (uchar*)ip++ - m; goto Exit;
-OP: /* ." */        ip = dotq(ip); NEXT
-OP: /* S" */        push virt(ip) + 1; push *ip; ip = litq(ip); NEXT
+OP: /* DOVAR */     push (uchar*)I++ - m; goto Exit;
+OP: /* ." */        I = dotq(I); NEXT
+OP: /* S" */        push virt(I) + 1; push *I; I = litq(I); NEXT
 OP: /* abort" */    if (top) {
-                    `   show_error((char*)ip, phys(HERE), phys(SOURCE));
+                    `   show_error((char*)I, phys(HERE), phys(SOURCE));
                     `   goto abort;
-                    ` } ip = litq(ip); pop; NEXT
+                    ` } I = litq(I); pop; NEXT
 
 10 OP!
 
-PRIM +          top += *sp--; NEXT
-PRIM -          top = *sp-- - top; NEXT
-PRIM AND        top &= *sp--; NEXT
-PRIM OR         top |= *sp--; NEXT
-PRIM XOR        top ^= *sp--; NEXT
-PRIM LSHIFT     top = *sp-- << top; NEXT
-PRIM RSHIFT     top = ((ucell)*sp--) >> top; NEXT
-CODE SWAP       w = top; top = *sp; *sp = w; NEXT
+PRIM +          top += *S--; NEXT
+PRIM -          top = *S-- - top; NEXT
+PRIM AND        top &= *S--; NEXT
+PRIM OR         top |= *S--; NEXT
+PRIM XOR        top ^= *S--; NEXT
+PRIM LSHIFT     top = *S-- << top; NEXT
+PRIM RSHIFT     top = ((ucell)*S--) >> top; NEXT
+CODE SWAP       w = top; top = *S; *S = w; NEXT
 
-CODE PICK       top = sp[-top]; NEXT
+CODE PICK       top = S[-top]; NEXT
 CODE @          top = *(cell *)(m + top); NEXT
-CODE !          *(cell *)(m + top) = *sp; pop2; NEXT
-CODE +!         *(cell *)(m + top) += *sp; pop2; NEXT
-CODE *          top *= *sp--; NEXT
-CODE /          top = *sp-- / top; NEXT
+CODE !          *(cell *)(m + top) = *S; pop2; NEXT
+CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
+CODE *          top *= *S--; NEXT
+CODE /          top = *S-- / top; NEXT
 CODE NOP        NEXT
 
-OP: ( LIT + )   top += *ip++; NEXT
-OP: ( LIT - )   top -= *ip++; NEXT
-OP: ( LIT AND ) top &= *ip++; NEXT
+OP: ( LIT + )   top += *I++; NEXT
+OP: ( LIT - )   top -= *I++; NEXT
+OP: ( LIT AND ) top &= *I++; NEXT
 
 2F OP!
-OP:  ( LIT )    push *(cell*)ip; ip += CELL; NEXT
+OP:  ( LIT )    push *(cell*)I; I += CELL; NEXT
 
 40 OP!
 
 CODE 0=         top = (top == 0) LOGICAL; NEXT
 CODE 0<         top = (top < 0) LOGICAL; NEXT
 CODE 0>         top = (top > 0) LOGICAL; NEXT
-CODE =          top = (*sp-- == top) LOGICAL; NEXT
-CODE <          top = (*sp-- < top) LOGICAL; NEXT
-CODE >          top = (*sp-- > top) LOGICAL; NEXT
-CODE U<         top = ((ucell)*sp-- < (ucell)top) LOGICAL; NEXT
-CODE U>         top = ((ucell)*sp-- > (ucell)top) LOGICAL; NEXT
+CODE =          top = (*S-- == top) LOGICAL; NEXT
+CODE <          top = (*S-- < top) LOGICAL; NEXT
+CODE >          top = (*S-- > top) LOGICAL; NEXT
+CODE U<         top = ((ucell)*S-- < (ucell)top) LOGICAL; NEXT
+CODE U>         top = ((ucell)*S-- > (ucell)top) LOGICAL; NEXT
 
 OP: /* 0<> */   top = (top != 0) LOGICAL; NEXT
 OP: /* 0>= */   top = (top >= 0) LOGICAL; NEXT
 OP: /* 0<= */   top = (top <= 0) LOGICAL; NEXT
-OP: /* <>  */   top = (*sp-- != top) LOGICAL; NEXT
-OP: /* >=  */   top = (*sp-- >= top) LOGICAL; NEXT
-OP: /* <=  */   top = (*sp-- <= top) LOGICAL; NEXT
-OP: /* U>= */   top = ((ucell)*sp-- >= (ucell)top) LOGICAL; NEXT
-OP: /* U<= */   top = ((ucell)*sp-- <= (ucell)top) LOGICAL; NEXT
+OP: /* <>  */   top = (*S-- != top) LOGICAL; NEXT
+OP: /* >=  */   top = (*S-- >= top) LOGICAL; NEXT
+OP: /* <=  */   top = (*S-- <= top) LOGICAL; NEXT
+OP: /* U>= */   top = ((ucell)*S-- >= (ucell)top) LOGICAL; NEXT
+OP: /* U<= */   top = ((ucell)*S-- <= (ucell)top) LOGICAL; NEXT
 
 50 OP!  ( cond IF, must be in the same order as above )
 
@@ -320,11 +317,11 @@ OP: /* U<= IF */    IF2((ucell)*S <= (ucell)top)
 
 60 OP!
 CODE DROP       pop; NEXT
-CODE DUP        *++sp = top; NEXT
-CODE NIP        sp--; NEXT
-CODE ?DUP       if (top) *++sp = top; NEXT
+CODE DUP        *++S = top; NEXT
+CODE NIP        S--; NEXT
+CODE ?DUP       if (top) *++S = top; NEXT
 \ OP: ( SWAP )  ; NEXT
-CODE OVER       push sp[-1]; NEXT
+CODE OVER       push S[-1]; NEXT
 CODE ROT        w = S[-1], S[-1] = *S, *S = top, top = w; NEXT
 
 68 OP!
@@ -367,10 +364,10 @@ CODE M*  ( n1 n2 -- d ) {
 `   NEXT }
 
 CODE UM* ( u1 u2 -- ud ) {
-`   uint64_t u1 = (uint32_t)*sp;
+`   uint64_t u1 = (uint32_t)*S;
 `   uint64_t u2 = (uint32_t)top;
 `   uint64_t ud = u1 * u2;
-`   *sp = ud ;
+`   *S = ud ;
 `   top = ud >> 32;
 `   NEXT }
 
@@ -401,7 +398,7 @@ CELL-T CONSTANT CELL
 : CELL+  CELL + ;
 
 CODE C@  ( a -- c )  top = m[top]; NEXT
-CODE C!  ( c a -- )  m[top] = *sp; pop2; NEXT
+CODE C!  ( c a -- )  m[top] = *S; pop2; NEXT
 : COUNT  DUP 1+ SWAP C@ ;
 
 : 2@    DUP CELL+ @ SWAP @ ;
@@ -414,7 +411,7 @@ CODE VIRT  top -= (cell)m; NEXT   // convert to absolute address
 
 CODE KEY   ( -- char )  push getchar(); NEXT
 CODE EMIT  ( char -- )  putchar(top); pop; NEXT
-CODE TYPE  ( a n -- )   type(*sp, top); pop2; NEXT
+CODE TYPE  ( a n -- )   type(*S, top); pop2; NEXT
 
 \ : X $ 12345 >R KEY DROP R> KEY DROP ;
 
@@ -423,7 +420,7 @@ CODE TYPE  ( a n -- )   type(*sp, top); pop2; NEXT
 
 CODE BYE  return;
 
-CODE ACCEPT ( a n -- n )  top = accept(*sp--, top);
+CODE ACCEPT ( a n -- n )  top = accept(*S--, top);
 ` /* FIXME */ if (top < 0) exit(0); NEXT
 
 
@@ -458,7 +455,7 @@ CODE ALLOCATE   *++S = virt(malloc(top)), top = *S ? 0 : -1; NEXT
 CODE RESIZE     *S = virt(realloc(phys(*S), top)), top = *S ? 0 : -1; NEXT
 CODE FREE       free(phys(top)), top = 0; NEXT
 
-CODE NEW-STRING top = new_string(*sp--, top); NEXT
+CODE NEW-STRING top = new_string(*S--, top); NEXT
 
 CODE OPEN-FILE ( c-addr u fam -- fileid ior ) {
 `   //printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
@@ -502,8 +499,8 @@ VARIABLE TIB 80 ALLOT-T
 CODE .  ( n -- )  printf("%d ", top); pop; NEXT
 : ?  @ . ;
 
-CODE -NUMBER  ( a -- a t, n f ) w = number(phys(top), ++sp);
-`   if (w) top = 0; else *sp = top, top = -1; NEXT
+CODE -NUMBER  ( a -- a t, n f ) w = number(phys(top), ++S);
+`   if (w) top = 0; else *S = top, top = -1; NEXT
 : NUMBER  ( a -- n )  -NUMBER ABORT" ? " ;
 
 20 CONSTANT BL
@@ -513,20 +510,20 @@ CODE WORD  ( char -- addr )
 
 CODE FIND  ( str -- xt flag | str 0 )
 `       w = find(top, 1);
-`       if (w) *++sp = cfa(w), top = -1;
+`       if (w) *++S = cfa(w), top = -1;
 `       else push 0; NEXT
 
 CODE -FIND  ( str v -- str t | xt f )
-`       w = find(*sp, top);
-`       if (w) *sp = cfa(w), top = 0;
+`       w = find(*S, top);
+`       if (w) *S = cfa(w), top = 0;
 `       else top = -1; NEXT
 
 : -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
 : '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
 
-CODE DEPTH ( -- n )  w = sp - stack; push w; NEXT
+CODE DEPTH ( -- n )  w = S - stack; push w; NEXT
 CODE .S ( -- )
-`       w = sp - stack;  sp[1] = top;
+`       w = S - stack;  S[1] = top;
 `       printf("[%d] ", w);
 `       for (int i = 0; i < w; i++)
 `           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
@@ -534,7 +531,7 @@ CODE .S ( -- )
 
 
 CODE WORDS  ( -- )  words(M[CONTEXT]); NEXT
-CODE DUMP  ( a n -- )  dump(*sp--, top); pop; NEXT
+CODE DUMP  ( a n -- )  dump(*S--, top); pop; NEXT
 
 CODE LIMIT  push sizeof m; NEXT
 
@@ -551,7 +548,7 @@ COMPILER
 : LITERAL  $ 2F C, , ;
 FORTH
 : EXECUTE  PHYS >R ;
-\ CODE EXECUTE  ip = m + top, pop; NEXT
+\ CODE EXECUTE  I = m + top, pop; NEXT
 
 : INTERPRET  ( -- )
     \ BEGIN BL WORD DUP C@ WHILE COUNT TYPE SPACE REPEAT EXIT
@@ -606,21 +603,21 @@ VARIABLE LAST
 : CONSTANT  HEADER  ( [COMPILE]) LITERAL  $ 0 OP, ;
 : VARIABLE  HEADER  $ 8 OP,  $ 0 , ;
 
-\ | opc | ip for does | data
-\ OP: /* DOVAR */     push (uchar*)ip++ - m; goto Exit;
+\ | opc | I for does | data
+\ OP: /* DOVAR */     push (uchar*)I++ - m; goto Exit;
 F0 OP!
 OP: /* docreate */
-` push ip + CELL - m;
-` w = *(cell*)ip;
-` if (!w) goto Exit; ip = phys(w); NEXT
+` push I + CELL - m;
+` w = *(cell*)I;
+` if (!w) goto Exit; I = phys(w); NEXT
 
 \ TODO: move me!
 FF OP!
 OP: /* call */
-    ` w = *(cell*)ip;
+    ` w = *(cell*)I;
     ` //printf("call 0x%x\n", w);
-    ` *--R = (cell)ip + CELL;
-    ` ip = (opcode*)(m + w);
+    ` *--R = (cell)I + CELL;
+    ` I = (opcode*)(m + w);
     ` NEXT
 
 : CREATE  HEADER $ F0 C, $ 0 , ;
