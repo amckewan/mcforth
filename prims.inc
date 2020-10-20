@@ -1,7 +1,6 @@
 #define S sp
-#define R rp
 #define I ip
-case 0x000:  /* EXIT */  Exit:  ip = (opcode*) *rp--; NEXT
+case 0x000:  /* EXIT */  Exit:  ip = (opcode*) *R--; NEXT
 /* EXECUTEX */ case 0x001:        w = top; pop; goto exec;
 #define OFFSET    *(cell*)I
 #define BRANCH    I += OFFSET
@@ -37,9 +36,9 @@ case 0x00B:  /* abort" */    if (top) {
 /* RSHIFT */ case 0x016:      top = ((ucell)*sp--) >> top; NEXT
 /* SWAP */ case 0x017:        w = top; top = *sp; *sp = w; NEXT
 /* PICK */ case 0x018:        top = sp[-top]; NEXT
-/* @ */ case 0x019:           top = M(top); NEXT
-/* ! */ case 0x01A:           M(top) = *sp; pop2; NEXT
-/* +! */ case 0x01B:          M(top) += *sp; pop2; NEXT
+/* @ */ case 0x019:           top = *(cell *)(m + top); NEXT
+/* ! */ case 0x01A:           *(cell *)(m + top) = *sp; pop2; NEXT
+/* +! */ case 0x01B:          *(cell *)(m + top) += *sp; pop2; NEXT
 /* * */ case 0x01C:           top *= *sp--; NEXT
 /* / */ case 0x01D:           top = *sp-- / top; NEXT
 /* NOP */ case 0x01E:         NEXT
@@ -90,15 +89,15 @@ case 0x05F:  /* U<= IF */    IF2((ucell)*S <= (ucell)top)
 /* ROT */ case 0x065:         w = S[-1], S[-1] = *S, *S = top, top = w; NEXT
 /* >R */ case 0x068:          
    //printf(">R R=%p top=0x%X", R, top);getchar();
-   *++rp = top, pop;
+   *++R = top, pop;
    //printf(">R R=%p *R=0x%X", R, *R);getchar();
  ; NEXT
 /* R> */ case 0x069:          
    //printf("R> R=%p *R=0x%X", R, *R);getchar();
-   push *rp--; 
+   push *R--; 
    //printf("R> R=%p top=0x%X", R, top);getchar();
  ; NEXT
-/* R@ */ case 0x06A:          push *rp  ; NEXT
+/* R@ */ case 0x06A:          push *R  ; NEXT
 /* I */ case 0x06B:           push R[0] + R[-1]; NEXT
 /* J */ case 0x06C:           push R[-3] + R[-4]; NEXT
 /* LEAVE */ case 0x06D:       I = (byte*)R[-2];
@@ -191,7 +190,7 @@ case 0x05F:  /* U<= IF */    IF2((ucell)*S <= (ucell)top)
       for (int i = 0; i < w; i++)
           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
       NEXT
-/* WORDS */ case 0x095:    words(M(CONTEXT)); NEXT
+/* WORDS */ case 0x095:    words(M[CONTEXT]); NEXT
 /* DUMP */ case 0x096:    dump(*sp--, top); pop; NEXT
 /* LIMIT */ case 0x097:   push sizeof m; NEXT
 /* ALIGNED */ case 0x098:     top = aligned(top); NEXT
@@ -200,3 +199,9 @@ case 0x0F0:  /* docreate */
 push ip + CELL - m;
 w = *(cell*)ip;
 if (!w) goto Exit; ip = phys(w); NEXT
+case 0x0FF:  /* call */
+w = *(cell*)ip;
+//printf("call 0x%x\n", w);
+*++R = (cell)ip + CELL;
+ip = (opcode*)(m + w);
+NEXT

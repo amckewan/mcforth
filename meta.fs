@@ -212,12 +212,11 @@ VARIABLE OP  ( next opcode )
 ( cold start: )  FF OP, 0 ,-T
 
 ` #define S sp
-` #define R rp
 ` #define I ip
 
 0 OP!
 
-OP: /* EXIT */  Exit:  ip = (opcode*) *rp--; NEXT
+OP: /* EXIT */  Exit:  ip = (opcode*) *R--; NEXT
 CODE EXECUTEX       w = top; pop; goto exec;
 
 ` #define OFFSET    *(cell*)I
@@ -259,10 +258,11 @@ PRIM XOR        top ^= *sp--; NEXT
 PRIM LSHIFT     top = *sp-- << top; NEXT
 PRIM RSHIFT     top = ((ucell)*sp--) >> top; NEXT
 CODE SWAP       w = top; top = *sp; *sp = w; NEXT
+
 CODE PICK       top = sp[-top]; NEXT
-CODE @          top = M(top); NEXT
-CODE !          M(top) = *sp; pop2; NEXT
-CODE +!         M(top) += *sp; pop2; NEXT
+CODE @          top = *(cell *)(m + top); NEXT
+CODE !          *(cell *)(m + top) = *sp; pop2; NEXT
+CODE +!         *(cell *)(m + top) += *sp; pop2; NEXT
 CODE *          top *= *sp--; NEXT
 CODE /          top = *sp-- / top; NEXT
 CODE NOP        NEXT
@@ -331,15 +331,15 @@ CODE ROT        w = S[-1], S[-1] = *S, *S = top, top = w; NEXT
 \ 68-6F must be inlined
 CODE >R         
 `    //printf(">R R=%p top=0x%X", R, top);getchar();
-`    *++rp = top, pop;
+`    *++R = top, pop;
 `    //printf(">R R=%p *R=0x%X", R, *R);getchar();
 `  ; NEXT
 CODE R>         
 `    //printf("R> R=%p *R=0x%X", R, *R);getchar();
-`    push *rp--; 
+`    push *R--; 
 `    //printf("R> R=%p top=0x%X", R, top);getchar();
 `  ; NEXT
-CODE R@         push *rp  ; NEXT
+CODE R@         push *R  ; NEXT
 
 
 CODE I          push R[0] + R[-1]; NEXT
@@ -541,7 +541,7 @@ CODE .S ( -- )
 `       NEXT
 
 
-CODE WORDS  ( -- )  words(M(CONTEXT)); NEXT
+CODE WORDS  ( -- )  words(M[CONTEXT]); NEXT
 CODE DUMP  ( a n -- )  dump(*sp--, top); pop; NEXT
 
 CODE LIMIT  push sizeof m; NEXT
@@ -621,6 +621,15 @@ OP: /* docreate */
 ` push ip + CELL - m;
 ` w = *(cell*)ip;
 ` if (!w) goto Exit; ip = phys(w); NEXT
+
+\ TODO: move me!
+FF OP!
+OP: /* call */
+    ` w = *(cell*)ip;
+    ` //printf("call 0x%x\n", w);
+    ` *++R = (cell)ip + CELL;
+    ` ip = (opcode*)(m + w);
+    ` NEXT
 
 : CREATE  HEADER $ F0 C, $ 0 , ;
 

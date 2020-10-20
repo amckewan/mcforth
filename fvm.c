@@ -2,6 +2,9 @@
 
 #include "fvm.h"
 
+#define DATASIZE 20000 // in cells
+#define STACKSIZE 100
+
 #define CELL sizeof(cell)
 
 typedef struct {
@@ -19,11 +22,12 @@ typedef struct {
 byte dict[10000] = {
 #include "dict.inc"
 };
-byte m[100000];
+
+static cell M[DATASIZE];
+byte * const m = (byte *)M;
 int verbose;
 
 
-#define M(n) *(cell *)&m[n]
 #define NEXT ; goto next;
 #define push *++sp = top, top =
 #define pop top = *sp--
@@ -34,12 +38,12 @@ int verbose;
 #define c(x) HERE = x, HERE += CELL
 
 // Memory Map
-#define BOOT M(0)
-#define HERE M(4)
-#define SOURCE M(8)
-#define BASE M(12)
-#define STATE M(16)
-#define CONTEXT 20
+#define BOOT M[0]
+#define HERE M[1]
+#define SOURCE M[2]
+#define BASE M[3]
+#define STATE M[4]
+#define CONTEXT 5 /* 3 cells */
 
 cell cfa(cell nfa) // convert nfa to cfa (NAME>)
 {
@@ -68,14 +72,14 @@ void typex(const char *str, int len) {
 cell find(cell name, cell v) {
     //printf("find '"); typex((char*)m+name+1, m[name]); printf("'\n");
     // return nfa if found, else zero
-    cell link = M(CONTEXT + v * CELL);
+    cell link = M[CONTEXT + v];
     cell len = m[name];
     while (link) {
         if ((m[link + CELL] & 63) == len
             && match((char*)m + name + 1, (char*)m + link + CELL + 1, len))
             return link + CELL;
 
-        link = M(link);
+        link = *(cell *)(m + link);
     }
     return 0;
 }
@@ -135,16 +139,16 @@ void dotid(cell nfa) {
 }
 
 void words(cell v) {
-    cell link = M(CONTEXT + v * CELL);
+    cell link = M[CONTEXT + v];
     while (link) {
         dotid(link + CELL);
-        link = M(link);
+        link = *(cell*)(m + link);
     }
 }
 
 void fvm() {
     cell stack[1000], *sp, top;
-    cell rack[1000], *rp;
+    cell rack[1000], *R;
     opcode *ip;
     cell w;
 
@@ -153,10 +157,10 @@ void fvm() {
 
 abort:
     STATE = 0;
-    M(CONTEXT) = 1;
+    M[CONTEXT] = 1;
     sp = stack;
     *sp = top = 0;
-    rp = rack;
+    R = rack;
     ip = (opcode *)phys(0x200);
 
 next:
@@ -166,13 +170,6 @@ exec:
     switch (w) {
 
 #include "prims.inc"
-
-    case 0xFF: // call 32-bit address
-        w = *(cell*)ip;
-        //printf("call 0x%x\n", w);
-        *++rp = (cell)ip + CELL;
-        ip = (opcode*)(m + w);
-        NEXT
 
     default:
         printf("Invalid opcode 0x%X\n", w);
