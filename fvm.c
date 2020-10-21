@@ -2,48 +2,24 @@
 
 #include "fvm.h"
 
-#define DATASIZE 20000 // in cells
-#define STACKSIZE 100
-
-#define CELL sizeof(cell)
-
-typedef struct {
-    cell in;
-    cell len;
-    uchar *addr;
-} Input;
-
-typedef struct {
-    cell link;
-    uchar count;
-    uchar name[1];
-} Header;
-
-byte dict[10000] = {
-#include "dict.inc"
-};
+// sizes in cells
+#define DATASIZE    20000
+#define STACKSIZE   100
 
 static cell M[DATASIZE];
 byte * const m = (byte *)M;
 
-// data stack, grows down
-static cell stak[STACKSIZE+100]; // a bit of underflow not tragic
-cell * const S0 = stak + STACKSIZE;
-
-// return stack, grows down from top of memory
+// return stack grows down from top of memory
 cell *const R0 = M + DATASIZE;
+
+// data stack, grows down
+static cell stack[STACKSIZE+20]; // a bit of underflow not tragic
+cell * const S0 = stack + STACKSIZE;
 
 int verbose;
 
-
-#define NEXT ; goto next;
-#define push *++S = top, top =
-#define pop top = *S--
-#define pop2 top = S[-1], S -= 2
-#define pop3 top = S[-2], S -= 3
-#define LOGICAL ? -1 : 0
+#define CELL sizeof(cell)
 #define aligned(x) (((cell)(x) + (CELL - 1)) & ~(CELL - 1))
-#define c(x) HERE = x, HERE += CELL
 
 // Memory Map
 #define BOOT M[0]
@@ -73,10 +49,6 @@ int match(const char *name, const char *str, int len) {
     return 1;
 }
 
-void typex(const char *str, int len) {
-    fwrite(str, len, sizeof(char), stdout);
-}
-
 cell find(cell name, cell v) {
     //printf("find '"); typex((char*)m+name+1, m[name]); printf("'\n");
     // return nfa if found, else zero
@@ -92,11 +64,11 @@ cell find(cell name, cell v) {
     return 0;
 }
 
-static int digit(char c) {
+int digit(char c) {
     return (c <= '9') ? c - '0' : 10 + toupper(c) - 'A';
 }
 
-cell number(const char *str, cell *num) {
+int number(const char *str, cell *num) {
     int len = *str++;
     int n = 0;
     int sign = 1;
@@ -112,17 +84,6 @@ cell number(const char *str, cell *num) {
     *num = n * sign;
     return TRUE;
 }
-
-
-/*
-header *find(char *name)
-{
-        header *h = last;
-        while (h && stricmp(h->name, name))
-                h = h->link;
-        return h;
-}
-*/
 
 void type(cell addr, cell len) {
     while (len--) putchar(m[addr++]);
@@ -155,9 +116,9 @@ void words(cell v) {
 }
 
 void fvm() {
-    cell stack[1000], *S, top;
+    cell *S, top;
     cell *R;
-    opcode *I;
+    byte *I;
     cell w;
 
     printf("hi\n");
@@ -166,8 +127,7 @@ void fvm() {
 abort:
     STATE = 0;
     M[CONTEXT] = 1;
-    S = stack;
-    *S = top = 0;
+    S = S0;
     R = R0;
     I = (opcode *)phys(0x200);
 
@@ -185,8 +145,14 @@ exec:
     }
 }
 
+// Initial dictionary
+byte dict[10000] = {
+#include "dict.inc"
+};
+
 int main(int argc, char *argv[]) {
     memcpy(m, dict, sizeof dict);
+
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-v")) {
             verbose = 1;

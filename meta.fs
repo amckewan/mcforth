@@ -44,7 +44,12 @@ S" prims.inc" OPEN
 
 CREATE EOL 1 C, 0A C,
 : NEWLINE   EOL COUNT WRITE ;
-: `  1 PARSE WRITE  NEWLINE ;
+
+: `   1 PARSE WRITE  NEWLINE ;
+: ``  BEGIN  REFILL 0= ABORT" missing ``"
+        BL WORD COUNT S" ``" COMPARE WHILE
+        SOURCE WRITE NEWLINE
+      REPEAT ;
 
 : WRITE-DICT-IMG
     S" dict.img" R/W CREATE-FILE ?ERR
@@ -208,6 +213,15 @@ VARIABLE OP  ( next opcode )
 \ **********************************************************************
 \ FVM Kernel
 
+``
+#define push *--S = top, top =
+#define pop top = *S++
+#define pop2 top = S[1], S += 2
+#define pop3 top = S[2], S += 3
+#define LOGICAL ? -1 : 0
+#define NEXT ; goto next;
+``
+
 200 DP-T !
 ( cold start: )  FF OP, 0 ,-T
 
@@ -221,13 +235,13 @@ CODE EXECUTEX       w = top; pop; goto exec;
 ` #define NOBRANCH  I += CELL
 
 OP: /* BRANCH */    BRANCH; NEXT
-OP: /* DO */        *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S--, pop;
+OP: /* DO */        *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop;
 `                   //printf("DO R=%p I=%d %d\n", R, R[0], R[1]);
 `                   NOBRANCH; NEXT
 OP: /* ?DO */       if (top == *S) BRANCH;
 `                   else *--R = (cell)I + OFFSET,
 `                       *--R = *S, *--R = top - *S, NOBRANCH;
-`                   S--, pop; NEXT
+`                   S++, pop; NEXT
 OP: /* LOOP */      //printf("LOOP R=%p I=%d %d\n", R, R[0], R[1]);
 `                   if ((++ *R) == 0) NOBRANCH, R += 3;
 `                   else BRANCH; NEXT
@@ -247,21 +261,21 @@ OP: /* abort" */    if (top) {
 
 10 OP!
 
-PRIM +          top += *S--; NEXT
-PRIM -          top = *S-- - top; NEXT
-PRIM AND        top &= *S--; NEXT
-PRIM OR         top |= *S--; NEXT
-PRIM XOR        top ^= *S--; NEXT
-PRIM LSHIFT     top = *S-- << top; NEXT
-PRIM RSHIFT     top = ((ucell)*S--) >> top; NEXT
+PRIM +          top += *S++; NEXT
+PRIM -          top = *S++ - top; NEXT
+PRIM AND        top &= *S++; NEXT
+PRIM OR         top |= *S++; NEXT
+PRIM XOR        top ^= *S++; NEXT
+PRIM LSHIFT     top = *S++ << top; NEXT
+PRIM RSHIFT     top = ((ucell)*S++) >> top; NEXT
 CODE SWAP       w = top; top = *S; *S = w; NEXT
 
-CODE PICK       top = S[-top]; NEXT
+CODE PICK       top = S[top]; NEXT
 CODE @          top = *(cell *)(m + top); NEXT
 CODE !          *(cell *)(m + top) = *S; pop2; NEXT
 CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
-CODE *          top *= *S--; NEXT
-CODE /          top = *S-- / top; NEXT
+CODE *          top *= *S++; NEXT
+CODE /          top = *S++ / top; NEXT
 CODE NOP        NEXT
 
 OP: ( LIT + )   top += *I++; NEXT
@@ -276,20 +290,20 @@ OP:  ( LIT )    push *(cell*)I; I += CELL; NEXT
 CODE 0=         top = (top == 0) LOGICAL; NEXT
 CODE 0<         top = (top < 0) LOGICAL; NEXT
 CODE 0>         top = (top > 0) LOGICAL; NEXT
-CODE =          top = (*S-- == top) LOGICAL; NEXT
-CODE <          top = (*S-- < top) LOGICAL; NEXT
-CODE >          top = (*S-- > top) LOGICAL; NEXT
-CODE U<         top = ((ucell)*S-- < (ucell)top) LOGICAL; NEXT
-CODE U>         top = ((ucell)*S-- > (ucell)top) LOGICAL; NEXT
+CODE =          top = (*S++ == top) LOGICAL; NEXT
+CODE <          top = (*S++ < top) LOGICAL; NEXT
+CODE >          top = (*S++ > top) LOGICAL; NEXT
+CODE U<         top = ((ucell)*S++ < (ucell)top) LOGICAL; NEXT
+CODE U>         top = ((ucell)*S++ > (ucell)top) LOGICAL; NEXT
 
 OP: /* 0<> */   top = (top != 0) LOGICAL; NEXT
 OP: /* 0>= */   top = (top >= 0) LOGICAL; NEXT
 OP: /* 0<= */   top = (top <= 0) LOGICAL; NEXT
-OP: /* <>  */   top = (*S-- != top) LOGICAL; NEXT
-OP: /* >=  */   top = (*S-- >= top) LOGICAL; NEXT
-OP: /* <=  */   top = (*S-- <= top) LOGICAL; NEXT
-OP: /* U>= */   top = ((ucell)*S-- >= (ucell)top) LOGICAL; NEXT
-OP: /* U<= */   top = ((ucell)*S-- <= (ucell)top) LOGICAL; NEXT
+OP: /* <>  */   top = (*S++ != top) LOGICAL; NEXT
+OP: /* >=  */   top = (*S++ >= top) LOGICAL; NEXT
+OP: /* <=  */   top = (*S++ <= top) LOGICAL; NEXT
+OP: /* U>= */   top = ((ucell)*S++ >= (ucell)top) LOGICAL; NEXT
+OP: /* U<= */   top = ((ucell)*S++ <= (ucell)top) LOGICAL; NEXT
 
 50 OP!  ( cond IF, must be in the same order as above )
 
@@ -317,12 +331,12 @@ OP: /* U<= IF */    IF2((ucell)*S <= (ucell)top)
 
 60 OP!
 CODE DROP       pop; NEXT
-CODE DUP        *++S = top; NEXT
-CODE NIP        S--; NEXT
-CODE ?DUP       if (top) *++S = top; NEXT
+CODE DUP        *--S = top; NEXT
+CODE NIP        S++; NEXT
+CODE ?DUP       if (top) *--S = top; NEXT
 \ OP: ( SWAP )  ; NEXT
-CODE OVER       push S[-1]; NEXT
-CODE ROT        w = S[-1], S[-1] = *S, *S = top, top = w; NEXT
+CODE OVER       push S[1]; NEXT
+CODE ROT        w = S[1], S[1] = *S, *S = top, top = w; NEXT
 
 68 OP!
 \ 68-6F must be inlined
@@ -347,14 +361,14 @@ CODE UNLOOP     R += 3; NEXT
 CODE INVERT  top = ~top; NEXT
 CODE NEGATE  top = -top; NEXT
 
-CODE MOD  top = *S-- % top;  NEXT
+CODE MOD  top = *S++ % top;  NEXT
 
 ` #define LOWER(u1,u2)  ((uint32_t)(u1) < (uint32_t)(u2))
 
 CODE WITHIN
-`   w = *S--,
+`   w = *S++,
 `   top = LOWER(*S - w, top - w) LOGICAL;
-`   S--;
+`   S++;
 `   NEXT
 
 CODE M*  ( n1 n2 -- d ) {
@@ -372,19 +386,19 @@ CODE UM* ( u1 u2 -- ud ) {
 `   NEXT }
 
 CODE UM/MOD  ( ud u1 -- rem quot ) {
-`   uint64_t ud = ((uint64_t)*S << 32) | (uint32_t)S[-1];
+`   uint64_t ud = ((uint64_t)*S << 32) | (uint32_t)S[1];
 `   uint64_t u = (uint32_t)top;
 `   uint32_t quot = ud / u;
 `   uint32_t rem = ud % u;
-`   *--S = rem;
+`   *++S = rem;
 `   top = quot;
 `   NEXT }
 
 CODE SM/REM  ( d n -- rem quot ) {
-`   int64_t d = (((uint64_t)*S) << 32) | ((uint32_t) S[-1]);
+`   int64_t d = (((uint64_t)*S) << 32) | ((uint32_t) S[1]);
 `   int32_t quot = d / top;
 `   int32_t rem = d % top;
-`   *--S = rem;
+`   *++S = rem;
 `   top = quot;
 `   NEXT }
 
@@ -404,7 +418,7 @@ CODE C!  ( c a -- )  m[top] = *S; pop2; NEXT
 : 2@    DUP CELL+ @ SWAP @ ;
 : 2!    DUP >R ! R> CELL+ ! ;
 
-CODE MOVE  ( a1 a2 u -- ) memmove(phys(*S), phys(S[-1]), top); pop3; NEXT
+CODE MOVE  ( a1 a2 u -- ) memmove(phys(*S), phys(S[1]), top); pop3; NEXT
 
 CODE PHYS  top += (cell)m; NEXT   // convert to physical address
 CODE VIRT  top -= (cell)m; NEXT   // convert to absolute address
@@ -420,7 +434,7 @@ CODE TYPE  ( a n -- )   type(*S, top); pop2; NEXT
 
 CODE BYE  return;
 
-CODE ACCEPT ( a n -- n )  top = accept(*S--, top);
+CODE ACCEPT ( a n -- n )  top = accept(*S++, top);
 ` /* FIXME */ if (top < 0) exit(0); NEXT
 
 
@@ -451,19 +465,19 @@ CONSTANT SOURCE-STACK
 
 : SOURCE-DEPTH  >IN SOURCE-STACK -  $ 5 RSHIFT ( 32 /) ;
 
-CODE ALLOCATE   *++S = virt(malloc(top)), top = *S ? 0 : -1; NEXT
+CODE ALLOCATE   *--S = virt(malloc(top)), top = *S ? 0 : -1; NEXT
 CODE RESIZE     *S = virt(realloc(phys(*S), top)), top = *S ? 0 : -1; NEXT
 CODE FREE       free(phys(top)), top = 0; NEXT
 
-CODE NEW-STRING top = new_string(*S--, top); NEXT
+CODE NEW-STRING top = new_string(*S++, top); NEXT
 
 CODE OPEN-FILE ( c-addr u fam -- fileid ior ) {
-`   //printf("open a=0x%x, u=%d, fam=%d\n", S[-1], *S, top);
-`   char *filename = phys(new_string(S[-1], *S));
+`   //printf("open a=0x%x, u=%d, fam=%d\n", S[1], *S, top);
+`   char *filename = phys(new_string(S[1], *S));
 `   FILE *file = fopen(filename, "r");
 `   //printf("open %s returned %p\n", filename, file);
 `   free(filename);
-`   *--S = (cell) file;
+`   *++S = (cell) file;
 `   top = file ? 0 : -1; NEXT }
 
 CODE CLOSE-FILE ( fileid -- ior )
@@ -499,7 +513,7 @@ VARIABLE TIB 80 ALLOT-T
 CODE .  ( n -- )  printf("%d ", top); pop; NEXT
 : ?  @ . ;
 
-CODE -NUMBER  ( a -- a t, n f ) w = number(phys(top), ++S);
+CODE -NUMBER  ( a -- a t, n f ) w = number(phys(top), --S);
 `   if (w) top = 0; else *S = top, top = -1; NEXT
 : NUMBER  ( a -- n )  -NUMBER ABORT" ? " ;
 
@@ -510,7 +524,7 @@ CODE WORD  ( char -- addr )
 
 CODE FIND  ( str -- xt flag | str 0 )
 `       w = find(top, 1);
-`       if (w) *++S = cfa(w), top = -1;
+`       if (w) *--S = cfa(w), top = -1;
 `       else push 0; NEXT
 
 CODE -FIND  ( str v -- str t | xt f )
@@ -521,17 +535,17 @@ CODE -FIND  ( str v -- str t | xt f )
 : -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
 : '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
 
-CODE DEPTH ( -- n )  w = S - stack; push w; NEXT
+CODE DEPTH ( -- n )  w = S0 - S; push w; NEXT
 CODE .S ( -- )
-`       w = S - stack;  S[1] = top;
+`       w = S0 - S;  S[-1] = top;
 `       printf("[%d] ", w);
-`       for (int i = 0; i < w; i++)
-`           printf("%d (0x%x) ", stack[i+2], stack[i+2]);
+`       for (int i = w - 2; i >= -1; i--)
+`           printf("%d (0x%x) ", S[i], S[i]);
 `       NEXT
 
 
 CODE WORDS  ( -- )  words(M[CONTEXT]); NEXT
-CODE DUMP  ( a n -- )  dump(*S--, top); pop; NEXT
+CODE DUMP  ( a n -- )  dump(*S++, top); pop; NEXT
 
 CODE LIMIT  push sizeof m; NEXT
 
@@ -583,7 +597,7 @@ CODE ALIGNED    top = aligned(top); NEXT
 \ CODE ALIGN        while (HERE != aligned(HERE)) m[HERE++] = 0; NEXT
 : ALIGN BEGIN HERE $ 3 AND WHILE $ 0 C, REPEAT ;
 
-CODE PARSE  ( c -- a n )  top = parse(SOURCE, top, ++S); NEXT
+CODE PARSE  ( c -- a n )  top = parse(SOURCE, top, --S); NEXT
 
 : S,  ( a n -- )  BEGIN DUP WHILE >R COUNT C, R> 1- REPEAT 2DROP ;
 : ",  $ 22 ( [CHAR] ") PARSE  DUP C,  S,  ALIGN  ( 0 ?CODE !) ;
