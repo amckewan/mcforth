@@ -9,7 +9,10 @@ prims.inc dict.inc: meta.fs
 	gforth meta.fs -e ciao
 
 test: fvm
-	./fvm
+	@./fvm
 
 testv: fvm
-	./fvm -v
+	@./fvm -v
+
+clean:
+	@rm fvm prims.inc dict.*
