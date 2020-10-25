@@ -48,9 +48,9 @@ char *new_string1(const char *str, int len) {
 
 cell new_string(cell str_va, int len) {
     char *cstr = malloc(len + 1);
-    memcpy(cstr, phys(str_va), len);
+    memcpy(cstr, abs(str_va), len);
     cstr[len] = 0;
-    return virt(cstr);
+    return rel(cstr);
 }
 
 void fatal(const char *msg) {
@@ -78,7 +78,7 @@ void show_error(const char *msg, const char *here, const struct source *source) 
     if (col < 1) col = 1;
     putchar('\n');
     if (source->file != SOURCE_CONSOLE && source->file != SOURCE_EVALUATE)
-        printf("%s:%d:%d: ", phys(source->filename), source->line, col);
+        printf("%s:%d:%d: ", abs(source->filename), source->line, col);
     int n = *here++;
     while (n--) putchar(*here++);
     putchar(' ');

@@ -20,8 +20,8 @@ typedef uint8_t opcode;
 extern byte *const m; // forth memory
 extern int verbose;
 
-#define phys(va)    (void *)(m + (va))
-#define virt(pa)    (cell)((byte*)(pa) - m)
+#define abs(va)    (void *)(m + (va))
+#define rel(pa)    (cell)((byte*)(pa) - m)
 
 #define TRUE -1
 #define FALSE 0

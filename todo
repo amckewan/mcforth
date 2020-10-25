@@ -1,4 +1,8 @@
-. number using base
-. redefined warning
+x number using base
+x redefined warning
+. load file from command line
 . make meta compiler all interpreting (no IMMEDIATE)
 . create/does>
+. immediate in a standard way (so find returns 1)
+. remove unecessary alignment
+. check for redefined words

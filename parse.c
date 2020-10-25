@@ -3,8 +3,8 @@
 #include "fvm.h"
 
 cell parse(cell source_va, char c, cell *start_addr) {
-    struct source *source = phys(source_va);
-    const char *src = phys(source->addr);
+    struct source *source = abs(source_va);
+    const char *src = abs(source->addr);
     int len = 0;
     int in = source->in;
 
@@ -17,8 +17,8 @@ cell parse(cell source_va, char c, cell *start_addr) {
 }
 
 cell parse_name(cell source_va, cell *start_addr) {
-    struct source *source = phys(source_va);
-    const char *src = phys(source->addr);
+    struct source *source = abs(source_va);
+    const char *src = abs(source->addr);
     int len = 0;
     int in = source->in;
 
@@ -33,10 +33,10 @@ cell parse_name(cell source_va, cell *start_addr) {
 }
 
 cell word(cell source_va, char c, cell here_va) {
-    struct source *source = phys(source_va);
-    const char *src = phys(source->addr);
+    struct source *source = abs(source_va);
+    const char *src = abs(source->addr);
     int in = source->in;
-    char *here = phys(here_va);
+    char *here = abs(here_va);
     char *dest = here;
     if (c == BL) {
         while (in < source->len && isspace(src[in]))

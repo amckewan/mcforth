@@ -15,7 +15,7 @@ cell accept(cell addr_va, cell max) {
     int len = strlen(line);
     if (len && line[len-1] == '\n') len--;
     if (len > max) len = max;
-    memcpy(phys(addr_va), line, len);
+    memcpy(abs(addr_va), line, len);
 
     add_history(line);
     free(line);
@@ -32,8 +32,8 @@ static int refill_tib(struct source *source) {
 }
 
 static int refill_file(struct source *source) {
-    if (verbose) printf("refill %s line %d\n", phys(source->filename), source->line+1);
-    char *buf = phys(source->buf);
+    if (verbose) printf("refill %s line %d\n", abs(source->filename), source->line+1);
+    char *buf = abs(source->buf);
     if (!fgets(buf, MAXLINE, source->file)) {
         source->len = 0;
         source->in = 0;
@@ -49,7 +49,7 @@ static int refill_file(struct source *source) {
 }
 
 cell refill(cell source_va) {
-    struct source *source = phys(source_va);
+    struct source *source = abs(source_va);
     //printf("refill source = %p\n", source);
     //printf("file = %p\n", source->file);
     //printf("buf = 0x%X\n", source->buf);

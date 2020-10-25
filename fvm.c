@@ -115,7 +115,7 @@ void words(cell v) {
     }
 }
 
-void fvm() {
+void fvm(int argc, char *argv[]) {
     cell *S, top;
     cell *R;
     byte *I;
@@ -129,7 +129,7 @@ abort:
     M[CONTEXT] = 1;
     S = S0;
     R = R0;
-    I = (opcode *)phys(0x200);
+    I = (opcode *)abs(0x200);
 
 next:
 //printf("I=%X op=%02X\n", I-m, *(I-m));
@@ -153,6 +153,8 @@ byte dict[10000] = {
 int main(int argc, char *argv[]) {
     memcpy(m, dict, sizeof dict);
 
+    printf("m = %p, argv = %p, diff = %td\n", m, argv, (byte*)argv-m);
+
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-v")) {
             verbose = 1;
@@ -161,7 +163,7 @@ int main(int argc, char *argv[]) {
         }
     }
     if (verbose) printf("sizeof(source) = %u\n", sizeof(struct source));
-    fvm();
+    fvm(argc, argv);
     return 0;
 
     const char *filename = "dict.img";
@@ -174,6 +176,6 @@ int main(int argc, char *argv[]) {
     fread(m, 1, 0x2000, f);
     fclose(f);
 
-    fvm();
+    fvm(argc, argv);
     return 0;
 }

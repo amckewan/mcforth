@@ -253,9 +253,9 @@ OP: /* DLIT */      push *I++; push *I++; NEXT
 ( DOVAR must be 8!)
 OP: /* DOVAR */     push (uchar*)I++ - m; goto Exit;
 OP: /* ." */        I = dotq(I); NEXT
-OP: /* S" */        push virt(I) + 1; push *I; I = litq(I); NEXT
+OP: /* S" */        push rel(I) + 1; push *I; I = litq(I); NEXT
 OP: /* abort" */    if (top) {
-                    `   show_error((char*)I, phys(HERE), phys(SOURCE));
+                    `   show_error((char*)I, abs(HERE), abs(SOURCE));
                     `   goto abort;
                     ` } I = litq(I); pop; NEXT
 
@@ -418,10 +418,10 @@ CODE C!  ( c a -- )  m[top] = *S; pop2; NEXT
 : 2@    DUP CELL+ @ SWAP @ ;
 : 2!    DUP >R ! R> CELL+ ! ;
 
-CODE MOVE  ( a1 a2 u -- ) memmove(phys(*S), phys(S[1]), top); pop3; NEXT
+CODE MOVE  ( a1 a2 u -- ) memmove(abs(*S), abs(S[1]), top); pop3; NEXT
 
-CODE PHYS  top += (cell)m; NEXT   // convert to physical address
-CODE VIRT  top -= (cell)m; NEXT   // convert to absolute address
+CODE >REL  top -= (cell)m; NEXT   // convert to relative address
+CODE REL>  top += (cell)m; NEXT   // convert to absolute address
 
 CODE KEY   ( -- char )  push getchar(); NEXT
 CODE EMIT  ( char -- )  putchar(top); pop; NEXT
@@ -445,6 +445,10 @@ CODE ACCEPT ( a n -- n )  top = accept(*S++, top);
 10 CONSTANT STATE
 14 CONSTANT CONTEXT
 
+CODE ARGC ( -- n ) push argc; NEXT
+CODE ARGV ( n -- a n ) *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEXT
+
+
 \ ********** Input source processig **********
 
 \ 8 CONSTANT SOURCE-CELLS ( sizeof )
@@ -465,15 +469,15 @@ CONSTANT SOURCE-STACK
 
 : SOURCE-DEPTH  >IN SOURCE-STACK -  $ 5 RSHIFT ( 32 /) ;
 
-CODE ALLOCATE   *--S = virt(malloc(top)), top = *S ? 0 : -1; NEXT
-CODE RESIZE     *S = virt(realloc(phys(*S), top)), top = *S ? 0 : -1; NEXT
-CODE FREE       free(phys(top)), top = 0; NEXT
+CODE ALLOCATE   *--S = rel(malloc(top)), top = *S ? 0 : -1; NEXT
+CODE RESIZE     *S = rel(realloc(abs(*S), top)), top = *S ? 0 : -1; NEXT
+CODE FREE       free(abs(top)), top = 0; NEXT
 
 CODE NEW-STRING top = new_string(*S++, top); NEXT
 
 CODE OPEN-FILE ( c-addr u fam -- fileid ior ) {
 `   //printf("open a=0x%x, u=%d, fam=%d\n", S[1], *S, top);
-`   char *filename = phys(new_string(S[1], *S));
+`   char *filename = abs(new_string(S[1], *S));
 `   FILE *file = fopen(filename, "r");
 `   //printf("open %s returned %p\n", filename, file);
 `   free(filename);
@@ -513,7 +517,7 @@ VARIABLE TIB 80 ALLOT-T
 CODE .  ( n -- )  printf("%d ", top); pop; NEXT
 : ?  @ . ;
 
-CODE -NUMBER  ( a -- a t, n f ) w = number(phys(top), --S);
+CODE -NUMBER  ( a -- a t, n f ) w = number(abs(top), --S);
 `   if (w) top = 0; else *S = top, top = -1; NEXT
 : NUMBER  ( a -- n )  -NUMBER ABORT" ? " ;
 
@@ -561,7 +565,7 @@ COMPILER
 : [COMPILE]  $ 2 -' ABORT" ?" COMPILE, ;
 : LITERAL  $ 2F C, , ;
 FORTH
-: EXECUTE  PHYS >R ;
+: EXECUTE  REL> >R ;
 \ CODE EXECUTE  I = m + top, pop; NEXT
 
 : INTERPRET  ( -- )
@@ -602,15 +606,13 @@ CODE PARSE  ( c -- a n )  top = parse(SOURCE, top, --S); NEXT
 : S,  ( a n -- )  BEGIN DUP WHILE >R COUNT C, R> 1- REPEAT 2DROP ;
 : ",  $ 22 ( [CHAR] ") PARSE  DUP C,  S,  ALIGN  ( 0 ?CODE !) ;
 
-COMPILER
-: ."      $ 9 OP,  ", ;
-: S"      $ A OP,  ", ;
-: ABORT"  $ B OP,  ", ;
-FORTH
+VARIABLE WARNING
+: WARN  WARNING @ IF  >IN @  BL WORD CONTEXT @ -FIND 0= IF
+    HERE COUNT TYPE ."  redefined " THEN  DROP >IN !  THEN ;
 
-VARIABLE LAST
+VARIABLE LAST ( nfa)
 : HASH  ( v -- a )  CELLS CONTEXT + ;
-: HEADER  ( -- )
+: HEADER  ( -- )  WARN
     ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
     HERE LAST !  BL WORD C@ 1+ ALLOT  ALIGN ;
 
@@ -623,7 +625,7 @@ F0 OP!
 OP: /* docreate */
 ` push I + CELL - m;
 ` w = *(cell*)I;
-` if (!w) goto Exit; I = phys(w); NEXT
+` if (!w) goto Exit; I = abs(w); NEXT
 
 \ TODO: move me!
 FF OP!
@@ -640,6 +642,12 @@ OP: /* call */
 : USE  ( a -- )  PREVIOUS $ 1F AND + $ 1 + ALIGNED ! ;
 : DOES>   R> USE ;
 : SMUDGE  PREVIOUS $ 20 XOR SWAP C! ;
+
+COMPILER
+: ."      $ 9 OP,  ", ;
+: S"      $ A OP,  ", ;
+: ABORT"  $ B OP,  ", ;
+FORTH
 
 COMPILER
 : [  $ 0 STATE ! ;
