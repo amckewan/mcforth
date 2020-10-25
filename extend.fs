@@ -170,9 +170,11 @@ forth
     compiler
     2dup "header + aligned compile, [compile] exit
     forth ;
-: recurse  previous 31 and + 1+ aligned compile, ;
 
+COMPILER
+: RECURSE  PREVIOUS 31 AND + 1+ ALIGNED COMPILE, ;
+FORTH
 : EVALUATE ( a n -- )
-    0 0 -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;
+    -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;
 
 

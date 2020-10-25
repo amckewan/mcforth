@@ -496,12 +496,11 @@ CODE CLOSE-FILE ( fileid -- ior )
 
 : FILE?  1+ $ 2 U< NOT ;
 
-: >SOURCE ( filename len fileid -- ) \ CR ." Including " DROP TYPE SPACE ;
+: >SOURCE ( filename len fileid | -1 -- ) \ CR ." Including " DROP TYPE SPACE ;
     SOURCE-DEPTH $ 7 U> ABORT" nested too deep"
     $ 20 'SOURCE +!
     DUP 'SOURCE-ID !
-    FILE? IF  $ 80 ALLOCATE DROP  SOURCE-BUF !  THEN
-    DUP IF  NEW-STRING DUP  THEN  SOURCE-NAME ! DROP
+    FILE? IF  $ 80 ALLOCATE DROP SOURCE-BUF !  NEW-STRING SOURCE-NAME !  THEN
     $ 0 SOURCE-LINE ! ;
 
 : SOURCE> ( -- )
@@ -509,8 +508,8 @@ CODE CLOSE-FILE ( fileid -- ior )
     SOURCE-ID FILE? IF
         SOURCE-ID CLOSE-FILE DROP
         SOURCE-BUF @ FREE DROP
+        SOURCE-NAME @ FREE DROP
     THEN
-    SOURCE-NAME @ FREE DROP
     $ -20 'SOURCE +! ;
 
 CODE REFILL ( -- f )  push refill(SOURCE); NEXT

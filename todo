@@ -1,9 +1,9 @@
 x number using base
 x redefined warning
 x load file from command line
-. create/does>
+x create/does>
 . make meta compiler all interpreting (no IMMEDIATE)
-. immediate in a standard way (so find returns 1)
 . remove unecessary alignment
 . check for redefined words
 . make -vvv work
+. immediate in a standard way (so find returns 1)
