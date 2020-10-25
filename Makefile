@@ -1,9 +1,16 @@
 # fvm makefile
 
-SOURCES = fvm.c misc.c parse.c file.c
+all: test
 
-fvm: $(SOURCES) fvm.h dict.inc prims.inc
-	clang -m32 $(SOURCES) -lreadline -o fvm
+CC = clang
+CFLAGS = -m32 -Wall
+
+SOURCES = fvm.c misc.c parse.c file.c
+HEADERS = fvm.h dict.inc prims.inc
+LIBS = -lreadline
+
+fvm: $(SOURCES) $(HEADERS)
+	$(CC) $(CFLAGS) $(SOURCES) $(LIBS) -o fvm
 
 prims.inc dict.inc: meta.fs
 	gforth meta.fs -e ciao

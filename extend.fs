@@ -172,4 +172,7 @@ forth
     forth ;
 : recurse  previous 31 and + 1+ aligned compile, ;
 
+: EVALUATE ( a n -- )
+    0 0 -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;
+
 

@@ -86,6 +86,22 @@ int number(const char *str, cell *num) {
     return TRUE;
 }
 
+cell to_number(cell *sp, cell top) {
+    uint64_t u = (uint32_t)sp[2] | ((uint64_t)sp[1] << 32);
+    char *str = abs(sp[0]);
+    while (top) {
+        int d = digit(*str);
+        if (d < 0 || d >= BASE) break;
+        u = u * BASE + d;
+        ++str;
+        --top;
+    }
+    sp[0] = rel(str);
+    sp[1] = u >> 32;
+    sp[2] = u;
+    return top;
+}
+
 void type(cell addr, cell len) {
     while (len--) putchar(m[addr++]);
 }
@@ -162,16 +178,20 @@ byte dict[10000] = {
 int main(int argc, char *argv[]) {
     memcpy(m, dict, sizeof dict);
 
-    printf("m = %p, argv = %p, diff = %td\n", m, argv, (byte*)argv-m);
-
-    for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "-v")) {
-            verbose = 1;
-        } else {
-//            include_file(argv[i]);
-        }
+    if (argc > 1 && !strcmp(argv[1], "-v")) {
+        verbose = 1;
+        for (int i = 2; i < argc; i++)
+            argv[i-1] = argv[i];
+        argc--;
     }
-    if (verbose) printf("sizeof(source) = %u\n", sizeof(struct source));
+
+    if (verbose) {
+        printf("sizeof(source) = %u\n", sizeof(struct source));
+        printf("m = %p, argv = %p, diff = %td\n", m, argv, (byte*)argv-m);
+        byte *temp = malloc(100);
+        printf("m = %p, malloc = %p, diff = %td\n", m, temp, temp-m);
+    }
+
     fvm(argc, argv);
     return 0;
 

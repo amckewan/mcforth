@@ -477,7 +477,7 @@ CONSTANT SOURCE-STACK
 
 CODE ALLOCATE   *--S = rel(malloc(top)), top = *S ? 0 : -1; NEXT
 CODE RESIZE     *S = rel(realloc(abs(*S), top)), top = *S ? 0 : -1; NEXT
-CODE FREE       free(abs(top)), top = 0; NEXT
+CODE FREE       if (top) free(abs(top)); top = 0; NEXT
 
 CODE NEW-STRING top = new_string(*S++, top); NEXT
 
@@ -496,7 +496,7 @@ CODE CLOSE-FILE ( fileid -- ior )
 
 : FILE?  1+ $ 2 U< NOT ;
 
-: >SOURCE ( str len fileid -- ) \ CR ." Including " DROP TYPE SPACE ;
+: >SOURCE ( filename len fileid -- ) \ CR ." Including " DROP TYPE SPACE ;
     SOURCE-DEPTH $ 7 U> ABORT" nested too deep"
     $ 20 'SOURCE +!
     DUP 'SOURCE-ID !
@@ -526,6 +526,8 @@ CODE .  ( n -- )  printf("%d ", top); pop; NEXT
 CODE -NUMBER  ( a -- a t, n f ) w = number(abs(top), --S);
 `   if (w) top = 0; else *S = top, top = -1; NEXT
 : NUMBER  ( a -- n )  -NUMBER ABORT" ? " ;
+
+CODE >NUMBER  top = to_number(S, top); NEXT
 
 20 CONSTANT BL
 
@@ -578,7 +580,7 @@ FORTH
 : INTERPRET  ( -- )
     BEGIN   BL WORD DUP C@
     WHILE   STATE @
-        IF    $ 2 -FIND IF  $ 1 -FIND IF  NUMBER ( [COMPILE]) LITERAL
+        IF    $ 2 -FIND IF  $ 1 -FIND IF  NUMBER  [COMPILE] LITERAL
               ELSE  COMPILE,  THEN  ELSE  EXECUTE  THEN
         ELSE  $ 1 -FIND IF  NUMBER  ELSE  EXECUTE  THEN
         THEN  DEPTH 0< ABORT" stack? "
@@ -627,7 +629,7 @@ VARIABLE LAST ( nfa)
     ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
     HERE LAST !  BL WORD C@ 1+ ALLOT  ALIGN ;
 
-: CONSTANT  HEADER  ( [COMPILE]) LITERAL  $ 0 OP, ;
+: CONSTANT  HEADER  [COMPILE] LITERAL  $ 0 OP, ;
 : VARIABLE  HEADER  $ 8 OP,  $ 0 , ;
 
 \ | opc | I for does | data
@@ -650,26 +652,23 @@ OP: /* call */
 : CREATE  HEADER $ F0 C, $ 0 , ;
 
 : PREVIOUS  ( -- nfa count )  CONTEXT @ HASH @  CELL+ DUP C@ ;
-: USE  ( a -- )  PREVIOUS $ 1F AND + $ 1 + ALIGNED ! ;
-: DOES>   R> USE ;
+: DOES>   R> >REL  PREVIOUS $ 1F AND + 1+ ALIGNED 1+ ! ;
 : SMUDGE  PREVIOUS $ 20 XOR SWAP C! ;
 
 \ Be careful from here on...
 
 COMPILER
-FORTH
-
-COMPILER
 : [  $ 0 STATE ! ;
 : EXIT  $ 0 OP, ;
-T: ;  SMUDGE ( [COMPILE]) EXIT ( [COMPILE]) [ ;
+T: ;  SMUDGE  [COMPILE] EXIT  [COMPILE] [ ;
 : [COMPILE]  $ 2 -' ABORT" ?" COMPILE, ;
+
 : ."      $ 9 OP,  ", ;
 : S"      $ A OP,  ", ;
 : ABORT"  $ B OP,  ", ;
 FORTH
-: ]  $ -1 STATE ! ;
 
+: ]  $ -1 STATE ! ;
 T: :  HEADER SMUDGE ] ;
 
 : FORTH     $ 1 CONTEXT ! ;

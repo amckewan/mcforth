@@ -13,10 +13,10 @@ hi
 
 include ../forth2012-test-suite/src/tester.fr
 \ VERBOSE ON
-include ../forth2012-test-suite/src/core.fr
-
 : { T{ ;
 : } }T ;
+include ../forth2012-test-suite/src/core.fr
+
 
 decimal
 CR .( testing finished! ) .TESTS
