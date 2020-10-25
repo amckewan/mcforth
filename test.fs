@@ -19,4 +19,4 @@ include ../forth2012-test-suite/src/core.fr
 : } }T ;
 
 decimal
-CR .( testing finished! )
+CR .( testing finished! ) .TESTS

@@ -1,3 +1,4 @@
+5 5 + BASE !
 COMPILER
 : \  SOURCE >IN ! DROP ;
 : (  41 PARSE 2DROP ;
@@ -7,9 +8,8 @@ FORTH
 : (  [COMPILE] ( ;
 : .( [COMPILE] .( ;
 
-\ Now we can relax a bit...
+\ Now we can explain a bit...
 
-5 5 + BASE !
 : DECIMAL   10 BASE ! ;
 : HEX       16 BASE ! ;
 
@@ -110,18 +110,16 @@ FORTH
 : */        */MOD NIP ;
 : /MOD      >R S>D R> SM/REM ;
 
-: SPACES    0 ?DO  SPACE  LOOP ;
-\ : SPACES    BEGIN DUP WHILE SPACE 1- REPEAT DROP ;
+: SPACES    0 MAX  0 ?DO  SPACE  LOOP ;
 
 : \S  BEGIN REFILL 0= UNTIL ;
 
 \ : POSTPONE  (') 0< IF  COMPILE COMPILE ,  ELSE  COMPILE,  THEN ; IMMEDIATE
 
-( *** String literals *** )
-CREATE SBUF 200 ALLOT
+CREATE SBUF 300 ALLOT
 VARIABLE #SBUF
-: STASH ( a n -- a' n )  200 MIN
-    DUP #SBUF @ + 200 > IF  #SBUF OFF ( wrap ) THEN
+: STASH ( a n -- a' n )  DUP 300 U> ABORT" too big for stash"
+    DUP #SBUF @ + 300 > IF  #SBUF OFF ( wrap ) THEN
     #SBUF @  OVER #SBUF +!  SBUF + SWAP  ( a a' n )
     DUP >R OVER >R  MOVE  R> R> ;
 : S"  [CHAR] " PARSE STASH ;

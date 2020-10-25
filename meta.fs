@@ -105,7 +105,7 @@ VARIABLE ?CODE
 : COMPILE,  ( op/addr -- )
     DUP C@-T 68 70 WITHIN OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
 
-    DUP 200 < IF  OP,  ELSE  FF OP, ,-T  THEN ;
+    DUP 200 < ( 0 AND ( ??) IF  OP,  ELSE  FF OP, ,-T  THEN ;
 
 \   OP, ;  ( non-optimizing )
 \   DUP 200 < IF  OP,  ELSE  DUP @-T  ( adr op )
@@ -169,10 +169,10 @@ VARIABLE OP  ( next opcode )
 : ?CONDITION  INVERT ABORT" unbalanced" ;
 : MARK  ( -- here )  HERE-T  0 ?CODE ! ;
 : OFFSET  ( to from -- offset )  - ( CELL-T /) ;
-: ?>MARK      ( -- f addr )   TRUE  MARK   0 ,-T ;
-: ?>RESOLVE   ( f addr -- )   MARK  OVER OFFSET  SWAP !-T   ?CONDITION ;
-: ?<MARK      ( -- f addr )   TRUE  MARK ;
-: ?<RESOLVE   ( f addr -- )   MARK  OFFSET ,-T   ?CONDITION ;
+: >MARK      ( -- f addr )   TRUE  MARK   0 ,-T ;
+: >RESOLVE   ( f addr -- )   MARK  OVER OFFSET  SWAP !-T   ?CONDITION ;
+: <MARK      ( -- f addr )   TRUE  MARK ;
+: <RESOLVE   ( f addr -- )   MARK  OFFSET ,-T   ?CONDITION ;
 
 : CONDITION  ( optimizer )
     58 OP, ;
@@ -180,14 +180,19 @@ VARIABLE OP  ( next opcode )
 : NOT  ( invert last conditional op )  LATEST 40 48 WITHIN
     IF  LATEST 8 + PATCH  ELSE  40 OP,  THEN ; IMMEDIATE
 
-: IF        CONDITION  ?>MARK ; IMMEDIATE
-: THEN      ?>RESOLVE ; IMMEDIATE
-: ELSE      2 OP,  ?>MARK  2SWAP ?>RESOLVE ; IMMEDIATE
-: BEGIN     ?<MARK ; IMMEDIATE
-: UNTIL     CONDITION  ?<RESOLVE ; IMMEDIATE
-: AGAIN     2 OP,  ?<RESOLVE ; IMMEDIATE
+: IF        CONDITION  >MARK ; IMMEDIATE
+: THEN      >RESOLVE ; IMMEDIATE
+: ELSE      2 OP,  >MARK  2SWAP >RESOLVE ; IMMEDIATE
+: BEGIN     <MARK ; IMMEDIATE
+: UNTIL     CONDITION  <RESOLVE ; IMMEDIATE
+: AGAIN     2 OP,  <RESOLVE ; IMMEDIATE
 : WHILE     [COMPILE] IF  2SWAP ; IMMEDIATE
 : REPEAT    [COMPILE] AGAIN  [COMPILE] THEN ; IMMEDIATE
+
+: DO        3 OP,  >MARK  <MARK ; IMMEDIATE
+: ?DO       4 OP,  >MARK  <MARK ; IMMEDIATE
+: LOOP      5 OP,  <RESOLVE  >RESOLVE ; IMMEDIATE
+: +LOOP     6 OP,  <RESOLVE  >RESOLVE ; IMMEDIATE
 
 \ Compile Strings into the Target
 : ",  [CHAR] " PARSE  DUP C,-T  S,-T  ALIGN  0 ?CODE ! ;
@@ -223,7 +228,7 @@ VARIABLE OP  ( next opcode )
 ``
 
 200 DP-T !
-( cold start: )  FF OP, 0 ,-T
+\ ( cold start: )  FF OP, 0 ,-T
 
 0 OP!
 
@@ -418,10 +423,11 @@ CODE C!  ( c a -- )  m[top] = *S; pop2; NEXT
 : 2@    DUP CELL+ @ SWAP @ ;
 : 2!    DUP >R ! R> CELL+ ! ;
 
-CODE MOVE  ( a1 a2 u -- ) memmove(abs(*S), abs(S[1]), top); pop3; NEXT
+CODE FILL  ( a u c -- )  memset(abs(S[1]), top, *S); pop3; NEXT
+CODE MOVE  ( src dest u -- )  memmove(abs(*S), abs(S[1]), top); pop3; NEXT
 
+CODE >ABS  top += (cell)m; NEXT   // convert to absolute address
 CODE >REL  top -= (cell)m; NEXT   // convert to relative address
-CODE REL>  top += (cell)m; NEXT   // convert to absolute address
 
 CODE KEY   ( -- char )  push getchar(); NEXT
 CODE EMIT  ( char -- )  putchar(top); pop; NEXT
@@ -558,27 +564,27 @@ CODE LIMIT  push sizeof m; NEXT
 : ,   H @ !   $ 4 H +! ;
 : C,  H @ C!  $ 1 H +! ;
 
+( ********** Interpreter ********** )
+
 : COMPILE,  ( xt -- )
     DUP C@ $ 68 $ 70 WITHIN OVER 1+ C@ 0= AND IF  C@ C, EXIT  THEN
     $ FF C, , ;
 COMPILER
-: [COMPILE]  $ 2 -' ABORT" ?" COMPILE, ;
 : LITERAL  $ 2F C, , ;
 FORTH
-: EXECUTE  REL> >R ;
+: EXECUTE  >ABS >R ;
 \ CODE EXECUTE  I = m + top, pop; NEXT
 
 : INTERPRET  ( -- )
-    \ BEGIN BL WORD DUP C@ WHILE COUNT TYPE SPACE REPEAT EXIT
     BEGIN   BL WORD DUP C@
     WHILE   STATE @
-        IF  $ 2 -FIND IF  $ 1 -FIND IF  NUMBER ( [COMPILE]) LITERAL
-            ELSE  COMPILE,  THEN  ELSE  EXECUTE  THEN
+        IF    $ 2 -FIND IF  $ 1 -FIND IF  NUMBER ( [COMPILE]) LITERAL
+              ELSE  COMPILE,  THEN  ELSE  EXECUTE  THEN
         ELSE  $ 1 -FIND IF  NUMBER  ELSE  EXECUTE  THEN
         THEN  DEPTH 0< ABORT" stack? "
     REPEAT DROP ;
 
-: QUIT [ HERE-T 201 !-T ]
+: QUIT [ HERE-T 20 !-T ]
     BEGIN SOURCE-DEPTH 0> WHILE SOURCE> REPEAT
     \ RP0 @ RP!
 \   ." hi" CR
@@ -594,7 +600,12 @@ FORTH
 
 : TEST S" test.fs" INCLUDED ;
 
-( Compiler )
+: BOOT  [ HERE-T 0 !-T ]
+    ARGC $ 1 ?DO  I ARGV INCLUDED  LOOP
+    ." Hello" QUIT ;
+
+( ********** Compiler ********** )
+
 : OP,  C, ;
 
 CODE ALIGNED    top = aligned(top); NEXT
@@ -643,16 +654,19 @@ OP: /* call */
 : DOES>   R> USE ;
 : SMUDGE  PREVIOUS $ 20 XOR SWAP C! ;
 
+\ Be careful from here on...
+
 COMPILER
-: ."      $ 9 OP,  ", ;
-: S"      $ A OP,  ", ;
-: ABORT"  $ B OP,  ", ;
 FORTH
 
 COMPILER
 : [  $ 0 STATE ! ;
 : EXIT  $ 0 OP, ;
 T: ;  SMUDGE ( [COMPILE]) EXIT ( [COMPILE]) [ ;
+: [COMPILE]  $ 2 -' ABORT" ?" COMPILE, ;
+: ."      $ 9 OP,  ", ;
+: S"      $ A OP,  ", ;
+: ABORT"  $ B OP,  ", ;
 FORTH
 : ]  $ -1 STATE ! ;
 

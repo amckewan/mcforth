@@ -22,12 +22,13 @@ int verbose;
 #define aligned(x) (((cell)(x) + (CELL - 1)) & ~(CELL - 1))
 
 // Memory Map
-#define BOOT M[0]
+#define COLD M[0]
 #define HERE M[1]
 #define SOURCE M[2]
 #define BASE M[3]
 #define STATE M[4]
 #define CONTEXT 5 /* 3 cells */
+#define WARM M[8]
 
 cell cfa(cell nfa) // convert nfa to cfa (NAME>)
 {
@@ -121,15 +122,23 @@ void fvm(int argc, char *argv[]) {
     byte *I;
     cell w;
 
-    printf("hi\n");
     BASE = 10;
 
+    if (COLD) {
+        printf("Running from %u\n", COLD);
+        I = abs(COLD);
+        goto start;
+    }
+
+    printf("hi\n");
+
 abort:
+    I = abs(WARM);
+start:
     STATE = 0;
     M[CONTEXT] = 1;
     S = S0;
     R = R0;
-    I = (opcode *)abs(0x200);
 
 next:
 //printf("I=%X op=%02X\n", I-m, *(I-m));
