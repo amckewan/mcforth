@@ -1,4 +1,4 @@
-\ FVM Metacompiler
+\ fo Metacompiler
 \ Andrew McKewan
 \ December 1994
 
@@ -140,7 +140,7 @@ CREATE CONTEXT  1 , 0 , ( FORTH ) 0 , ( COMPILER )
 : RECREATE   ( -- )
    >IN @   TARGET-CREATE   >IN ! ;
 
-\ Generate FVM Primatives
+\ Generate fo Primatives
 : ?COMMENT  ( allow Forth comment after OP: etc. )
     >IN @  BL WORD COUNT S" (" COMPARE
     IF  >IN !  ELSE  DROP  [COMPILE] (  THEN ;
@@ -216,7 +216,7 @@ VARIABLE OP  ( next opcode )
 
 
 \ **********************************************************************
-\ FVM Kernel
+\ fo Kernel
 
 ``
 #define push *--S = top, top =

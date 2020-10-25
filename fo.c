@@ -1,6 +1,6 @@
-// fvm.c
+// fo.c
 
-#include "fvm.h"
+#include "fo.h"
 
 // sizes in cells
 #define DATASIZE    20000
@@ -132,7 +132,7 @@ void words(cell v) {
     }
 }
 
-void fvm(int argc, char *argv[]) {
+void fo(int argc, char *argv[]) {
     cell *S, top;
     cell *R;
     byte *I;
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
         printf("m = %p, malloc = %p, diff = %td\n", m, temp, temp-m);
     }
 
-    fvm(argc, argv);
+    fo(argc, argv);
     return 0;
 
     const char *filename = "dict.img";
@@ -205,6 +205,6 @@ int main(int argc, char *argv[]) {
     fread(m, 1, 0x2000, f);
     fclose(f);
 
-    fvm(argc, argv);
+    fo(argc, argv);
     return 0;
 }

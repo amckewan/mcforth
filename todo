@@ -2,8 +2,15 @@ x number using base
 x redefined warning
 x load file from command line
 x create/does>
+. build extended forth
+. change branches to 1 byte
+. organize opcodes
+. implement optimizing compiler
+
 . make meta compiler all interpreting (no IMMEDIATE)
 . remove unecessary alignment
 . check for redefined words
 . make -vvv work
+
+
 . immediate in a standard way (so find returns 1)

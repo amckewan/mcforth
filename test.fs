@@ -1,7 +1,4 @@
-include extend.fs
-
-: hi ." Hello, shall we test?" CR ;
-hi
+.( Hello, shall we test?) CR
 
 : x 10 0 do i . loop ;
 : y 0 10 do i . -1 +loop ;

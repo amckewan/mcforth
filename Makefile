@@ -1,32 +1,32 @@
-# fvm makefile
+# fo makefile
 
 all: test
 
 CC = clang
 CFLAGS = -m32 -Wall
 
-SOURCES = fvm.c misc.c parse.c file.c
-HEADERS = fvm.h dict.inc prims.inc
+SOURCES = fo.c misc.c parse.c file.c
+HEADERS = fo.h dict.inc prims.inc
 LIBS = -lreadline
 
-fvm: $(SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) $(SOURCES) $(LIBS) -o fvm
+fo: $(SOURCES) $(HEADERS)
+	$(CC) $(CFLAGS) $(SOURCES) $(LIBS) -o fo
 
 prims.inc dict.inc: meta.fs
 	gforth meta.fs -e ciao
 
-run: fvm
-	@./fvm
+run: fo
+	@./fo
 
-extend: fvm extend.fs
-	@./fvm extend.fs
+extend: fo extend.fs
+	@./fo extend.fs
 
-test: fvm
+test: fo rth test.fs
 	@echo "CR BYE" > bye
-	@./fvm test.fs bye
+	@./fo rth test.fs bye
 
-testv: fvm
-	@./fvm -v
+testv: fo
+	@./fo -v
 
 clean:
-	@rm fvm prims.inc dict.*
+	@rm fo prims.inc dict.*

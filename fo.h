@@ -45,7 +45,7 @@ struct source {
     long offset;        // file offset for save/restore
 };
 
-// This is assumed for the memory layout in fvm.c
+// This is assumed for the memory layout in fo.c
 STATIC_ASSERT(sizeof(struct source) == 32, source_size);
 
 // lib.c

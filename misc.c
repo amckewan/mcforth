@@ -1,6 +1,6 @@
 /* misc support functions */
 
-#include "fvm.h"
+#include "fo.h"
 
 #define MAX_SOURCE_DEPTH 8
 
