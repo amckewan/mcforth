@@ -52,23 +52,13 @@ CREATE EOL 1 C, 0A C,
       REPEAT ;
 
 : WRITE-DICT-IMG
-    S" dict.img" R/W CREATE-FILE ?ERR
+    S" kernel.img" R/W CREATE-FILE ?ERR
     DUP TARGET-IMAGE HERE-T ROT WRITE-FILE ?ERR
     CLOSE-FILE ?ERR ;
 
-: WRITE-DICT-INC-X
-    S" dict.inc" OPEN
-    HERE-T 0 DO
-        S" /* " WRITE  I 0 <# # # # # #> WRITE  S"  */ " WRITE
-        I THERE 10 0 DO
-            S" 0x" WRITE  COUNT 0 <# # # #> WRITE  S" , " WRITE
-        LOOP DROP
-        NEWLINE
-    10 +LOOP  CLOSE ;
-
 : WRITE-DICT-INC
+    S" kernel.inc" OPEN
     BASE @ DECIMAL
-    S" dict.inc" OPEN
     HERE-T 0 DO
         I THERE 10 0 DO
             COUNT 0 <# #S #> WRITE  S" ," WRITE

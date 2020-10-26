@@ -6,25 +6,22 @@ CC = clang
 CFLAGS = -m32 -Wall -Werror
 
 SOURCES = fo.c misc.c parse.c file.c
-HEADERS = fo.h dict.inc prims.inc
+HEADERS = fo.h prims.inc kernel.inc
 LIBS = -lreadline
 
 fo: $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(SOURCES) $(LIBS) -o fo
 
-forth: $(SOURCES) $(HEADERS) forth.inc
+forth: $(SOURCES) $(HEADERS) extended.inc
 	$(CC) -DEXTEND $(CFLAGS) $(SOURCES) $(LIBS) -o forth
 
-prims.inc dict.inc: meta.fs
+prims.inc kernel.inc: meta.fs
 	gforth meta.fs -e ciao
+	hexdump -C kernel.img > kernel.hex
 
-forth.inc: fo rth extend
+extended.inc: fo rth extend
 	./fo extend
-
-compare:
-	hexdump -C dict.img > dict.hex
-	hexdump -C forth.img > forth.hex
-	meld dict.hex forth.hex
+	hexdump -C extended.img > extended.hex
 
 run: fo
 	@./fo
@@ -37,4 +34,4 @@ testv: fo
 	@./fo -v
 
 clean:
-	@rm fo *.inc *.img *.dump bye
+	@rm fo forth *.inc *.img *.hex

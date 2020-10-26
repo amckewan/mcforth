@@ -1,4 +1,4 @@
 include rth
-save forth.inc
-save-image forth.img
+save extended.inc
+save-image extended.img
 bye

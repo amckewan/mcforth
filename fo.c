@@ -173,9 +173,9 @@ exec:
 // Initial dictionary
 byte dict[10000] = {
 #ifdef EXTEND
-    #include "forth.inc"
+    #include "extended.inc"
 #else
-    #include "dict.inc"
+    #include "kernel.inc"
 #endif
 };
 
