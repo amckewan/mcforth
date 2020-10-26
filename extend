@@ -1,0 +1,4 @@
+include rth
+save forth.inc
+save-image forth.img
+bye

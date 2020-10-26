@@ -141,7 +141,7 @@ void fo(int argc, char *argv[]) {
     BASE = 10;
 
     if (COLD) {
-        printf("Running from %u\n", COLD);
+        if (verbose) printf("Running from %u\n", COLD);
         I = abs(COLD);
         goto start;
     }
@@ -172,7 +172,11 @@ exec:
 
 // Initial dictionary
 byte dict[10000] = {
-#include "dict.inc"
+#ifdef EXTEND
+    #include "forth.inc"
+#else
+    #include "dict.inc"
+#endif
 };
 
 int main(int argc, char *argv[]) {

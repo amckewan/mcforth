@@ -124,7 +124,6 @@ VARIABLE #SBUF
     DUP >R OVER >R  MOVE  R> R> ;
 : S"  [CHAR] " PARSE STASH ;
 
-
 ( *** Pictured numeric output *** )
 \ Adapted from Wil Baden's ThisForth
 VARIABLE HLD
@@ -143,6 +142,28 @@ VARIABLE HLD
 : U.        0 <# #S #> TYPE   SPACE ;
 : U.R       >R 0 <# #S #> R> OVER - SPACES  TYPE ;
 : ?         @ . ;
+
+( *** Save dictionary image *** )
+
+: ?IOERR  DUP IF CR ." ior = " DUP . THEN ABORT" File I/O Error" ;
+: WRITE ( a u fid -- )  WRITE-FILE ?IOERR ;
+: .ADDR ( a fid -- )  >R  S" /* " R@ WRITE  (.) R@ WRITE  S"  */ " R> WRITE ;
+
+: SAVE-IMAGE ( <filename> -- )
+    BL WORD COUNT W/O CREATE-FILE ?IOERR ( fid)
+    DUP 0 HERE ROT WRITE
+    CLOSE-FILE ?IOERR ;
+
+: SAVE ( <filename> -- )
+    BL WORD COUNT W/O CREATE-FILE ?IOERR ( fid)
+    HERE 0 DO
+        I 15 AND 0= IF  I OVER .ADDR  THEN
+        DUP I C@ 0 <# [CHAR] , HOLD #S #> ROT
+        I 15 AND 15 = IF WRITE-LINE ELSE WRITE-FILE THEN ?IOERR
+    LOOP
+    HERE 15 AND IF  DUP 0 0 ROT WRITE-LINE ?IOERR  THEN
+    CLOSE-FILE ?IOERR ;
+
 
 \ ===============================================
 \ stuff for core test

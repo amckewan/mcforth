@@ -1,5 +1,8 @@
 *sublime*
-fvm
-prims.inc
-dict.*
+fo
+forth
+*.inc
+*.img
+*.hex
+*.dump
 bye

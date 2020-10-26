@@ -8,6 +8,15 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+FILE *open_file(const char *str, int len, const char *mode) {
+    char *filename = malloc(len  + 1);
+    memcpy(filename, str, len);
+    filename[len] = 0;
+    FILE *file = fopen(filename, mode);
+    free(filename);
+    return file;
+}
+
 cell accept(cell addr_va, cell max) {
     char *line = readline(0);
     if (!line) return -1;

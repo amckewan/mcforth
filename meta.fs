@@ -56,7 +56,7 @@ CREATE EOL 1 C, 0A C,
     DUP TARGET-IMAGE HERE-T ROT WRITE-FILE ?ERR
     CLOSE-FILE ?ERR ;
 
-: WRITE-DICT \ write dict.c
+: WRITE-DICT-INC-X
     S" dict.inc" OPEN
     HERE-T 0 DO
         S" /* " WRITE  I 0 <# # # # # #> WRITE  S"  */ " WRITE
@@ -66,26 +66,22 @@ CREATE EOL 1 C, 0A C,
         NEWLINE
     10 +LOOP  CLOSE ;
 
-: PRINTABLE  DUP 20 < OVER 7F > OR IF DROP [CHAR] . THEN ;
-: WRITE-DICT-DUMP  \ write dump to dict.dump
-    S" dict.dump" OPEN
+: WRITE-DICT-INC
+    BASE @ DECIMAL
+    S" dict.inc" OPEN
     HERE-T 0 DO
-        I 0 <# [CHAR] : HOLD # # # # #> WRITE
         I THERE 10 0 DO
-            I 3 AND 0= IF S"  " WRITE THEN
-            COUNT 0 <# BL HOLD # # #> WRITE
+            COUNT 0 <# #S #> WRITE  S" ," WRITE
         LOOP DROP
-        I THERE 10 0 DO  COUNT 0 <# OVER PRINTABLE HOLD #> WRITE  LOOP DROP
         NEWLINE
-    10 +LOOP  CLOSE ;
+    10 +LOOP  CLOSE  BASE ! ;
 
-\ Save dictionary image to KERNEL.DCT
 : SAVE  ( -- )
     CLOSE
     CR ." Saving " BASE @ DECIMAL HERE-T . BASE ! ." bytes..."
     \ WRITE-DICT-IMG
-    WRITE-DICT
-    WRITE-DICT-DUMP
+    WRITE-DICT-IMG
+    WRITE-DICT-INC
     ." done" ;
 
 : ciao cr bye ;
@@ -195,6 +191,7 @@ VARIABLE OP  ( next opcode )
 : +LOOP     6 OP,  <RESOLVE  >RESOLVE ; IMMEDIATE
 
 \ Compile Strings into the Target
+: C"  HERE-T  [CHAR] " PARSE S,-T  0 C,-T ; \ c-style string
 : ",  [CHAR] " PARSE  DUP C,-T  S,-T  ALIGN  0 ?CODE ! ;
 
 : ."      09 OP,  ", ; IMMEDIATE
@@ -455,7 +452,48 @@ CODE ARGC ( -- n ) push argc; NEXT
 CODE ARGV ( n -- a n ) *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEXT
 
 
-\ ********** Input source processig **********
+( ********** File I/O ********** )
+
+C" r"  CONSTANT R/O
+C" w"  CONSTANT W/O
+C" w+" CONSTANT R/W
+
+CODE CREATE-FILE ( c-addr u fam -- fileid ior )
+    ` top = (cell)open_file(abs(S[1]), *S, abs(top));
+    ` *++S = top, top = top ? 0 : -1; NEXT
+
+CODE OPEN-FILE ( c-addr u fam -- fileid ior )
+    ` top = (cell)open_file(abs(S[1]), *S, abs(top));
+    ` *++S = top, top = top ? 0 : -1; NEXT
+
+CODE CLOSE-FILE ( fileid -- ior )
+    ` top = fclose((FILE*)top); NEXT
+
+CODE READ-FILE ( a u fid -- u' ior )
+    ` w = fread(abs(S[1]), 1, *S, (FILE*)top);
+    ` top = w == *S ? 0 : ferror((FILE*)top); *++S = w; NEXT
+
+CODE READ-LINE ( a u fid -- u' flag ior )
+    ` w = (cell)fgets(abs(S[1]), *S + 1, (FILE*)top);
+    ` if (!w) {
+    `   top = feof((FILE*)top) ? 0 : ferror((FILE*)top);
+    `   *S = S[1] = 0; NEXT
+    ` }
+    ` top = strlen((char*)w);
+    ` if (top > 0 && ((char*)w)[top-1] == '\n') --top;
+    ` S[1] = top, *S = TRUE, top = 0; NEXT
+
+CODE WRITE-FILE ( a u fid -- ior )
+    ` w = fwrite(abs(S[1]), 1, *S, (FILE*)top);
+    ` top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
+
+CODE WRITE-LINE ( a u fid -- ior )
+    ` w = fwrite(abs(S[1]), 1, *S, (FILE*)top);
+    ` if (w == *S) *S = 1, w = fwrite("\n", 1, 1, (FILE*)top);
+    ` top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
+
+
+( ********** Input source processig ********** )
 
 \ 8 CONSTANT SOURCE-CELLS ( sizeof )
 
@@ -480,19 +518,6 @@ CODE RESIZE     *S = rel(realloc(abs(*S), top)), top = *S ? 0 : -1; NEXT
 CODE FREE       if (top) free(abs(top)); top = 0; NEXT
 
 CODE NEW-STRING top = new_string(*S++, top); NEXT
-
-CODE OPEN-FILE ( c-addr u fam -- fileid ior ) {
-`   //printf("open a=0x%x, u=%d, fam=%d\n", S[1], *S, top);
-`   char *filename = abs(new_string(S[1], *S));
-`   FILE *file = fopen(filename, "r");
-`   //printf("open %s returned %p\n", filename, file);
-`   free(filename);
-`   *++S = (cell) file;
-`   top = file ? 0 : -1; NEXT }
-
-CODE CLOSE-FILE ( fileid -- ior )
-`   //printf("closing %p\n", (FILE*)top);
-`   top = fclose((FILE*)top); NEXT
 
 : FILE?  1+ $ 2 U< NOT ;
 
@@ -593,8 +618,7 @@ FORTH
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF  ."  ok"  THEN  AGAIN ;
 
 : INCLUDED  ( str len -- )
-    \ $ 0 OPEN-FILE .S EXIT ABORT" file not found" DROP EXIT
-    2DUP $ 0 OPEN-FILE ABORT" file not found"
+    2DUP R/O OPEN-FILE ABORT" file not found"
     >SOURCE  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
 
 : INCLUDE  BL WORD COUNT INCLUDED ;

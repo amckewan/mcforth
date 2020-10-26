@@ -64,5 +64,6 @@ cell parse_name(cell source_va, cell *start_addr);
 cell word(cell source_va, char c, cell here_va);
 
 // file.c
+FILE *open_file(const char *str, int len, const char *mode);
 cell accept(cell addr_va, cell max);
 cell refill(cell source_va);
