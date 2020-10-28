@@ -157,7 +157,9 @@ start:
     R = R0;
 
 next:
-//printf("I=%X op=%02X\n", I-m, *(I-m));
+    if (verbose > 2) printf("I=%X op=%02X R=%X %X %X (%d)\n",
+        rel(I), *I, rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
+
     w = *I++;
 exec:
     switch (w) {
@@ -182,14 +184,15 @@ byte dict[10000] = {
 int main(int argc, char *argv[]) {
     memcpy(m, dict, sizeof dict);
 
-    if (argc > 1 && !strcmp(argv[1], "-v")) {
-        verbose = 1;
+    if (argc > 1 && !strncmp(argv[1], "-v", 2)) {
+        verbose = strlen(argv[1]) - 1;
         for (int i = 2; i < argc; i++)
             argv[i-1] = argv[i];
         argc--;
     }
+    printf("verbose = %d\n", verbose);
 
-    if (verbose) {
+    if (verbose > 1) {
         printf("sizeof(source) = %u\n", sizeof(struct source));
         printf("m = %p, argv = %p, diff = %td\n", m, argv, (byte*)argv-m);
         byte *temp = malloc(100);

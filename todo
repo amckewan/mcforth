@@ -6,11 +6,13 @@ x create/does>
 . change branches to 1 byte
 . organize opcodes
 . implement optimizing compiler
+. rename 'source to 'in, base all input vars from that
 
 . make meta compiler all interpreting (no IMMEDIATE)
 . remove unecessary alignment
 . check for redefined words
 . make -vvv work
 
-
+or not...
 . immediate in a standard way (so find returns 1)
+

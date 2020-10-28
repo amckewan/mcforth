@@ -616,6 +616,7 @@ FORTH
 : TEST S" test.fs" INCLUDED ;
 
 : BOOT  [ HERE-T 0 !-T ]
+    SOURCE-STACK 'SOURCE !
     ARGC $ 1 ?DO  I ARGV INCLUDED  LOOP
     ." Hello" QUIT ;
 
