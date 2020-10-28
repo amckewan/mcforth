@@ -425,7 +425,7 @@ CODE TYPE  ( a n -- )   type(*S, top); pop2; NEXT
 : CR     $ 0A EMIT ;
 : SPACE  $ 20 EMIT ;
 
-CODE BYE  return;
+CODE BYE  return 0;
 
 CODE ACCEPT ( a n -- n )  top = accept(*S++, top);
 ` /* FIXME */ if (top < 0) exit(0); NEXT
@@ -433,7 +433,7 @@ CODE ACCEPT ( a n -- n )  top = accept(*S++, top);
 
 \ Variables shared with C code at fixed offsets
 04 CONSTANT H
-08 CONSTANT 'SOURCE
+08 CONSTANT 'IN
 0C CONSTANT BASE
 10 CONSTANT STATE
 14 CONSTANT CONTEXT
@@ -490,16 +490,16 @@ CODE WRITE-LINE ( a u fid -- ior )
 ALIGN  HERE-T 8 !-T  HERE-T 100 ( 20 8 *) ALLOT-T
 CONSTANT SOURCE-STACK
 
-: >IN           'SOURCE @ ;
+: >IN           'IN @ ;
 : #TIB          >IN     CELL+ ;
 : 'TIB          >IN $ 2 CELLS + ;
-: 'SOURCE-ID    >IN $ 3 CELLS + ;
+: SID           >IN $ 3 CELLS + ;
 : SOURCE-BUF    >IN $ 4 CELLS + ;
 : SOURCE-NAME   >IN $ 5 CELLS + ;
 : SOURCE-LINE   >IN $ 6 CELLS + ;
 
 : SOURCE        >IN CELL+ 2@ ;
-: SOURCE-ID     'SOURCE-ID @ ;
+: SOURCE-ID     SID @ ;
 
 : SOURCE-DEPTH  >IN SOURCE-STACK -  $ 5 RSHIFT ( 32 /) ;
 
@@ -513,8 +513,8 @@ CODE NEW-STRING top = new_string(*S++, top); NEXT
 
 : >SOURCE ( filename len fileid | -1 -- ) \ CR ." Including " DROP TYPE SPACE ;
     SOURCE-DEPTH $ 7 U> ABORT" nested too deep"
-    $ 20 'SOURCE +!
-    DUP 'SOURCE-ID !
+    $ 20 'IN +!
+    DUP SID !
     FILE? IF  $ 80 ALLOCATE DROP SOURCE-BUF !  NEW-STRING SOURCE-NAME !  THEN
     $ 0 SOURCE-LINE ! ;
 
@@ -525,12 +525,12 @@ CODE NEW-STRING top = new_string(*S++, top); NEXT
         SOURCE-BUF @ FREE DROP
         SOURCE-NAME @ FREE DROP
     THEN
-    $ -20 'SOURCE +! ;
+    $ -20 'IN +! ;
 
 CODE REFILL ( -- f )  push refill(SOURCE); NEXT
 
 VARIABLE TIB 80 ALLOT-T
-: QUERY  ( -- )  $ 0 'SOURCE-ID !  TIB SOURCE-BUF !  REFILL 0= IF BYE THEN ;
+: QUERY  ( -- )  $ 0 SID !  TIB SOURCE-BUF !  REFILL 0= IF BYE THEN ;
 
 \ ********** Numbers **********
 
@@ -616,7 +616,7 @@ FORTH
 : TEST S" test.fs" INCLUDED ;
 
 : BOOT  [ HERE-T 0 !-T ]
-    SOURCE-STACK 'SOURCE !
+    SOURCE-STACK 'IN !
     ARGC $ 1 ?DO  I ARGV INCLUDED  LOOP
     ." Hello" QUIT ;
 

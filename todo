@@ -2,9 +2,9 @@ x number using base
 x redefined warning
 x load file from command line
 x create/does>
-. build extended forth
-. change branches to 1 byte
+x build extended forth
 . organize opcodes
+. change branches to 1 byte
 . implement optimizing compiler
 . rename 'source to 'in, base all input vars from that
 

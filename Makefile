@@ -26,9 +26,9 @@ extended.inc: fo rth extend
 run: fo
 	@./fo
 
-test: fo rth test.fs
+test: forth test.fs
 	@echo "CR BYE" > bye
-	@./fo rth test.fs bye
+	@./forth test.fs bye
 
 testv: fo
 	@./fo -v

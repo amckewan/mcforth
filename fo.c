@@ -132,7 +132,7 @@ void words(cell v) {
     }
 }
 
-void fo(int argc, char *argv[]) {
+int run(int argc, char *argv[]) {
     cell *S, top;
     cell *R;
     byte *I;
@@ -167,7 +167,7 @@ exec:
 #include "prims.inc"
 
     default:
-        printf("Invalid opcode 0x%X\n", w);
+        printf("Invalid opcode %X\n", w);
         goto abort;
     }
 }
@@ -190,7 +190,6 @@ int main(int argc, char *argv[]) {
             argv[i-1] = argv[i];
         argc--;
     }
-    printf("verbose = %d\n", verbose);
 
     if (verbose > 1) {
         printf("sizeof(source) = %u\n", sizeof(struct source));
@@ -199,8 +198,7 @@ int main(int argc, char *argv[]) {
         printf("m = %p, malloc = %p, diff = %td\n", m, temp, temp-m);
     }
 
-    fo(argc, argv);
-    return 0;
+    return run(argc, argv);
 
     const char *filename = "dict.img";
     if (argc > 1) filename = argv[1];
@@ -212,6 +210,5 @@ int main(int argc, char *argv[]) {
     fread(m, 1, 0x2000, f);
     fclose(f);
 
-    fo(argc, argv);
-    return 0;
+    return run(argc, argv);
 }
