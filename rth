@@ -1,8 +1,8 @@
 5 5 + BASE !
 COMPILER
 : \  SOURCE >IN ! DROP ;
-: (  41 PARSE 2DROP ;
-: .( 41 PARSE TYPE ;
+: (  ')' PARSE 2DROP ;
+: .( ')' PARSE TYPE ;
 FORTH
 : \  [COMPILE] \ ;
 : (  [COMPILE] ( ;
@@ -128,7 +128,8 @@ VARIABLE #SBUF
 \ Adapted from Wil Baden's ThisForth
 VARIABLE HLD
 : PAD       HERE 80 + ;
-: >char     dup 10 < not if 10 - [char] A + [char] 0 - then [char] 0 + ;
+: >char1     dup 10 < not if 10 - 'A' + '0' - then '0' + ;
+: >char     dup 10 < not if [ 10 'A' - '0' + ] literal - then '0' + ;
 : <#        PAD HLD ! ;
 : HOLD      HLD @ 1 -  DUP HLD !  C! ;
 : HOLDS     BEGIN DUP WHILE 1- 2DUP + C@ HOLD REPEAT 2DROP ;

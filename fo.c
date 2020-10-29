@@ -71,16 +71,27 @@ int digit(char c) {
 
 int number(const char *str, cell *num) {
     int len = *str++;
+    int base = BASE;
     int n = 0;
     int sign = 1;
+    if (len == 3 && *str == '\'' && str[2] == '\'') {
+        *num = str[1];
+        return TRUE;
+    }
+    if (len > 1) {
+        if (*str == '#') base = 10, str++, len--;
+        else if (*str == '$') base = 16, str++, len--;
+        else if (*str == '%') base = 2, str++, len--;
+    }
     if (len > 1 && *str == '-') {
         str++, len--;
         sign = -1;
     }
+    if (len == 0) return FALSE;
     for (int i = 0; i < len; i++) {
         int d = digit(str[i]);
-        if (d < 0 || d >= BASE) return FALSE;
-        n = n * BASE + d;
+        if (d < 0 || d >= base) return FALSE;
+        n = n * base + d;
     }
     *num = n * sign;
     return TRUE;
