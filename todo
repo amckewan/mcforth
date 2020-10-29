@@ -8,6 +8,8 @@ x build extended forth
 . implement optimizing compiler
 . rename 'source to 'in, base all input vars from that
 
+. align create and variable
+
 . make meta compiler all interpreting (no IMMEDIATE)
 . remove unecessary alignment
 . check for redefined words

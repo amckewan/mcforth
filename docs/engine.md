@@ -53,9 +53,9 @@ opcode | function | operands
 5 | loop | address
 6 | +loop | address
 7 | lit | value
-8 | variable
-9 | create
-A | S" | counted string
+8 | dovar | op, data
+9 | docreate | op, I for does, data
+A | s" | counted string
 B | ." | counted string
 C | abort" | counted string
 D | unused

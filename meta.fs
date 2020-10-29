@@ -80,7 +80,7 @@ CREATE EOL 1 C, 0A C,
 \ Compiler
 
 \ Opcodes
-2F CONSTANT <LIT>
+7 CONSTANT <LIT>
 
 VARIABLE ?CODE
 : LATEST  ( -- n )  ?CODE @ C@-T ;
@@ -182,9 +182,9 @@ VARIABLE OP  ( next opcode )
 : C"  HERE-T  [CHAR] " PARSE S,-T  0 C,-T ; \ c-style string
 : ",  [CHAR] " PARSE  DUP C,-T  S,-T  ALIGN  0 ?CODE ! ;
 
-: ."      09 OP,  ", ; IMMEDIATE
-: S"      0A OP,  ", ; IMMEDIATE
-: ABORT"  0B OP,  ", ; IMMEDIATE
+: S"      A OP,  ", ; IMMEDIATE
+: ."      B OP,  ", ; IMMEDIATE
+: ABORT"  C OP,  ", ; IMMEDIATE
 
 \ Defining Words
 \ : EQU CONSTANT ;
@@ -201,7 +201,8 @@ VARIABLE OP  ( next opcode )
 
 
 \ **********************************************************************
-\ fo Kernel
+\ Start of Kernel
+\ **********************************************************************
 
 ``
 #define push *--S = top, top =
@@ -209,46 +210,42 @@ VARIABLE OP  ( next opcode )
 #define pop2 top = S[1], S += 2
 #define pop3 top = S[2], S += 3
 #define LOGICAL ? -1 : 0
-#define NEXT ; goto next;
+
+#define NEXT        goto next;
+#define LIT         *(cell*)I
+#define OFFSET      *(cell*)I
+#define BRANCH      I += OFFSET
+#define NOBRANCH    I += CELL
 ``
 
 200 DP-T !
-\ ( cold start: )  FF OP, 0 ,-T
 
 0 OP!
 
-OP: EXIT      Exit: I = (byte*) *R++; NEXT
-OP: CALL      w = *(cell*)I; *--R = (cell)I + CELL; I = m + w; NEXT
+OP: EXIT        Exit: I = (byte*) *R++; NEXT
+OP: CALL        w = OFFSET; *--R = (cell)I + CELL; I = m + w; NEXT
+OP: BRANCH      BRANCH; NEXT
+OP: DO          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
+OP: ?DO         if (top == *S) BRANCH;
+                ` else *--R = (cell)I + OFFSET,
+                `      *--R = *S, *--R = top - *S, NOBRANCH;
+                ` S++, pop; NEXT
+OP: LOOP        if ((++ *R) == 0) NOBRANCH, R += 3; else BRANCH; NEXT
+OP: +LOOP       w = *R, *R += top;
+                ` if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
+                ` else BRANCH; pop; NEXT
+OP: LIT         push LIT; I += CELL; NEXT
 
-` #define OFFSET    *(cell*)I
-` #define BRANCH    I += OFFSET
-` #define NOBRANCH  I += CELL
-
-OP: BRANCH    BRANCH; NEXT
-OP: DO        *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop;
-`                   //printf("DO R=%p I=%d %d\n", R, R[0], R[1]);
-`                   NOBRANCH; NEXT
-OP: ?DO       if (top == *S) BRANCH;
-`                   else *--R = (cell)I + OFFSET,
-`                       *--R = *S, *--R = top - *S, NOBRANCH;
-`                   S++, pop; NEXT
-OP: LOOP      //printf("LOOP R=%p I=%d %d\n", R, R[0], R[1]);
-`                   if ((++ *R) == 0) NOBRANCH, R += 3;
-`                   else BRANCH; NEXT
-OP: +LOOP     w = *R, *R += top;
-`                   if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
-`                   else BRANCH; pop; NEXT
-
-\ OP:  LIT    push *(cell*)I; I += CELL; NEXT
-OP: DLIT      push *I++; push *I++; NEXT
-( DOVAR must be 8!)
-OP: DOVAR     push (uchar*)I++ - m; goto Exit;
-OP: ."        I = dotq(I); NEXT
-OP: S"        push rel(I) + 1; push *I; I = litq(I); NEXT
-OP: ABORT"    if (top) {
-                    `   show_error((char*)I, abs(HERE), abs(SOURCE));
-                    `   goto abort;
-                    ` } I = litq(I); pop; NEXT
+OP: DOVAR       push (byte*)I++ - m; goto Exit;
+OP: DOCREATE    push I + CELL - m; w = OFFSET; if (!w) goto Exit; I = abs(w); NEXT
+OP: S"          push rel(I) + 1; push *I; I = litq(I); NEXT
+OP: ."          I = dotq(I); NEXT
+OP: ABORT"      if (!top) I = litq(I); pop; NEXT
+                ` show_error((char*)I, abs(HERE), abs(SOURCE));
+                ` goto abort;
+\ OP:
+\ OP:
+\ OP:
 
 10 OP!
 
@@ -272,9 +269,6 @@ CODE NOP        NEXT
 OP: LIT+   top += *I++; NEXT
 OP: LIT-    top -= *I++; NEXT
 OP: LIT-AND  top &= *I++; NEXT
-
-2F OP!
-OP: LIT    push *(cell*)I; I += CELL; NEXT
 
 40 OP!
 
@@ -581,9 +575,9 @@ CODE DUMP  ( a n -- )  dump(*S++, top); pop; NEXT
 
 : COMPILE,  ( xt -- )
     DUP C@ $ 68 $ 70 WITHIN OVER 1+ C@ 0= AND IF  C@ C, EXIT  THEN
-    $ FF C, , ;
+    $ 1 C, , ;
 COMPILER
-: LITERAL  $ 2F C, , ;
+: LITERAL  $ 7 C, , ;
 FORTH
 : EXECUTE  >ABS >R ;
 \ CODE EXECUTE  I = m + top, pop; NEXT
@@ -641,26 +635,10 @@ VARIABLE LAST ( nfa)
     HERE LAST !  BL WORD C@ 1+ ALLOT  ALIGN ;
 
 : CONSTANT  HEADER  [COMPILE] LITERAL  $ 0 OP, ;
-: VARIABLE  HEADER  $ 8 OP,  $ 0 , ;
+: VARIABLE  HEADER  $ 8 OP, ( ALIGN) $ 0 , ;
 
-\ | opc | I for does | data
-\ OP: /* DOVAR */     push (uchar*)I++ - m; goto Exit;
-F0 OP!
-OP: docreate
-` push I + CELL - m;
-` w = *(cell*)I;
-` if (!w) goto Exit; I = abs(w); NEXT
-
-\ TODO: move me!
-FF OP!
-OP: call
-    ` w = *(cell*)I;
-    ` //printf("call 0x%x\n", w);
-    ` *--R = (cell)I + CELL;
-    ` I = (opcode*)(m + w);
-    ` NEXT
-
-: CREATE  HEADER $ F0 C, $ 0 , ;
+\ | opc | align | I for does | data
+: CREATE  HEADER $ 9 C, ( ALIGN) $ 0 , ;
 
 : PREVIOUS  ( -- nfa count )  CONTEXT @ HASH @  CELL+ DUP C@ ;
 : DOES>   R> >REL  PREVIOUS $ 1F AND + 1+ ALIGNED 1+ ! ;
@@ -674,9 +652,9 @@ COMPILER
 T: ;  SMUDGE  [COMPILE] EXIT  [COMPILE] [ ;
 : [COMPILE]  $ 2 -' ABORT" ?" COMPILE, ;
 
-: ."      $ 9 OP,  ", ;
 : S"      $ A OP,  ", ;
-: ABORT"  $ B OP,  ", ;
+: ."      $ B OP,  ", ;
+: ABORT"  $ C OP,  ", ;
 FORTH
 
 : ]  $ -1 STATE ! ;
