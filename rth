@@ -70,10 +70,10 @@ VARIABLE ?CODE
 ( *** Branching and Looping *** )
 : ?CONDITION  INVERT ABORT" unbalanced" ;
 : MARK  ( -- here )  HERE  0 ?CODE ! ;
-: >MARK      ( -- f addr )   TRUE  MARK   0 , ;
-: >RESOLVE   ( f addr -- )   MARK  OVER -  SWAP !   ?CONDITION ;
+: >MARK      ( -- f addr )   TRUE  MARK   0 C, ;
+: >RESOLVE   ( f addr -- )   MARK  OVER -  SWAP C!   ?CONDITION ;
 : <MARK      ( -- f addr )   TRUE  MARK ;
-: <RESOLVE   ( f addr -- )   MARK  - ,   ?CONDITION ;
+: <RESOLVE   ( f addr -- )   MARK  - C,   ?CONDITION ;
 
 \ HEX ( does nothing)
 : CONDITION  ( optimizer todo )

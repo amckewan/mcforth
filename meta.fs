@@ -83,13 +83,14 @@ CREATE EOL 1 C, 0A C,
 7 CONSTANT <LIT>
 
 VARIABLE ?CODE
-: LATEST  ( -- n )  ?CODE @ C@-T ;
-: PATCH  ( n -- )  ?CODE @ C!-T ;
+: LATEST ( -- n )  ?CODE @ DUP IF C@-T ELSE INVERT THEN ;
+: PATCH  ( n -- )  ?CODE @ DUP 0= ABORT" patch?" C!-T ;
 : OP,  ( opcode -- )  HERE-T ?CODE !  C,-T ;
 
 : COMPILE,  ( addr -- )
-    DUP C@-T 5F >  OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
-    1 OP, ,-T ;
+    ?CODE @ 0< 0= IF
+        DUP C@-T 5F >  OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
+    THEN  1 OP, ,-T ( call ) ;
 
 : EXIT  0 OP, ; IMMEDIATE
 
@@ -141,12 +142,11 @@ VARIABLE OP  ( next opcode )
 
 \ Define Meta Branching Constructs
 : ?CONDITION  INVERT ABORT" unbalanced" ;
-: MARK  ( -- here )  HERE-T  0 ?CODE ! ;
-: OFFSET  ( to from -- offset )  - ;
-: >MARK      ( -- f addr )   TRUE  MARK   0 ,-T ;
-: >RESOLVE   ( f addr -- )   MARK  OVER OFFSET  SWAP !-T   ?CONDITION ;
-: <MARK      ( -- f addr )   TRUE  MARK ;
-: <RESOLVE   ( f addr -- )   MARK  OFFSET ,-T   ?CONDITION ;
+: MARK      ( -- here )     HERE-T  0 ?CODE ! ;
+: >MARK     ( -- f addr )   TRUE  MARK   0 C,-T ;
+: >RESOLVE  ( f addr -- )   MARK  OVER -  SWAP C!-T   ?CONDITION ;
+: <MARK     ( -- f addr )   TRUE  MARK ;
+: <RESOLVE  ( f addr -- )   MARK  - C,-T   ?CONDITION ;
 
 : CONDITION  ( todo optimizer )
     58 OP, ;
@@ -207,15 +207,15 @@ VARIABLE OP  ( next opcode )
 
 #define NEXT        goto next;
 #define LIT         *(cell*)I
-#define OFFSET      *(cell*)I
+#define OFFSET      *(signed char*)I
 #define BRANCH      I += OFFSET
-#define NOBRANCH    I += CELL
+#define NOBRANCH    I += 1
 ``
 
 0 OP! ( special functions )
 
 OP: EXIT        Exit: I = (byte*) *R++; NEXT
-OP: CALL        w = OFFSET; *--R = (cell)I + CELL; I = m + w; NEXT
+OP: CALL        w = LIT; *--R = (cell)I + CELL; I = m + w; NEXT
 OP: BRANCH      BRANCH; NEXT
 OP: DO          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
 OP: ?DO         if (top == *S) BRANCH;

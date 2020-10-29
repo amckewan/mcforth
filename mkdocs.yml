@@ -4,4 +4,6 @@ nav:
   - About: about.md
   - Internals: internals.md
   - Compiler: compiler.md
+  - To Do: todo.md
+
 #theme: readthedocs
