@@ -32,7 +32,7 @@ VARIABLE DP-T
 
 : tdump  target-image here-t dump ;
 
-\ Output to kernel.c
+\ Output to prims.inc
 : ?ERR  ABORT" file I/O error" ;
 
 VARIABLE OUT
@@ -88,11 +88,11 @@ VARIABLE ?CODE
 : OP,  ( opcode -- )  HERE-T ?CODE !  C,-T ;
 \ : ,A  ( addr -- )   OP, ;
 
-: COMPILE,  ( op/addr -- )
+: COMPILE,  ( addr -- )
     DUP C@-T 68 70 WITHIN OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
+    1 OP, ,-T ;
 
-    DUP 200 < ( 0 AND ( ??) IF  OP,  ELSE  FF OP, ,-T  THEN ;
-
+\    DUP 200 < ( 0 AND ( ??) IF  OP,  ELSE  FF OP, ,-T  THEN ;
 \   OP, ;  ( non-optimizing )
 \   DUP 200 < IF  OP,  ELSE  DUP @-T  ( adr op )
 \   OVER 2 CELLS + @-T 0=  OVER 20 40 WITHIN AND
@@ -123,24 +123,22 @@ CREATE CONTEXT  1 , 0 , ( FORTH ) 0 , ( COMPILER )
    >IN @ HEADER >IN !  CREATE IMMEDIATE  HERE-T ,
    DOES>  STATE @ 0= ABORT" target word!"  @ COMPILE, ;
 
-: RECREATE   ( -- )
-   >IN @   TARGET-CREATE   >IN ! ;
-
-\ Generate fo Primatives
+\ Generate primatives
 : ?COMMENT  ( allow Forth comment after OP: etc. )
     >IN @  BL WORD COUNT S" (" COMPARE
     IF  >IN !  ELSE  DROP  [COMPILE] (  THEN ;
 
-: C-COMMENT  S" /* " WRITE  >IN @  BL WORD COUNT WRITE  >IN !  S"  */ " WRITE ;
+: C-COMMENT  S" /* " WRITE  BL WORD COUNT WRITE  S"  */ " WRITE ;
 VARIABLE OP  ( next opcode )
 : OP!  OP ! ;
 : OP:  ( output opcode case statement )
-    S" case 0x" WRITE  OP @ 0 <# # # # #> WRITE  S" :  " WRITE
+    OP @ FF > ABORT" opcodes exhausted"
+    C-COMMENT  S" case 0x" WRITE  OP @ 0 <# # # #> WRITE  S" : " WRITE
     ?COMMENT ` ( copy rest of line )  1 OP +! ;
 
 : (PRIM)   OP @ OP,  [COMPILE] EXIT  OP: ;
-: PRIM   C-COMMENT  HEADER (PRIM) ;  ( in target only )
-: CODE   C-COMMENT  TARGET-CREATE (PRIM) ;  ( in host and target)
+: PRIM   >IN @ HEADER        >IN ! (PRIM) ;  ( in target only )
+: CODE   >IN @ TARGET-CREATE >IN ! (PRIM) ;  ( in host and target)
 
 : BINARY  ( op -- )
     CREATE , IMMEDIATE  DOES> @ OP, ;
@@ -219,34 +217,35 @@ VARIABLE OP  ( next opcode )
 
 0 OP!
 
-OP: /* EXIT */  Exit:  I = (opcode*) *R++; NEXT
-CODE EXECUTEX       w = top; pop; goto exec;
+OP: EXIT      Exit: I = (byte*) *R++; NEXT
+OP: CALL      w = *(cell*)I; *--R = (cell)I + CELL; I = m + w; NEXT
 
 ` #define OFFSET    *(cell*)I
 ` #define BRANCH    I += OFFSET
 ` #define NOBRANCH  I += CELL
 
-OP: /* BRANCH */    BRANCH; NEXT
-OP: /* DO */        *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop;
+OP: BRANCH    BRANCH; NEXT
+OP: DO        *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop;
 `                   //printf("DO R=%p I=%d %d\n", R, R[0], R[1]);
 `                   NOBRANCH; NEXT
-OP: /* ?DO */       if (top == *S) BRANCH;
+OP: ?DO       if (top == *S) BRANCH;
 `                   else *--R = (cell)I + OFFSET,
 `                       *--R = *S, *--R = top - *S, NOBRANCH;
 `                   S++, pop; NEXT
-OP: /* LOOP */      //printf("LOOP R=%p I=%d %d\n", R, R[0], R[1]);
+OP: LOOP      //printf("LOOP R=%p I=%d %d\n", R, R[0], R[1]);
 `                   if ((++ *R) == 0) NOBRANCH, R += 3;
 `                   else BRANCH; NEXT
-OP: /* +LOOP */     w = *R, *R += top;
+OP: +LOOP     w = *R, *R += top;
 `                   if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
 `                   else BRANCH; pop; NEXT
 
-OP: /* DLIT */      push *I++; push *I++; NEXT
+\ OP:  LIT    push *(cell*)I; I += CELL; NEXT
+OP: DLIT      push *I++; push *I++; NEXT
 ( DOVAR must be 8!)
-OP: /* DOVAR */     push (uchar*)I++ - m; goto Exit;
-OP: /* ." */        I = dotq(I); NEXT
-OP: /* S" */        push rel(I) + 1; push *I; I = litq(I); NEXT
-OP: /* abort" */    if (top) {
+OP: DOVAR     push (uchar*)I++ - m; goto Exit;
+OP: ."        I = dotq(I); NEXT
+OP: S"        push rel(I) + 1; push *I; I = litq(I); NEXT
+OP: ABORT"    if (top) {
                     `   show_error((char*)I, abs(HERE), abs(SOURCE));
                     `   goto abort;
                     ` } I = litq(I); pop; NEXT
@@ -270,12 +269,12 @@ CODE *          top *= *S++; NEXT
 CODE /          top = *S++ / top; NEXT
 CODE NOP        NEXT
 
-OP: ( LIT + )   top += *I++; NEXT
-OP: ( LIT - )   top -= *I++; NEXT
-OP: ( LIT AND ) top &= *I++; NEXT
+OP: LIT+   top += *I++; NEXT
+OP: LIT-    top -= *I++; NEXT
+OP: LIT-AND  top &= *I++; NEXT
 
 2F OP!
-OP:  ( LIT )    push *(cell*)I; I += CELL; NEXT
+OP: LIT    push *(cell*)I; I += CELL; NEXT
 
 40 OP!
 
@@ -288,14 +287,14 @@ CODE >          top = (*S++ > top) LOGICAL; NEXT
 CODE U<         top = ((ucell)*S++ < (ucell)top) LOGICAL; NEXT
 CODE U>         top = ((ucell)*S++ > (ucell)top) LOGICAL; NEXT
 
-OP: /* 0<> */   top = (top != 0) LOGICAL; NEXT
-OP: /* 0>= */   top = (top >= 0) LOGICAL; NEXT
-OP: /* 0<= */   top = (top <= 0) LOGICAL; NEXT
-OP: /* <>  */   top = (*S++ != top) LOGICAL; NEXT
-OP: /* >=  */   top = (*S++ >= top) LOGICAL; NEXT
-OP: /* <=  */   top = (*S++ <= top) LOGICAL; NEXT
-OP: /* U>= */   top = ((ucell)*S++ >= (ucell)top) LOGICAL; NEXT
-OP: /* U<= */   top = ((ucell)*S++ <= (ucell)top) LOGICAL; NEXT
+OP: 0<>   top = (top != 0) LOGICAL; NEXT
+OP: 0>=   top = (top >= 0) LOGICAL; NEXT
+OP: )<=   top = (top <= 0) LOGICAL; NEXT
+OP: <>   top = (*S++ != top) LOGICAL; NEXT
+OP: >=   top = (*S++ >= top) LOGICAL; NEXT
+OP: <=   top = (*S++ <= top) LOGICAL; NEXT
+OP: U>=   top = ((ucell)*S++ >= (ucell)top) LOGICAL; NEXT
+OP: U<=   top = ((ucell)*S++ <= (ucell)top) LOGICAL; NEXT
 
 50 OP!  ( cond IF, must be in the same order as above )
 
@@ -303,23 +302,23 @@ OP: /* U<= */   top = ((ucell)*S++ <= (ucell)top) LOGICAL; NEXT
 ` #define IF1(cond) IF(cond); pop; NEXT
 ` #define IF2(cond) IF(cond); pop2; NEXT
 
-OP: /* 0= IF */     IF1(top == 0)
-OP: /* 0< IF */     IF1(top < 0)
-OP: /* 0> IF */     IF1(top > 0)
-OP: /* = IF */      IF2(*S == top)
-OP: /* < IF */      IF2(*S < top)
-OP: /* > IF */      IF2(*S > top)
-OP: /* U< IF */     IF2((ucell)*S < (ucell)top)
-OP: /* U> IF */     IF2((ucell)*S > (ucell)top)
+OP: 0=IF     IF1(top == 0)
+OP: 0<IF     IF1(top < 0)
+OP: 0>IF     IF1(top > 0)
+OP: =IF      IF2(*S == top)
+OP: <IF      IF2(*S < top)
+OP: >IF      IF2(*S > top)
+OP: U<IF     IF2((ucell)*S < (ucell)top)
+OP: U>IF     IF2((ucell)*S > (ucell)top)
 
-OP: /* 0<> IF */    IF1(top != 0)
-OP: /* 0>= IF */    IF1(top >= 0)
-OP: /* 0<= IF */    IF1(top <= 0)
-OP: /* <> IF */     IF2(*S != top)
-OP: /* >= IF */     IF2(*S >= top)
-OP: /* <= IF */     IF2(*S <= top)
-OP: /* U>= IF */    IF2((ucell)*S >= (ucell)top)
-OP: /* U<= IF */    IF2((ucell)*S <= (ucell)top)
+OP: 0<>IF    IF1(top != 0)
+OP: 0>=IF    IF1(top >= 0)
+OP: 0<=IF    IF1(top <= 0)
+OP: <>IF     IF2(*S != top)
+OP: >=IF     IF2(*S >= top)
+OP: <=IF     IF2(*S <= top)
+OP: U>=IF    IF2((ucell)*S >= (ucell)top)
+OP: U<=IF    IF2((ucell)*S <= (ucell)top)
 
 60 OP!
 CODE DROP       pop; NEXT
@@ -573,8 +572,6 @@ CODE .S ( -- )
 CODE WORDS  ( -- )  words(M[CONTEXT]); NEXT
 CODE DUMP  ( a n -- )  dump(*S++, top); pop; NEXT
 
-CODE LIMIT  push sizeof m; NEXT
-
 : HERE  H @ ;
 : ALLOT  H +! ;
 : ,   H @ !   $ 4 H +! ;
@@ -649,14 +646,14 @@ VARIABLE LAST ( nfa)
 \ | opc | I for does | data
 \ OP: /* DOVAR */     push (uchar*)I++ - m; goto Exit;
 F0 OP!
-OP: /* docreate */
+OP: docreate
 ` push I + CELL - m;
 ` w = *(cell*)I;
 ` if (!w) goto Exit; I = abs(w); NEXT
 
 \ TODO: move me!
 FF OP!
-OP: /* call */
+OP: call
     ` w = *(cell*)I;
     ` //printf("call 0x%x\n", w);
     ` *--R = (cell)I + CELL;

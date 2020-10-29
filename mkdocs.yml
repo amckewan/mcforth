@@ -2,4 +2,5 @@ site_name: McForth
 nav:
   - Home: index.md
   - About: about.md
+  - Engine: engine.md
 #theme: readthedocs

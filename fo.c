@@ -171,9 +171,7 @@ next:
     if (verbose > 2) printf("I=%X op=%02X R=%X %X %X (%d)\n",
         rel(I), *I, rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
 
-    w = *I++;
-exec:
-    switch (w) {
+    switch (w = *I++) {
 
 #include "prims.inc"
 
