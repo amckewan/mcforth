@@ -21,25 +21,29 @@ include see.info
 hex
 
 : .b  base @ hex  swap 0 <# # # #> type space  base ! ;
+: .name ( xt -- ) >name count 1f and type space ;
 
-: .w  ( a -- a+2 ) dup w@ . 2 + ;
+: .call  ( a -- a+2 ) dup w@ ( dup . ) .name 2 + ;
 : .branch ( a -- a+1 )  dup dup c@ dup 80 and if ffffff00 or then + . 1+ ;
 : .lit  dup ? cell + ;
+: .slit  count 2dup type '"' emit space + ;
 
 \ now we need to know how many bytes of operand per opcode. hmm...
 : .operands ( a opc -- a' )
     dup 7 = over 20 30 within or if drop .lit exit then
-    dup 8 = if drop  .w  exit then
-    dup 50 60 within if drop .branch exit then
+    dup A D within if drop .slit exit then
+    dup 8 = if drop  .call  exit then
+    dup 2 = over 50 60 within or over 3 7 within or if drop .branch exit then
     \ case?
     drop
 ;
 
 : (see) ( xt -- )
+    \ dup >name count 1f and type
     begin
-        cr dup . dup count ( a a+1 op )
-        dup .b dup .op .operands
-        swap c@ 0=
+        dup . dup count ( a a+1 op )
+        dup .b dup .op .operands cr
+        swap c@ dup 0= swap 10 20 within or
     until drop ;
 
 : see ' (see) ;
