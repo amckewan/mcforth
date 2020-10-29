@@ -5,4 +5,5 @@ forth
 *.img
 *.hex
 *.dump
+*.info
 bye

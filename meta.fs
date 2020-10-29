@@ -39,7 +39,6 @@ VARIABLE DP-T
 
 VARIABLE OUT
 : OPEN   R/W CREATE-FILE ?ERR OUT ! ;
-: CLOSE  OUT @ CLOSE-FILE ?ERR ;
 : WRITE  ( adr len -- )  OUT @ WRITE-FILE ?ERR ;
 
 S" prims.inc" OPEN
@@ -52,6 +51,18 @@ CREATE EOL 1 C, 0A C,
         BL WORD COUNT S" ``" COMPARE WHILE
         SOURCE WRITE NEWLINE
       REPEAT ;
+
+\ write decompiler information
+variable seer
+s" see.info" w/o create-file ?err seer !
+: info ( opc -- )
+    base @ decimal swap
+    0 <# #S #> seer @ write-file ?err
+    s"  OP " seer @ write-file ?err
+    >in @  bl word count seer @ write-line ?err  >in !
+    base ! ;
+
+: CLOSE  OUT @ CLOSE-FILE ?ERR ;
 
 : WRITE-DICT-IMG
     S" kernel.img" R/W CREATE-FILE ?ERR
@@ -69,9 +80,9 @@ CREATE EOL 1 C, 0A C,
     10 +LOOP  CLOSE  BASE ! ;
 
 : SAVE  ( -- )
+    seer @ close-file ?err
     CLOSE
     CR ." Saving " BASE @ DECIMAL HERE-T . BASE ! ." bytes..."
-    \ WRITE-DICT-IMG
     WRITE-DICT-IMG
     WRITE-DICT-INC
     ." done" ;
@@ -128,6 +139,7 @@ VARIABLE OP  ( next opcode )
 : OP!  OP ! ;
 : OP:  ( output opcode case statement )
     OP @ FF > ABORT" opcodes exhausted"
+    OP @ info
     C-COMMENT  S" case 0x" WRITE  OP @ 0 <# # # #> WRITE  S" : " WRITE
     ?COMMENT ` ( copy rest of line )  1 OP +! ;
 
@@ -233,7 +245,7 @@ OP: +LOOP       w = *R, *R += top;
                 ` else BRANCH; pop; NEXT
 OP: LIT         push LIT; I += CELL; NEXT
 
-OP: CALL2       w = *(unsigned short*)I; *--R = (cell)I + 2; I = m + w; NEXT
+OP: CALL        w = *(unsigned short*)I; *--R = (cell)I + 2; I = m + w; NEXT
 OP: unused      NEXT
 OP: S"          push rel(I) + 1; push *I; I = litq(I); NEXT
 OP: ."          I = dotq(I); NEXT

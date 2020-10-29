@@ -1,4 +1,47 @@
 ( mcforth decompiler )
+decimal
 
 \ cheesy decompiler
-: see ' >name 32 dump ;
+: cee ' >name 32 dump ;
+
+\ build opcode table
+create ops 256 cells allot
+       ops 256 cells erase
+
+: op ( op )  here swap cells ops + !  bl word c@ 1+ allot ;
+
+include see.info
+
+: op? ( op -- c-str t | 0 ) cells ops + @ ?dup ;
+
+: .op ( op )  op? if count type else ." unused" then space ;
+
+: .ops  256 0 do  i op? if i . count type space then  loop ;
+
+hex
+
+: .b  base @ hex  swap 0 <# # # #> type space  base ! ;
+
+: .w  ( a -- a+2 ) dup w@ . 2 + ;
+: .branch ( a -- a+1 )  dup dup c@ dup 80 and if ffffff00 or then + . 1+ ;
+: .lit  dup ? cell + ;
+
+\ now we need to know how many bytes of operand per opcode. hmm...
+: .operands ( a opc -- a' )
+    dup 7 = over 20 30 within or if drop .lit exit then
+    dup 8 = if drop  .w  exit then
+    dup 50 60 within if drop .branch exit then
+    \ case?
+    drop
+;
+
+: (see) ( xt -- )
+    begin
+        cr dup . dup count ( a a+1 op )
+        dup .b dup .op .operands
+        swap c@ 0=
+    until drop ;
+
+: see ' (see) ;
+
+decimal

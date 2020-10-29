@@ -58,6 +58,7 @@ FORTH
 : CHARS  ; \ useless
 : CHAR+  1 + ; \ almost useless
 
+: ERASE  0 FILL ;
 : PLACE  ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;
 
 \ : DOES>  COMPILE (DOES>)  [COMPILE] EXIT ; IMMEDIATE

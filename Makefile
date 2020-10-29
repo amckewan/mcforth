@@ -19,7 +19,7 @@ prims.inc kernel.inc: meta.fs
 	gforth meta.fs -e ciao
 	hexdump -C kernel.img > kernel.hex
 
-extended.inc: fo rth extend
+extended.inc: fo rth extend lib/see
 	./fo extend
 	hexdump -C extended.img > extended.hex
 
