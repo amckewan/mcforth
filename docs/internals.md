@@ -48,7 +48,7 @@ Opcodes 60-FF have no operands and are always inlined.
 Page | Description | Example
 ---- | ----------  | -------
 0 | special functions | call, exit, loop, dovar
-1 | reserved | in case we want more stuff
+1 | runtime | dovar, docreate
 2 | lit op | 5 +
 3 | lit cond | 5 <
 4 | lit cond branch | 5 < if
@@ -78,8 +78,13 @@ D | unused
 E | unused
 F | jump | address
 
+## Page 1: Runtime
 
-## Page 1: Reserved
+opcode | function | operands
+------ | -------- | -----
+10 | dovar | op, align, value
+11 | docreate | op, align, I for DOES>, data
+12 | dovalue | op, align value (a fetching variable)
 
 ## Page 2: Literals
 

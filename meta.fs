@@ -172,16 +172,16 @@ VARIABLE OP  ( next opcode )
 : C"  HERE-T  [CHAR] " PARSE S,-T  0 C,-T ; \ c-style string
 : ",  [CHAR] " PARSE  DUP C,-T  S,-T  ALIGN  0 ?CODE ! ;
 
-: S"      A OP,  ", ; IMMEDIATE
-: ."      B OP,  ", ; IMMEDIATE
-: ABORT"  C OP,  ", ; IMMEDIATE
+: S"      0A OP,  ", ; IMMEDIATE
+: ."      0B OP,  ", ; IMMEDIATE
+: ABORT"  0C OP,  ", ; IMMEDIATE
 
 \ Defining Words
 \ : EQU CONSTANT ;
 : ;_  [COMPILE] ; ; IMMEDIATE
 
 : CONSTANT  TARGET-CREATE  [COMPILE] LITERAL  [COMPILE] EXIT ;
-: VARIABLE  TARGET-CREATE  8 OP,  0 ,-T ;
+: VARIABLE  TARGET-CREATE  10 OP, ALIGN 0 ,-T ;
 
 : T:  HEADER   0 ?CODE !  ] ;  \ to create words with no host header
 
@@ -210,11 +210,12 @@ VARIABLE OP  ( next opcode )
 #define OFFSET      *(signed char*)I
 #define BRANCH      I += OFFSET
 #define NOBRANCH    I += 1
+#define EXIT        I = (byte*) *R++; NEXT
 ``
 
 0 OP! ( special functions )
 
-OP: EXIT        Exit: I = (byte*) *R++; NEXT
+OP: EXIT        EXIT
 OP: CALL        w = LIT; *--R = (cell)I + CELL; I = m + w; NEXT
 OP: BRANCH      BRANCH; NEXT
 OP: DO          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
@@ -228,18 +229,23 @@ OP: +LOOP       w = *R, *R += top;
                 ` else BRANCH; pop; NEXT
 OP: LIT         push LIT; I += CELL; NEXT
 
-OP: DOVAR       push (byte*)I++ - m; goto Exit;
-OP: DOCREATE    push I + CELL - m; w = OFFSET; if (!w) goto Exit; I = abs(w); NEXT
+OP: unused      NEXT
+OP: unused      NEXT
 OP: S"          push rel(I) + 1; push *I; I = litq(I); NEXT
 OP: ."          I = dotq(I); NEXT
-OP: ABORT"      if (!top) I = litq(I); pop; NEXT
+OP: ABORT"      if (!top) { I = litq(I); pop; NEXT }
                 ` show_error((char*)I, abs(HERE), abs(SOURCE));
                 ` goto abort;
-\ OP:
-\ OP:
-\ OP:
+OP: unused      NEXT
+OP: unused      NEXT
+OP: unused      NEXT
 
-10 OP! ( reserved )
+10 OP! ( runtime for defining words )
+
+OP: DOVAR       push aligned(rel(I)); EXIT
+OP: DOCREATE    push aligned(rel(I)) + CELL; w = *(cell*)aligned(I);
+                ` if (w) I = abs(w); else EXIT
+
 
 20 OP! ( lit op )
 
@@ -634,13 +640,13 @@ VARIABLE LAST ( nfa)
     HERE LAST !  BL WORD C@ 1+ ALLOT  ALIGN ;
 
 : CONSTANT  HEADER  [COMPILE] LITERAL  $ 0 OP, ;
-: VARIABLE  HEADER  $ 8 OP, ( ALIGN) $ 0 , ;
+: VARIABLE  HEADER  $ 10 OP, ALIGN $ 0 , ;
 
 \ | opc | align | I for does | data
-: CREATE  HEADER $ 9 C, ( ALIGN) $ 0 , ;
+: CREATE  HEADER $ 11 C, ALIGN $ 0 , ;
 
 : PREVIOUS  ( -- nfa count )  CONTEXT @ HASH @  CELL+ DUP C@ ;
-: DOES>   R> >REL  PREVIOUS $ 1F AND + 1+ ALIGNED 1+ ! ;
+: DOES>   R> >REL  PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) 1+ ALIGNED ! ;
 : SMUDGE  PREVIOUS $ 20 XOR SWAP C! ;
 
 \ Be careful from here on...

@@ -8,12 +8,10 @@
 : yy 10 0 do i . i 5 = if leave ." oops " then loop ;
 : zz 10 0 do i . i 5 = if unloop exit then loop ." oops " ;
 
-include ../forth2012-test-suite/src/tester.fr
+include test/tester.fs
 \ VERBOSE ON
-: { T{ ;
-: } }T ;
 include ../forth2012-test-suite/src/core.fr
 
 
 decimal
-CR .( testing finished! ) .TESTS
+CR .( Testing finished: ) .TESTS

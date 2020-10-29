@@ -60,9 +60,8 @@ FORTH
 
 : PLACE  ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;
 
-\ : >BODY  2 CELLS + ;
 \ : DOES>  COMPILE (DOES>)  [COMPILE] EXIT ; IMMEDIATE
-: >BODY  5 + ( ALIGNED) ;
+: >BODY  1+ ALIGNED CELL+ ;
 
 VARIABLE ?CODE
 : OP,  HERE ?CODE ! C, ;
@@ -142,6 +141,7 @@ VARIABLE HLD
 : .R        >R (.) R> OVER - SPACES TYPE ;
 : U.        0 <# #S #> TYPE   SPACE ;
 : U.R       >R 0 <# #S #> R> OVER - SPACES  TYPE ;
+: H.        BASE @ HEX  SWAP U.  BASE ! ;
 : ?         @ . ;
 
 ( *** Save dictionary image *** )
@@ -199,4 +199,5 @@ FORTH
 : EVALUATE ( a n -- )
     -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;
 
-
+\ cheesy decompiler
+: see ' 12 - aligned 32 dump ;
