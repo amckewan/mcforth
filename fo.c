@@ -32,7 +32,7 @@ int verbose;
 
 cell cfa(cell nfa) // convert nfa to cfa (NAME>)
 {
-    return aligned(nfa + (m[nfa] & 31) + 1);
+    return nfa + (m[nfa] & 31) + 1;
 }
 
 cell nfa(cell cfa) {
@@ -119,14 +119,14 @@ void type(cell addr, cell len) {
 
 void *litq(void *I) {
     uchar *p = (uchar *)I;
-    return (cell *)aligned(p + *p + 1);
+    return (cell *)(p + *p + 1);
 }
 
 void *dotq(void *I) {
     char *p = (char *)I;
     int n = *p++;
     while (n--) putchar(*p++);
-    return (cell *)aligned(p);
+    return (cell *)(p);
 }
 
 void dotid(cell nfa) {

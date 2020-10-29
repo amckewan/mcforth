@@ -194,10 +194,10 @@ forth
     forth ;
 
 COMPILER
-: RECURSE  PREVIOUS 31 AND + 1+ ALIGNED COMPILE, ;
+: RECURSE  PREVIOUS 31 AND + 1+ COMPILE, ;
 FORTH
 : EVALUATE ( a n -- )
     -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;
 
 \ cheesy decompiler
-: see ' 12 - aligned 32 dump ;
+: see ' >name 32 dump ;

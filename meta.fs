@@ -108,7 +108,7 @@ CREATE CONTEXT  1 , 0 , ( FORTH ) 0 , ( COMPILER )
 
 : HEADER   ( -- )
     ALIGN  HERE-T  CONTEXT @ HASH  DUP @ ,-T  !
-    HERE-T LAST !  BL WORD DUP C@ 1+ S,-T  ALIGN ;
+    HERE-T LAST !  BL WORD COUNT DUP 80 OR C,-T S,-T ;
 
 : TARGET-CREATE   ( -- )
    >IN @ HEADER >IN !  CREATE IMMEDIATE  HERE-T ,
@@ -170,7 +170,7 @@ VARIABLE OP  ( next opcode )
 
 \ Compile Strings into the Target
 : C"  HERE-T  [CHAR] " PARSE S,-T  0 C,-T ; \ c-style string
-: ",  [CHAR] " PARSE  DUP C,-T  S,-T  ALIGN  0 ?CODE ! ;
+: ",  [CHAR] " PARSE  DUP C,-T  S,-T  0 ?CODE ! ;
 
 : S"      0A OP,  ", ; IMMEDIATE
 : ."      0B OP,  ", ; IMMEDIATE
@@ -556,6 +556,9 @@ CODE -FIND  ( str v -- str t | xt f )
 `       if (w) *S = cfa(w), top = 0;
 `       else top = -1; NEXT
 
+CODE >NAME ( xt -- nfa )  top = nfa(top); NEXT
+CODE NAME> ( nfa -- xt )  top = cfa(top); NEXT
+
 : -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
 : '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
 
@@ -627,7 +630,7 @@ CODE ALIGNED    top = aligned(top); NEXT
 CODE PARSE  ( c -- a n )  top = parse(SOURCE, top, --S); NEXT
 
 : S,  ( a n -- )  BEGIN DUP WHILE >R COUNT C, R> 1- REPEAT 2DROP ;
-: ",  $ 22 ( [CHAR] ") PARSE  DUP C,  S,  ALIGN  ( 0 ?CODE !) ;
+: ",  $ 22 ( [CHAR] ") PARSE  DUP C,  S,  ( 0 ?CODE !) ;
 
 VARIABLE WARNING
 : WARN  WARNING @ IF  >IN @  BL WORD CONTEXT @ -FIND 0= IF
@@ -637,7 +640,7 @@ VARIABLE LAST ( nfa)
 : HASH  ( v -- a )  CELLS CONTEXT + ;
 : HEADER  ( -- )  WARN
     ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
-    HERE LAST !  BL WORD C@ 1+ ALLOT  ALIGN ;
+    HERE LAST !  BL WORD C@  DUP $ 80 OR HERE C!  1+ ALLOT ;
 
 : CONSTANT  HEADER  [COMPILE] LITERAL  $ 0 OP, ;
 : VARIABLE  HEADER  $ 10 OP, ALIGN $ 0 , ;
@@ -646,7 +649,7 @@ VARIABLE LAST ( nfa)
 : CREATE  HEADER $ 11 C, ALIGN $ 0 , ;
 
 : PREVIOUS  ( -- nfa count )  CONTEXT @ HASH @  CELL+ DUP C@ ;
-: DOES>   R> >REL  PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) 1+ ALIGNED ! ;
+: DOES>   R> >REL  PREVIOUS $ 1F AND + 1+ ( cfa ) 1+ ALIGNED ! ;
 : SMUDGE  PREVIOUS $ 20 XOR SWAP C! ;
 
 \ Be careful from here on...

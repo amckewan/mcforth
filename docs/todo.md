@@ -1,8 +1,8 @@
 ### To-do list
 
-* implement optimizing compiler
+* decompiler
+* optimizing compiler
 * make meta compiler all interpreting (no IMMEDIATE)
-* remove unecessary alignment (headers, strings)
 * check for redefined words
 * add value
 * add defer
