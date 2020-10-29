@@ -69,8 +69,8 @@ opcode | function | operands
 5 | loop | offset
 6 | +loop | offset
 7 | lit | value
-8 | dovar | op, data
-9 | docreate | op, I for does, data
+8 | call2 | 2-byte offset
+9 |
 A | s" | counted string
 B | ." | counted string
 C | abort" | counted string

@@ -1,5 +1,6 @@
 ### To-do list
 
+* add short-call to first 64k of memory (which is all right now :)
 * decompiler
 * optimizing compiler
 * make meta compiler all interpreting (no IMMEDIATE)

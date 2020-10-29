@@ -23,8 +23,8 @@ extended.inc: fo rth extend
 	./fo extend
 	hexdump -C extended.img > extended.hex
 
-run: fo
-	@./fo
+run: forth
+	@./forth
 
 test: forth test.fs
 	@echo "CR BYE" > bye

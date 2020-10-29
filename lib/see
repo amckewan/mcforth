@@ -1,0 +1,4 @@
+( mcforth decompiler )
+
+\ cheesy decompiler
+: see ' >name 32 dump ;

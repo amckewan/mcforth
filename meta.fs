@@ -20,10 +20,12 @@ VARIABLE DP-T
 : C@-T    ( taddr -- char )   THERE C@ ;
 : @-T     ( taddr -- n )      THERE CELL@ ;
 : C!-T    ( char taddr -- )   THERE C! ;
+: W!-T    ( w taddr -- )      THERE OVER 8 RSHIFT OVER 1+ C! C! ; ( le )
 : !-T     ( n taddr -- )      THERE CELL! ;
 : HERE-T  ( -- taddr )   DP-T @ ;
 : ALLOT-T ( n -- )       HERE-T THERE OVER ERASE   DP-T +! ;
 : C,-T    ( char -- )   HERE-T C!-T   1 DP-T +! ;
+: W,-T    ( w -- )      HERE-T W!-T   2 DP-T +! ;
 : ,-T     ( n -- )      HERE-T  !-T   CELL-T DP-T +! ;
 : S,-T    ( addr len -- )
    0 ?DO   COUNT C,-T   LOOP   DROP ;
@@ -90,7 +92,9 @@ VARIABLE ?CODE
 : COMPILE,  ( addr -- )
     ?CODE @ 0< 0= IF
         DUP C@-T 5F >  OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
-    THEN  1 OP, ,-T ( call ) ;
+    THEN
+    DUP 10000 U< IF  8 OP, W,-T EXIT  THEN
+    1 OP, ,-T ( call ) ;
 
 : EXIT  0 OP, ; IMMEDIATE
 
@@ -229,7 +233,7 @@ OP: +LOOP       w = *R, *R += top;
                 ` else BRANCH; pop; NEXT
 OP: LIT         push LIT; I += CELL; NEXT
 
-OP: unused      NEXT
+OP: CALL2       w = *(unsigned short*)I; *--R = (cell)I + 2; I = m + w; NEXT
 OP: unused      NEXT
 OP: S"          push rel(I) + 1; push *I; I = litq(I); NEXT
 OP: ."          I = dotq(I); NEXT
@@ -408,6 +412,11 @@ CODE C!  ( c a -- )  m[top] = *S; pop2; NEXT
 : 2@    DUP CELL+ @ SWAP @ ;
 : 2!    DUP >R ! R> CELL+ ! ;
 
+\ 16-bit memory
+` #define W(a)  *(unsigned short *)(m + (a))
+CODE W@     top = W(top); NEXT
+CODE W!     W(top) = *S; pop2; NEXT
+
 CODE FILL  ( a u c -- )  memset(abs(S[1]), top, *S); pop3; NEXT
 CODE MOVE  ( src dest u -- )  memmove(abs(*S), abs(S[1]), top); pop3; NEXT
 
@@ -578,12 +587,15 @@ CODE DUMP  ( a n -- )  dump(*S++, top); pop; NEXT
 : ALLOT  H +! ;
 : ,   H @ !   $ 4 H +! ;
 : C,  H @ C!  $ 1 H +! ;
+: W,  H @ W!  $ 2 H +! ;
 
 ( ********** Interpreter ********** )
 
 : COMPILE,  ( xt -- )
     DUP C@ $ 5F >  OVER 1+ C@ 0= AND IF  C@ C, EXIT  THEN
+    DUP $ 10000 U< IF  $ 8 C, W, EXIT  THEN
     $ 1 C, , ;
+
 COMPILER
 : LITERAL  $ 7 C, , ;
 FORTH

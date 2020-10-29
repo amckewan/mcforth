@@ -198,6 +198,3 @@ COMPILER
 FORTH
 : EVALUATE ( a n -- )
     -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;
-
-\ cheesy decompiler
-: see ' >name 32 dump ;
