@@ -89,7 +89,7 @@ VARIABLE ?CODE
 \ : ,A  ( addr -- )   OP, ;
 
 : COMPILE,  ( addr -- )
-    DUP C@-T 68 70 WITHIN OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
+    DUP C@-T 7F >  OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
     1 OP, ,-T ;
 
 \    DUP 200 < ( 0 AND ( ??) IF  OP,  ELSE  FF OP, ,-T  THEN ;
@@ -220,7 +220,7 @@ VARIABLE OP  ( next opcode )
 
 200 DP-T !
 
-0 OP!
+0 OP! ( Special functions)
 
 OP: EXIT        Exit: I = (byte*) *R++; NEXT
 OP: CALL        w = OFFSET; *--R = (cell)I + CELL; I = m + w; NEXT
@@ -247,7 +247,7 @@ OP: ABORT"      if (!top) I = litq(I); pop; NEXT
 \ OP:
 \ OP:
 
-10 OP!
+10 OP! ( Literal op )
 
 PRIM +          top += *S++; NEXT
 PRIM -          top = *S++ - top; NEXT
@@ -314,7 +314,8 @@ OP: <=IF     IF2(*S <= top)
 OP: U>=IF    IF2((ucell)*S >= (ucell)top)
 OP: U<=IF    IF2((ucell)*S <= (ucell)top)
 
-60 OP!
+( Nothing special after this)
+80 OP!
 CODE DROP       pop; NEXT
 CODE DUP        *--S = top; NEXT
 CODE NIP        S++; NEXT
@@ -323,7 +324,7 @@ CODE ?DUP       if (top) *--S = top; NEXT
 CODE OVER       push S[1]; NEXT
 CODE ROT        w = S[1], S[1] = *S, *S = top, top = w; NEXT
 
-68 OP!
+\ 68 OP!
 \ 68-6F must be inlined
 CODE >R         *--R = top, pop; NEXT
 CODE R>         push *R++; NEXT
@@ -338,7 +339,7 @@ CODE UNLOOP     R += 3; NEXT
 : 2DUP      OVER OVER ;
 : 2DROP     DROP DROP ;
 
-70 OP!
+\ 70 OP!
 10 BINARY +         11 BINARY -
 12 BINARY AND       13 BINARY OR        14 BINARY XOR
 15 BINARY LSHIFT    16 BINARY RSHIFT    17 BINARY ARSHIFT
@@ -574,7 +575,7 @@ CODE DUMP  ( a n -- )  dump(*S++, top); pop; NEXT
 ( ********** Interpreter ********** )
 
 : COMPILE,  ( xt -- )
-    DUP C@ $ 68 $ 70 WITHIN OVER 1+ C@ 0= AND IF  C@ C, EXIT  THEN
+    DUP C@ $ 7F >  OVER 1+ C@ 0= AND IF  C@ C, EXIT  THEN
     $ 1 C, , ;
 COMPILER
 : LITERAL  $ 7 C, , ;
