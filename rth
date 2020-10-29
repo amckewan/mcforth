@@ -77,7 +77,7 @@ VARIABLE ?CODE
 
 \ HEX ( does nothing)
 : CONDITION  ( optimizer todo )
-    $48 OP, ;
+    $58 OP, ;
 
 COMPILER
 \ : NOT  ( invert last conditional op )  LATEST 70 80 WITHIN ( F0 AND 70 = )

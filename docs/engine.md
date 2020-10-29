@@ -28,17 +28,22 @@ Many of these opcodes have arguments following such as literals or
 branch destinations.
 Opcodes XX and greater have no arguments or particular numeric assignments.
 
+Opcodes 00-5F have operands and will not be automatically inlined. They are used
+by COMPILER words that know what to do in each case.
+
+Opcodes 60-FF have no arguments and are always inlined.
+
 
 Page | Description | Example
 ---- | ----------  | -------
 0 | special functions | call, exit, loop, dovar
-1 | lit op | 5 +
-2 | lit cond | 5 <
-3 | lit cond branch | 5 < if
-4 | cond branch | < if
-5 | op | +
-6 | cond | <
-7 | reserved | in case we want more stuff
+1 | reserved | in case we want more stuff
+2 | lit op | 5 +
+3 | lit cond | 5 <
+4 | lit cond branch | 5 < if
+5 | cond branch | < if
+6 | op | +
+7 | cond | <
 
 
 ## Page 0: Special Functions

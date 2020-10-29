@@ -88,7 +88,7 @@ VARIABLE ?CODE
 : OP,  ( opcode -- )  HERE-T ?CODE !  C,-T ;
 
 : COMPILE,  ( addr -- )
-    DUP C@-T 7F >  OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
+    DUP C@-T 5F >  OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
     1 OP, ,-T ;
 
 : EXIT  0 OP, ; IMMEDIATE
@@ -142,14 +142,14 @@ VARIABLE OP  ( next opcode )
 \ Define Meta Branching Constructs
 : ?CONDITION  INVERT ABORT" unbalanced" ;
 : MARK  ( -- here )  HERE-T  0 ?CODE ! ;
-: OFFSET  ( to from -- offset )  - ( CELL-T /) ;
+: OFFSET  ( to from -- offset )  - ;
 : >MARK      ( -- f addr )   TRUE  MARK   0 ,-T ;
 : >RESOLVE   ( f addr -- )   MARK  OVER OFFSET  SWAP !-T   ?CONDITION ;
 : <MARK      ( -- f addr )   TRUE  MARK ;
 : <RESOLVE   ( f addr -- )   MARK  OFFSET ,-T   ?CONDITION ;
 
-: CONDITION  ( optimizer )
-    48 OP, ;
+: CONDITION  ( todo optimizer )
+    58 OP, ;
 
 : NOT  ( invert last conditional op )  LATEST 70 78 WITHIN
     IF  LATEST 8 XOR PATCH  ELSE  70 OP, ( 0= )  THEN ; IMMEDIATE
@@ -239,18 +239,20 @@ OP: ABORT"      if (!top) I = litq(I); pop; NEXT
 \ OP:
 \ OP:
 
-10 OP! ( lit op )
+10 OP! ( reserved )
+
+20 OP! ( lit op )
 
 OP: LIT+   top += *I++; NEXT
 OP: LIT-    top -= *I++; NEXT
 OP: LIT-AND  top &= *I++; NEXT
 
-20 OP! ( lit cond )
+30 OP! ( lit cond )
 \ not needed for 0= 0< etc. so this frees up 6 slots, and be careful!
 
-30 OP! ( lit cond branch )
+40 OP! ( lit cond branch )
 
-40 OP! ( cond branch )
+50 OP! ( cond branch )
 
 ` #define IF(cond)  if (cond) NOBRANCH; else BRANCH
 ` #define IF1(cond) IF(cond); pop; NEXT
@@ -273,8 +275,6 @@ OP: >=IF     IF2(*S >= top)
 OP: <=IF     IF2(*S <= top)
 OP: U>=IF    IF2((ucell)*S >= (ucell)top)
 OP: U<=IF    IF2((ucell)*S <= (ucell)top)
-
-50 OP! ( reserved )
 
 60 OP! ( binary/memory ops )
 
@@ -573,7 +573,7 @@ CODE DUMP  ( a n -- )  dump(*S++, top); pop; NEXT
 ( ********** Interpreter ********** )
 
 : COMPILE,  ( xt -- )
-    DUP C@ $ 7F >  OVER 1+ C@ 0= AND IF  C@ C, EXIT  THEN
+    DUP C@ $ 5F >  OVER 1+ C@ 0= AND IF  C@ C, EXIT  THEN
     $ 1 C, , ;
 COMPILER
 : LITERAL  $ 7 C, , ;
