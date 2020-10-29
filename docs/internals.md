@@ -1,6 +1,14 @@
-# Memory
+# Source Code Organization
 
-All forth addresses are offsets from the base of memory 'm'.
+# Implementation Internals
+
+## Memory
+
+A cell is 4 bytes. Becuase we need to reference addresses in a cell we must use a 32-bit compiler. TODO remove this restriction through some cleverness.
+
+All forth addresses are offsets from the base of memory 'm'. These are converted to/from abolute addresses in the engine as required.
+
+Since the dictionary contains no absolute addresses, it is relocatable which allows the executable to contain a copy of the dictionary.
 
 The return stack grows down from the top of memory.
 
@@ -8,7 +16,7 @@ The data stack grows down in a separate area of memory. The top of the stack is 
 
 The first
 
-# Machine registers
+## Forth registers
 
 Register | Description
 --- | ---
@@ -16,23 +24,26 @@ I | Instruction pointer
 S | Stack pointer
 R | Return-stack pointer
 top | Top of stack
-w | Current opcode, scrach register
+w | Current opcode, scratch register
 
-# Opcodes
+## Opcodes
 
-
-The opcodes are grouped into 16 pages of 16 opcode each.
+The opcodes are organized into 16 pages of 16 opcodes each.
 
 The first 8 pages have specific assignments known to the compiler and optimizers.
 Many of these opcodes have arguments following such as literals or
-branch destinations.
-Opcodes XX and greater have no arguments or particular numeric assignments.
+branch offsets. The remaining pages are for other CODE words in no particular order.
 
 Opcodes 00-5F have operands and will not be automatically inlined. They are used
 by COMPILER words that know what to do in each case.
+There are several types of operands:
 
-Opcodes 60-FF have no arguments and are always inlined.
+* Literals (cell bytes)
+* Addresses (cell bytes)
+* Branch offsets (1 byte)
+* Strings (count + 1 bytes)
 
+Opcodes 60-FF have no operands and are always inlined.
 
 Page | Description | Example
 ---- | ----------  | -------
@@ -52,11 +63,11 @@ opcode | function | operands
 ------ | -------- | -----
 0 | exit
 1 | call | address
-2 | branch | address
-3 | do | address
-4 | ?do | address
-5 | loop | address
-6 | +loop | address
+2 | branch | offset
+3 | do | offset
+4 | ?do | offset
+5 | loop | offset
+6 | +loop | offset
 7 | lit | value
 8 | dovar | op, data
 9 | docreate | op, I for does, data
@@ -65,22 +76,19 @@ B | ." | counted string
 C | abort" | counted string
 D | unused
 E | unused
-F | unused
+F | jump | address
 
 
-Page 1:
+## Page 1: Reserved
 
-Page 2: literals
+## Page 2: Literals
 
+## Page 3: Conditionals
 
-00 |01 | 02
---- | ---  | ---
-EXIT | +  | lit +
-X    | -  | lit -
-X    | *  | lit *
-X    | /  | lit /
-X    | mod | lit mod
-X    | and |
-X    | or
-X    | xor
+## Page 4: Literal Compare and Branch
 
+## Page 5: Branching
+
+## Page 6: Binary and Memory Operations
+
+## Page 7: Conditionals
