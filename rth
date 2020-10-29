@@ -62,7 +62,7 @@ FORTH
 
 \ : >BODY  2 CELLS + ;
 \ : DOES>  COMPILE (DOES>)  [COMPILE] EXIT ; IMMEDIATE
-: >BODY  5 + ;
+: >BODY  5 + ( ALIGNED) ;
 
 VARIABLE ?CODE
 : OP,  HERE ?CODE ! C, ;
@@ -77,11 +77,11 @@ VARIABLE ?CODE
 
 \ HEX ( does nothing)
 : CONDITION  ( optimizer todo )
-    88 OP, ;
+    $48 OP, ;
 
 COMPILER
-\ : NOT  ( invert last conditional op )  LATEST 40 50 WITHIN
-\     IF  LATEST 8 XOR PATCH  ELSE  40 ( 0= ) OP, THEN ; IMMEDIATE
+\ : NOT  ( invert last conditional op )  LATEST 70 80 WITHIN ( F0 AND 70 = )
+\     IF  LATEST 8 XOR PATCH  ELSE  70 ( 0= ) OP, THEN ; IMMEDIATE
 \ DECIMAL
 
 : IF        CONDITION  >MARK ;

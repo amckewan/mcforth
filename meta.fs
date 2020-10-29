@@ -86,20 +86,10 @@ VARIABLE ?CODE
 : LATEST  ( -- n )  ?CODE @ C@-T ;
 : PATCH  ( n -- )  ?CODE @ C!-T ;
 : OP,  ( opcode -- )  HERE-T ?CODE !  C,-T ;
-\ : ,A  ( addr -- )   OP, ;
 
 : COMPILE,  ( addr -- )
     DUP C@-T 7F >  OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
     1 OP, ,-T ;
-
-\    DUP 200 < ( 0 AND ( ??) IF  OP,  ELSE  FF OP, ,-T  THEN ;
-\   OP, ;  ( non-optimizing )
-\   DUP 200 < IF  OP,  ELSE  DUP @-T  ( adr op )
-\   OVER 2 CELLS + @-T 0=  OVER 20 40 WITHIN AND
-\   IF  ( literal ) OP,  CELL+ @-T ,-T  ELSE
-\   OVER CELL+ @-T 0=  SWAP 200 < AND
-\   IF  ( primative )  @-T OP,  ELSE
-\   ( call )  ,A  THEN THEN THEN ;
 
 : EXIT  0 OP, ; IMMEDIATE
 
@@ -159,10 +149,10 @@ VARIABLE OP  ( next opcode )
 : <RESOLVE   ( f addr -- )   MARK  OFFSET ,-T   ?CONDITION ;
 
 : CONDITION  ( optimizer )
-    58 OP, ;
+    48 OP, ;
 
-: NOT  ( invert last conditional op )  LATEST 40 48 WITHIN
-    IF  LATEST 8 + PATCH  ELSE  40 OP,  THEN ; IMMEDIATE
+: NOT  ( invert last conditional op )  LATEST 70 78 WITHIN
+    IF  LATEST 8 XOR PATCH  ELSE  70 OP, ( 0= )  THEN ; IMMEDIATE
 
 : IF        CONDITION  >MARK ; IMMEDIATE
 : THEN      >RESOLVE ; IMMEDIATE
@@ -204,6 +194,10 @@ VARIABLE OP  ( next opcode )
 \ Start of Kernel
 \ **********************************************************************
 
+\ TODO put the system variable here
+
+200 DP-T !
+
 ``
 #define push *--S = top, top =
 #define pop top = *S++
@@ -218,9 +212,7 @@ VARIABLE OP  ( next opcode )
 #define NOBRANCH    I += CELL
 ``
 
-200 DP-T !
-
-0 OP! ( Special functions)
+0 OP! ( special functions )
 
 OP: EXIT        Exit: I = (byte*) *R++; NEXT
 OP: CALL        w = OFFSET; *--R = (cell)I + CELL; I = m + w; NEXT
@@ -247,50 +239,18 @@ OP: ABORT"      if (!top) I = litq(I); pop; NEXT
 \ OP:
 \ OP:
 
-10 OP! ( Literal op )
-
-PRIM +          top += *S++; NEXT
-PRIM -          top = *S++ - top; NEXT
-PRIM AND        top &= *S++; NEXT
-PRIM OR         top |= *S++; NEXT
-PRIM XOR        top ^= *S++; NEXT
-PRIM LSHIFT     top = *S++ << top; NEXT
-PRIM RSHIFT     top = ((ucell)*S++) >> top; NEXT
-CODE SWAP       w = top; top = *S; *S = w; NEXT
-
-CODE PICK       top = S[top]; NEXT
-CODE @          top = *(cell *)(m + top); NEXT
-CODE !          *(cell *)(m + top) = *S; pop2; NEXT
-CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
-CODE *          top *= *S++; NEXT
-CODE /          top = *S++ / top; NEXT
-CODE NOP        NEXT
+10 OP! ( lit op )
 
 OP: LIT+   top += *I++; NEXT
 OP: LIT-    top -= *I++; NEXT
 OP: LIT-AND  top &= *I++; NEXT
 
-40 OP!
+20 OP! ( lit cond )
+\ not needed for 0= 0< etc. so this frees up 6 slots, and be careful!
 
-CODE 0=         top = (top == 0) LOGICAL; NEXT
-CODE 0<         top = (top < 0) LOGICAL; NEXT
-CODE 0>         top = (top > 0) LOGICAL; NEXT
-CODE =          top = (*S++ == top) LOGICAL; NEXT
-CODE <          top = (*S++ < top) LOGICAL; NEXT
-CODE >          top = (*S++ > top) LOGICAL; NEXT
-CODE U<         top = ((ucell)*S++ < (ucell)top) LOGICAL; NEXT
-CODE U>         top = ((ucell)*S++ > (ucell)top) LOGICAL; NEXT
+30 OP! ( lit cond branch )
 
-OP: 0<>   top = (top != 0) LOGICAL; NEXT
-OP: 0>=   top = (top >= 0) LOGICAL; NEXT
-OP: )<=   top = (top <= 0) LOGICAL; NEXT
-OP: <>   top = (*S++ != top) LOGICAL; NEXT
-OP: >=   top = (*S++ >= top) LOGICAL; NEXT
-OP: <=   top = (*S++ <= top) LOGICAL; NEXT
-OP: U>=   top = ((ucell)*S++ >= (ucell)top) LOGICAL; NEXT
-OP: U<=   top = ((ucell)*S++ <= (ucell)top) LOGICAL; NEXT
-
-50 OP!  ( cond IF, must be in the same order as above )
+40 OP! ( cond branch )
 
 ` #define IF(cond)  if (cond) NOBRANCH; else BRANCH
 ` #define IF1(cond) IF(cond); pop; NEXT
@@ -314,8 +274,49 @@ OP: <=IF     IF2(*S <= top)
 OP: U>=IF    IF2((ucell)*S >= (ucell)top)
 OP: U<=IF    IF2((ucell)*S <= (ucell)top)
 
-( Nothing special after this)
-80 OP!
+50 OP! ( reserved )
+
+60 OP! ( binary/memory ops )
+
+PRIM +          top += *S++; NEXT
+PRIM -          top = *S++ - top; NEXT
+PRIM AND        top &= *S++; NEXT
+PRIM OR         top |= *S++; NEXT
+PRIM XOR        top ^= *S++; NEXT
+PRIM LSHIFT     top = *S++ << top; NEXT
+PRIM RSHIFT     top = ((ucell)*S++) >> top; NEXT
+CODE SWAP       w = top; top = *S; *S = w; NEXT
+
+CODE PICK       top = S[top]; NEXT
+CODE @          top = *(cell *)(m + top); NEXT
+CODE !          *(cell *)(m + top) = *S; pop2; NEXT
+CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
+CODE *          top *= *S++; NEXT
+CODE /          top = *S++ / top; NEXT
+CODE NOP        NEXT
+
+70 OP! ( conditionals )
+
+CODE 0=         top = (top == 0) LOGICAL; NEXT
+CODE 0<         top = (top < 0) LOGICAL; NEXT
+CODE 0>         top = (top > 0) LOGICAL; NEXT
+CODE =          top = (*S++ == top) LOGICAL; NEXT
+CODE <          top = (*S++ < top) LOGICAL; NEXT
+CODE >          top = (*S++ > top) LOGICAL; NEXT
+CODE U<         top = ((ucell)*S++ < (ucell)top) LOGICAL; NEXT
+CODE U>         top = ((ucell)*S++ > (ucell)top) LOGICAL; NEXT
+
+OP: 0<>   top = (top != 0) LOGICAL; NEXT
+OP: 0>=   top = (top >= 0) LOGICAL; NEXT
+OP: )<=   top = (top <= 0) LOGICAL; NEXT
+OP: <>   top = (*S++ != top) LOGICAL; NEXT
+OP: >=   top = (*S++ >= top) LOGICAL; NEXT
+OP: <=   top = (*S++ <= top) LOGICAL; NEXT
+OP: U>=   top = ((ucell)*S++ >= (ucell)top) LOGICAL; NEXT
+OP: U<=   top = ((ucell)*S++ <= (ucell)top) LOGICAL; NEXT
+
+80 OP! ( nothing special after this )
+
 CODE DROP       pop; NEXT
 CODE DUP        *--S = top; NEXT
 CODE NIP        S++; NEXT
@@ -324,8 +325,6 @@ CODE ?DUP       if (top) *--S = top; NEXT
 CODE OVER       push S[1]; NEXT
 CODE ROT        w = S[1], S[1] = *S, *S = top, top = w; NEXT
 
-\ 68 OP!
-\ 68-6F must be inlined
 CODE >R         *--R = top, pop; NEXT
 CODE R>         push *R++; NEXT
 CODE R@         push *R  ; NEXT
@@ -339,10 +338,9 @@ CODE UNLOOP     R += 3; NEXT
 : 2DUP      OVER OVER ;
 : 2DROP     DROP DROP ;
 
-\ 70 OP!
-10 BINARY +         11 BINARY -
-12 BINARY AND       13 BINARY OR        14 BINARY XOR
-15 BINARY LSHIFT    16 BINARY RSHIFT    17 BINARY ARSHIFT
+60 BINARY +         61 BINARY -
+62 BINARY AND       63 BINARY OR        64 BINARY XOR
+65 BINARY LSHIFT    66 BINARY RSHIFT
 
 CODE INVERT  top = ~top; NEXT
 CODE NEGATE  top = -top; NEXT
