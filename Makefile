@@ -5,15 +5,16 @@ all: test
 CC = clang
 CFLAGS = -m32 -Wall -Werror
 
-SOURCES = fo.c misc.c parse.c file.c
-HEADERS = fo.h prims.inc kernel.inc
+SOURCES = src/fo.c src/misc.c src/parse.c src/file.c
+HEADERS = src/fo.h prims.inc kernel.inc
+INCLUDES = -I.
 LIBS = -lreadline
 
 fo: $(SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) $(SOURCES) $(LIBS) -o fo
+	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
 
 forth: $(SOURCES) $(HEADERS) extended.inc
-	$(CC) -DEXTEND $(CFLAGS) $(SOURCES) $(LIBS) -o forth
+	$(CC) -DEXTEND $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
 
 prims.inc kernel.inc: meta.fs
 	gforth meta.fs -e ciao
