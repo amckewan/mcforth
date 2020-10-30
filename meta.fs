@@ -92,6 +92,8 @@ s" see.info" w/o create-file ?err seer !
 \ **********************************************************************
 \ Compiler
 
+: ;_  [COMPILE] ; ; IMMEDIATE \ concession
+
 \ Opcodes
 7 CONSTANT <LIT>
 
@@ -107,7 +109,7 @@ VARIABLE ?CODE
     DUP 10000 U< IF  8 OP, W,-T EXIT  THEN
     1 OP, ,-T ( call ) ;
 
-: EXIT  0 OP, ; IMMEDIATE
+: EXIT  0 OP, ;
 
 \ Create Headers in Target Image
 VARIABLE LAST
@@ -125,9 +127,16 @@ CREATE CONTEXT  1 , 0 , ( FORTH ) 0 , ( COMPILER )
     ALIGN  HERE-T  CONTEXT @ HASH  DUP @ ,-T  !
     HERE-T LAST !  BL WORD COUNT DUP 80 OR C,-T S,-T ;
 
+VARIABLE STATE-T
+: ?EXEC  STATE-T @ 0= ABORT" cannot execute target word!" ;
+
+VARIABLE CSP
+: !CSP  DEPTH CSP ! ;
+: ?CSP  DEPTH CSP @ - ABORT" definition not finished" ;
+
 : TARGET-CREATE   ( -- )
-   >IN @ HEADER >IN !  CREATE IMMEDIATE  HERE-T ,
-   DOES>  STATE @ 0= ABORT" target word!"  @ COMPILE, ;
+   >IN @ HEADER >IN !  CREATE  HERE-T ,
+   DOES>  ?EXEC  @ COMPILE, ;
 
 \ Generate primatives
 : ?COMMENT  ( allow Forth comment after OP: etc. )
@@ -143,22 +152,22 @@ VARIABLE OP  ( next opcode )
     C-COMMENT  S" case 0x" WRITE  OP @ 0 <# # # #> WRITE  S" : " WRITE
     ?COMMENT ` ( copy rest of line )  1 OP +! ;
 
-: (PRIM)   OP @ OP,  [COMPILE] EXIT  OP: ;
+: (PRIM)   OP @ OP,  EXIT  OP: ;
 : PRIM   >IN @ HEADER        >IN ! (PRIM) ;  ( in target only )
 : CODE   >IN @ TARGET-CREATE >IN ! (PRIM) ;  ( in host and target)
 
 : BINARY  ( op -- )
-    CREATE , IMMEDIATE  DOES> @ OP, ;
-\    CREATE , IMMEDIATE  DOES> @  LATEST <LIT> =
+    CREATE ,  DOES> ?EXEC @ OP, ;
+\    CREATE ,  DOES> @  LATEST <LIT> =
 \        IF  10 + PATCH  ELSE  OP,  THEN ;
 
 \ Target Literals
-: LITERAL  ( n -- )  <LIT> OP,  ,-T ; IMMEDIATE
-: $   BL WORD NUMBER DROP [COMPILE] LITERAL ; IMMEDIATE
+: LITERAL  ( n -- )  ?EXEC  <LIT> OP,  ,-T ;
+: $   BL WORD NUMBER DROP LITERAL ;
 
 \ Define Meta Branching Constructs
 : ?CONDITION  INVERT ABORT" unbalanced" ;
-: MARK      ( -- here )     HERE-T  0 ?CODE ! ;
+: MARK      ( -- here )     ?EXEC  HERE-T  0 ?CODE ! ;
 : >MARK     ( -- f addr )   TRUE  MARK   0 C,-T ;
 : >RESOLVE  ( f addr -- )   MARK  OVER -  SWAP C!-T   ?CONDITION ;
 : <MARK     ( -- f addr )   TRUE  MARK ;
@@ -167,43 +176,45 @@ VARIABLE OP  ( next opcode )
 : CONDITION  ( todo optimizer )
     58 OP, ;
 
-: NOT  ( invert last conditional op )  LATEST 70 78 WITHIN
-    IF  LATEST 8 XOR PATCH  ELSE  70 OP, ( 0= )  THEN ; IMMEDIATE
+: NOT  ( invert last conditional op )  ?EXEC  LATEST 70 78 WITHIN
+    IF  LATEST 8 XOR PATCH  ELSE  70 OP, ( 0= )  THEN ;
 
-: IF        CONDITION  >MARK ; IMMEDIATE
-: THEN      >RESOLVE ; IMMEDIATE
-: ELSE      2 OP,  >MARK  2SWAP >RESOLVE ; IMMEDIATE
-: BEGIN     <MARK ; IMMEDIATE
-: UNTIL     CONDITION  <RESOLVE ; IMMEDIATE
-: AGAIN     2 OP,  <RESOLVE ; IMMEDIATE
-: WHILE     [COMPILE] IF  2SWAP ; IMMEDIATE
-: REPEAT    [COMPILE] AGAIN  [COMPILE] THEN ; IMMEDIATE
+: IF        CONDITION  >MARK ;
+: THEN      >RESOLVE ;
+: ELSE      2 OP,  >MARK  2SWAP >RESOLVE ;
+: BEGIN     <MARK ;
+: UNTIL     CONDITION  <RESOLVE ;
+: AGAIN     2 OP,  <RESOLVE ;
+: WHILE     IF  2SWAP ;
+: REPEAT    AGAIN  THEN ;
 
-: DO        3 OP,  >MARK  <MARK ; IMMEDIATE
-: ?DO       4 OP,  >MARK  <MARK ; IMMEDIATE
-: LOOP      5 OP,  <RESOLVE  >RESOLVE ; IMMEDIATE
-: +LOOP     6 OP,  <RESOLVE  >RESOLVE ; IMMEDIATE
+: DO        3 OP,  >MARK  <MARK ;
+: ?DO       4 OP,  >MARK  <MARK ;
+: LOOP      5 OP,  <RESOLVE  >RESOLVE ;
+: +LOOP     6 OP,  <RESOLVE  >RESOLVE ;
 
 \ Compile Strings into the Target
 : C"  HERE-T  [CHAR] " PARSE S,-T  0 C,-T ; \ c-style string
-: ",  [CHAR] " PARSE  DUP C,-T  S,-T  0 ?CODE ! ;
+: ",  ?EXEC  [CHAR] " PARSE  DUP C,-T  S,-T  0 ?CODE ! ;
 
-: S"      0A OP,  ", ; IMMEDIATE
-: ."      0B OP,  ", ; IMMEDIATE
-: ABORT"  0C OP,  ", ; IMMEDIATE
+: S"      0A OP,  ", ;
+: ."      0B OP,  ", ;
+: ABORT"  0C OP,  ", ;
 
 \ Defining Words
 \ : EQU CONSTANT ;
-: ;_  [COMPILE] ; ; IMMEDIATE
 
-: CONSTANT  TARGET-CREATE  [COMPILE] LITERAL  [COMPILE] EXIT ;
+: [   0 STATE-T ! ;
+: ]  -1 STATE-T ! ;
+
+
+: CONSTANT  TARGET-CREATE  ] LITERAL EXIT [ ;
 : VARIABLE  TARGET-CREATE  10 OP, ALIGN 0 ,-T ;
 
 : T:  HEADER   0 ?CODE !  ] ;  \ to create words with no host header
 
-: ;   [COMPILE] EXIT  [COMPILE] [ ;_ IMMEDIATE
-: [COMPILE] ;_
-: :   TARGET-CREATE  0 ?CODE !  ] ;_
+: ;   ?CSP EXIT [ ;
+: :   TARGET-CREATE  0 ?CODE !  !CSP ] ;_
 
 
 \ **********************************************************************
@@ -617,7 +628,7 @@ FORTH
 : INTERPRET  ( -- )
     BEGIN   BL WORD DUP C@
     WHILE   STATE @
-        IF    $ 2 -FIND IF  $ 1 -FIND IF  NUMBER  [COMPILE] LITERAL
+        IF    $ 2 -FIND IF  $ 1 -FIND IF  NUMBER  LITERAL
               ELSE  COMPILE,  THEN  ELSE  EXECUTE  THEN
         ELSE  $ 1 -FIND IF  NUMBER  ELSE  EXECUTE  THEN
         THEN  DEPTH 0< ABORT" stack? "
@@ -666,7 +677,7 @@ VARIABLE LAST ( nfa)
     ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
     HERE LAST !  BL WORD C@  DUP $ 80 OR HERE C!  1+ ALLOT ;
 
-: CONSTANT  HEADER  [COMPILE] LITERAL  $ 0 OP, ;
+: CONSTANT  HEADER  LITERAL  $ 0 OP, ;
 : VARIABLE  HEADER  $ 10 OP, ALIGN $ 0 , ;
 
 \ | opc | align | I for does | data
@@ -681,7 +692,7 @@ VARIABLE LAST ( nfa)
 COMPILER
 : [  $ 0 STATE ! ;
 : EXIT  $ 0 OP, ;
-T: ;  SMUDGE  [COMPILE] EXIT  [COMPILE] [ ;
+T: ;  SMUDGE  EXIT [ ;
 : [COMPILE]  $ 2 -' ABORT" ?" COMPILE, ;
 
 : S"      $ A OP,  ", ;

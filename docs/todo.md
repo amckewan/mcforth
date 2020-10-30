@@ -1,6 +1,5 @@
 ### To-do list
 
-* make meta compiler all interpreting (no IMMEDIATE)
 * find and run some bechmarks before...
 * optimizing compiler
 * check for redefined words
