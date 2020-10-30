@@ -1,7 +1,7 @@
 *sublime*
 fo
 forth
-*.inc
+extended.inc
 *.img
 *.hex
 *.dump
