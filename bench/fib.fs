@@ -8,4 +8,4 @@
 	+
     then ;
 
-: main 34 fib . ;
+: main 38 fib drop ;

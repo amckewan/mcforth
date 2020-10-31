@@ -1,4 +1,4 @@
-.( Loading Matrix Multiplication benchmark...) cr
+\ .( Loading Matrix Multiplication benchmark...) cr
 \ NOTE: This version needs 0.5MB data space
 
 \ A classical benchmark of an O(n**3) algorithm; Matrix Multiplication
@@ -10,7 +10,7 @@
 \ MM forth2c doesn't have it !
 : mybounds  over + swap ;
 
-1 cells constant cell
+\ 1 cells constant cell
 
 variable seed
 
@@ -30,7 +30,7 @@ align create imr mat-byte-size allot
 : initiate-matrix ( m[row-size][row-size] -- )
   mat-byte-size mybounds do
     random dup 120 / 120 * - 60 - i !
-  cell +loop
+  1 cells +loop
 ;
 
 : innerproduct ( a[row][*] b[*][column] -- int)
@@ -42,16 +42,17 @@ align create imr mat-byte-size allot
   >r 2drop r>
 ;
 
-: main  ( -- )
+: mainx  ( -- )
   initiate-seed
   ima initiate-matrix
-  imb initiate-matrix 
+  imb initiate-matrix
   imr ima mat-byte-size mybounds do
     imb row-byte-size mybounds do
-      j i innerproduct over ! cell+ 
+      j i innerproduct over ! cell+
     cell +loop
   row-size cells +loop
   drop
 ;
 
+: main 10 0 do mainx loop ;
 

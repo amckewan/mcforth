@@ -1,4 +1,4 @@
-.( Loading Bubble Sort benchmark...) cr
+\ .( Loading Bubble Sort benchmark...) cr
 
 \ A classical benchmark of an O(n**2) algorithm; Bubble sort
 \
@@ -9,7 +9,7 @@
 \ MM forth2c doesn't have it !
 : mybounds  over + swap ;
 
-1 cells constant cell
+\ 1 cells constant cell
 
 variable seed ( -- addr)
 
@@ -18,28 +18,28 @@ variable seed ( -- addr)
 
 6000 constant elements ( -- int)
 
-align create list elements cells allot
+align create thelist elements cells allot
 
 : initiate-list ( -- )
-  list elements cells + list do random i ! cell +loop
+  thelist elements cells + thelist do random i ! 1 cells +loop
 ;
 
 : dump-list ( -- )
-  list elements cells + list do i @ . cell +loop cr
+  thelist elements cells + thelist do i @ . 1 cells +loop cr
 ;
 
 : verify-list ( -- )
-  list elements 1- cells mybounds do
+  thelist elements 1- cells mybounds do
     i 2@ > abort" bubble-sort: not sorted"
-  cell +loop
+  1 cells +loop
 ;
 
 : bubble ( -- )
-." bubbling..." cr
+\ ." bubbling..." cr
   1 elements 1 do
-    list elements i - cells mybounds do
+    thelist elements i - cells mybounds do
       i 2@ > if i 2@ swap i 2! then
-    cell +loop 
+    1 cells +loop
   loop
 ;
 
@@ -52,13 +52,13 @@ align create list elements cells allot
 
 : bubble-with-flag ( -- )
   1 elements 1 do
-    -1 list elements i - cells mybounds do
+    -1 thelist elements i - cells mybounds do
       i 2@ > if i 2@ swap i 2! drop 0 then
-    cell +loop 
+    1 cells +loop
     if leave then
   loop
 ;
-  
+
 : bubble-sort-with-flag ( -- )
   initiate-seed
   initiate-list
@@ -67,7 +67,7 @@ align create list elements cells allot
 ;
 
 : main	( -- )
-	bubble-sort
+	5 0 do bubble-sort loop
 \	bubble-sort-with-flag
 ;
 

@@ -61,7 +61,7 @@
     dup c@ rot + swap c! ;
 
 \ Comment out if not needed/present
-    MARKER ssieve
+\    MARKER ssieve
 
 \ PART 1 : TOOLS THAT MAY NOT BE PRESENT EVERYWHERE.
 
@@ -533,7 +533,7 @@ STRING RANGE-HIGH$    \  The high end of the range
               THEN
               2 +
               DUP DUP UM*   PRIMES-SIZE 30 UM*   D< WHILE
-         REPEAT DROP CR
+         REPEAT DROP \ CR
          SIEVE PRIMES PRIMES-SIZE CMOVE            \ Save small primes
          TRUE PRIMES-FILLED !
      THEN
@@ -648,6 +648,6 @@ DECIMAL
         THEN
 ;
 
-DEFAULT-IO  .HELP
+DEFAULT-IO \ .HELP
 
 : ??   counter 2@ D. ;

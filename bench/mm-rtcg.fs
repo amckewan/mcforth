@@ -80,10 +80,10 @@ align create imr mat-byte-size allot
 \   >r 2drop r>
 \ ;
 
-: main  ( -- )
+: mainx  ( -- )
   initiate-seed
   ima initiate-matrix
-  imb initiate-matrix 
+  imb initiate-matrix
   imr ima mat-byte-size mybounds do
    i gen-innerproduct swap
     imb row-byte-size mybounds do ( r xt )
@@ -94,13 +94,15 @@ align create imr mat-byte-size allot
   drop
 ;
 
+: main 10 0 do mainx loop ;
+
 \ : main  ( -- )
 \   initiate-seed
 \   ima initiate-matrix
-\   imb initiate-matrix 
+\   imb initiate-matrix
 \   imr ima mat-byte-size mybounds do
 \     imb row-byte-size mybounds do
-\       j i innerproduct over ! cell+ 
+\       j i innerproduct over ! cell+
 \     cell +loop
 \   row-size cells +loop
 \   drop
