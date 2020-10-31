@@ -90,3 +90,12 @@ void show_error(const char *msg, const char *here, const struct source *source) 
 //    cr(); type(source->addr, source->len);
 //    cr(); for (int i = 0; i < in; i++) emit(' '); putchar('^');
 }
+
+int compare(const char *a1, int n1, const char *a2, int n2) {
+    int n = n1 < n2 ? n1 : n2;
+    int d = memcmp(a1, a2, n);
+    if (d < 0) d = -1;
+    else if (d > 0) d = 1;
+    else if (n1 != n2) d = n1 < n2 ? -1 : 1;
+    return d;
+}

@@ -449,6 +449,8 @@ CODE TYPE  ( a n -- )   type(*S, top); pop2; NEXT
 : CR     $ 0A EMIT ;
 : SPACE  $ 20 EMIT ;
 
+CODE COMPARE  top = compare(abs(S[2]), S[1], abs(*S), top); S += 3; NEXT
+
 CODE BYE  return 0;
 
 CODE ACCEPT ( a n -- n )  top = accept(*S++, top);

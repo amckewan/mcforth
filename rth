@@ -199,3 +199,22 @@ COMPILER
 FORTH
 : EVALUATE ( a n -- )
     -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;
+
+: s=  compare 0= ;
+
+: doargs
+    1 begin dup argc < while
+        dup >r argv
+        2dup s" -e" s= if
+            2drop  r> 1+ >r  r@ argc < if r@ argv evaluate then
+        else
+            2dup ." Including " type cr included
+        then
+        r> 1+
+    repeat drop ;
+
+: BOOT
+    SOURCE-STACK 'IN !
+    doargs
+    ." Hi" QUIT ;
+

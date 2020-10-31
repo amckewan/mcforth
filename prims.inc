@@ -153,23 +153,24 @@ if (w) I = abs(w); else EXIT
 /* KEY */ case 0xA2:   push getchar(); NEXT
 /* EMIT */ case 0xA3:   putchar(top); pop; NEXT
 /* TYPE */ case 0xA4:    type(*S, top); pop2; NEXT
-/* BYE */ case 0xA5:  return 0;
-/* ACCEPT */ case 0xA6:   top = accept(*S++, top);
+/* COMPARE */ case 0xA5:  top = compare(abs(S[2]), S[1], abs(*S), top); S += 3; NEXT
+/* BYE */ case 0xA6:  return 0;
+/* ACCEPT */ case 0xA7:   top = accept(*S++, top);
 /* FIXME */ if (top < 0) exit(0); NEXT
-/* ARGC */ case 0xA7:  push argc; NEXT
-/* ARGV */ case 0xA8:  *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEXT
-/* CREATE-FILE */ case 0xA9: 
+/* ARGC */ case 0xA8:  push argc; NEXT
+/* ARGV */ case 0xA9:  *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEXT
+/* CREATE-FILE */ case 0xAA: 
 top = (cell)open_file(abs(S[1]), *S, abs(top));
 *++S = top, top = top ? 0 : -1; NEXT
-/* OPEN-FILE */ case 0xAA: 
+/* OPEN-FILE */ case 0xAB: 
 top = (cell)open_file(abs(S[1]), *S, abs(top));
 *++S = top, top = top ? 0 : -1; NEXT
-/* CLOSE-FILE */ case 0xAB: 
+/* CLOSE-FILE */ case 0xAC: 
 top = fclose((FILE*)top); NEXT
-/* READ-FILE */ case 0xAC: 
+/* READ-FILE */ case 0xAD: 
 w = fread(abs(S[1]), 1, *S, (FILE*)top);
 top = w == *S ? 0 : ferror((FILE*)top); *++S = w; NEXT
-/* READ-LINE */ case 0xAD: 
+/* READ-LINE */ case 0xAE: 
 w = (cell)fgets(abs(S[1]), *S + 1, (FILE*)top);
 if (!w) {
   top = feof((FILE*)top) ? 0 : ferror((FILE*)top);
@@ -178,43 +179,43 @@ if (!w) {
 top = strlen((char*)w);
 if (top > 0 && ((char*)w)[top-1] == '\n') --top;
 S[1] = top, *S = TRUE, top = 0; NEXT
-/* WRITE-FILE */ case 0xAE: 
+/* WRITE-FILE */ case 0xAF: 
 w = fwrite(abs(S[1]), 1, *S, (FILE*)top);
 top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
-/* WRITE-LINE */ case 0xAF: 
+/* WRITE-LINE */ case 0xB0: 
 w = fwrite(abs(S[1]), 1, *S, (FILE*)top);
 if (w == *S) *S = 1, w = fwrite("\n", 1, 1, (FILE*)top);
 top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
-/* ALLOCATE */ case 0xB0:   *--S = rel(malloc(top)), top = *S ? 0 : -1; NEXT
-/* RESIZE */ case 0xB1:     *S = rel(realloc(abs(*S), top)), top = *S ? 0 : -1; NEXT
-/* FREE */ case 0xB2:       if (top) free(abs(top)); top = 0; NEXT
-/* NEW-STRING */ case 0xB3: top = new_string(*S++, top); NEXT
-/* REFILL */ case 0xB4:   push refill(SOURCE); NEXT
-/* . */ case 0xB5:   printf("%d ", top); pop; NEXT
-/* -NUMBER */ case 0xB6:  w = number(abs(top), --S);
+/* ALLOCATE */ case 0xB1:   *--S = rel(malloc(top)), top = *S ? 0 : -1; NEXT
+/* RESIZE */ case 0xB2:     *S = rel(realloc(abs(*S), top)), top = *S ? 0 : -1; NEXT
+/* FREE */ case 0xB3:       if (top) free(abs(top)); top = 0; NEXT
+/* NEW-STRING */ case 0xB4: top = new_string(*S++, top); NEXT
+/* REFILL */ case 0xB5:   push refill(SOURCE); NEXT
+/* . */ case 0xB6:   printf("%d ", top); pop; NEXT
+/* -NUMBER */ case 0xB7:  w = number(abs(top), --S);
   if (w) top = 0; else *S = top, top = -1; NEXT
-/* >NUMBER */ case 0xB7:  top = to_number(S, top); NEXT
-/* WORD */ case 0xB8: 
+/* >NUMBER */ case 0xB8:  top = to_number(S, top); NEXT
+/* WORD */ case 0xB9: 
   top = word(SOURCE, top, HERE); NEXT
-/* FIND */ case 0xB9: 
+/* FIND */ case 0xBA: 
       w = find(top, 1);
       if (w) *--S = cfa(w), top = -1;
       else push 0; NEXT
-/* -FIND */ case 0xBA: 
+/* -FIND */ case 0xBB: 
       w = find(*S, top);
       if (w) *S = cfa(w), top = 0;
       else top = -1; NEXT
-/* >NAME */ case 0xBB:   top = nfa(top); NEXT
-/* NAME> */ case 0xBC:   top = cfa(top); NEXT
-/* DEPTH */ case 0xBD:   w = S0 - S; push w; NEXT
-/* .S */ case 0xBE: 
+/* >NAME */ case 0xBC:   top = nfa(top); NEXT
+/* NAME> */ case 0xBD:   top = cfa(top); NEXT
+/* DEPTH */ case 0xBE:   w = S0 - S; push w; NEXT
+/* .S */ case 0xBF: 
       w = S0 - S;  S[-1] = top;
       printf("[%d] ", w);
       for (int i = w - 2; i >= -1; i--)
           printf("%d (0x%x) ", S[i], S[i]);
       NEXT
-/* WORDS */ case 0xBF:   words(M[CONTEXT]); NEXT
-/* DUMP */ case 0xC0:   dump(*S++, top); pop; NEXT
-/* EXECUTE */ case 0xC1:  *--R = (cell)I, I = m + top, pop; NEXT
-/* ALIGNED */ case 0xC2:    top = aligned(top); NEXT
-/* PARSE */ case 0xC3:   top = parse(SOURCE, top, --S); NEXT
+/* WORDS */ case 0xC0:   words(M[CONTEXT]); NEXT
+/* DUMP */ case 0xC1:   dump(*S++, top); pop; NEXT
+/* EXECUTE */ case 0xC2:  *--R = (cell)I, I = m + top, pop; NEXT
+/* ALIGNED */ case 0xC3:    top = aligned(top); NEXT
+/* PARSE */ case 0xC4:   top = parse(SOURCE, top, --S); NEXT
