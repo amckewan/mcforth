@@ -62,14 +62,14 @@ Page | Description | Example
 opcode | function | operands
 ------ | -------- | -----
 0 | exit
-1 | call | address
+1 | call | 16-bit address
 2 | branch | offset
 3 | do | offset
 4 | ?do | offset
 5 | loop | offset
 6 | +loop | offset
 7 | lit | value
-8 | call2 | 2-byte offset
+8 | call | 32-bit address
 9 |
 A | s" | counted string
 B | ." | counted string

@@ -86,17 +86,17 @@ COMPILER
 
 : IF        CONDITION  >MARK ;
 : THEN      >RESOLVE ;
-: ELSE      2 OP,  >MARK  2SWAP >RESOLVE ;
+: ELSE      3 OP,  >MARK  2SWAP >RESOLVE ;
 : BEGIN     <MARK ;
 : UNTIL     CONDITION  <RESOLVE ;
-: AGAIN     2 OP,  <RESOLVE ;
+: AGAIN     3 OP,  <RESOLVE ;
 : WHILE     [COMPILE] IF  2SWAP ;
 : REPEAT    [COMPILE] AGAIN  [COMPILE] THEN ;
 
-: DO        3 OP,  >MARK  <MARK ;
-: ?DO       4 OP,  >MARK  <MARK ;
-: LOOP      5 OP,  <RESOLVE  >RESOLVE ;
-: +LOOP     6 OP,  <RESOLVE  >RESOLVE ;
+: DO        4 OP,  >MARK  <MARK ;
+: ?DO       5 OP,  >MARK  <MARK ;
+: LOOP      6 OP,  <RESOLVE  >RESOLVE ;
+: +LOOP     7 OP,  <RESOLVE  >RESOLVE ;
 FORTH
 
 ( *** more stuff *** )

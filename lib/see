@@ -24,19 +24,20 @@ hex
 : .name ( xt -- ) >name count 1f and type space ;
 
 : .call  ( a -- a+2 ) dup w@ ( dup . ) .name 2 + ;
+: .call32  ( a -- a+4 ) dup @ ( dup . ) .name cell+ ;
 : .branch ( a -- a+1 )  dup dup c@ dup 80 and if ffffff00 or then + . 1+ ;
 : .lit  dup ? cell + ;
 : .slit  count 2dup type '"' emit space + ;
 
 \ now we need to know how many bytes of operand per opcode. hmm...
 : .operands ( a opc -- a' )
-    dup 7 = over 20 30 within or if drop .lit exit then
-    dup A D within if drop .slit exit then
-    dup 8 = if drop  .call  exit then
-    dup 2 = over 50 60 within or over 3 7 within or if drop .branch exit then
     \ case?
-    drop
-;
+    dup 1 = if drop .call exit then
+    dup 2 = if drop .call32 exit then
+    dup 3 8 within over 50 60 within or if drop .branch exit then
+    dup 8 = over 20 30 within or if drop .lit exit then
+    dup A D within if drop .slit exit then
+    drop ;
 
 : (see) ( xt -- )
     \ dup >name count 1f and type

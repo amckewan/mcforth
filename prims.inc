@@ -11,30 +11,28 @@
 #define NOBRANCH    I += 1
 #define EXIT        I = (byte*) *R++; NEXT
 /* EXIT */ case 0x00:        EXIT
-/* CALL */ case 0x01:        w = LIT; *--R = (cell)I + CELL; I = m + w; NEXT
-/* BRANCH */ case 0x02:      BRANCH; NEXT
-/* DO */ case 0x03:          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
-/* ?DO */ case 0x04:         if (top == *S) BRANCH;
+/* CALL */ case 0x01:        w = *(uint16_t *)I; *--R = (cell)I + 2; I = m + w; NEXT
+/* CALL32 */ case 0x02:      w = LIT; *--R = (cell)I + CELL; I = m + w; NEXT
+/* BRANCH */ case 0x03:      BRANCH; NEXT
+/* DO */ case 0x04:          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
+/* ?DO */ case 0x05:         if (top == *S) BRANCH;
 else *--R = (cell)I + OFFSET,
      *--R = *S, *--R = top - *S, NOBRANCH;
 S++, pop; NEXT
-/* LOOP */ case 0x05:        if ((++ *R) == 0) NOBRANCH, R += 3; else BRANCH; NEXT
-/* +LOOP */ case 0x06:       w = *R, *R += top;
+/* LOOP */ case 0x06:        if ((++ *R) == 0) NOBRANCH, R += 3; else BRANCH; NEXT
+/* +LOOP */ case 0x07:       w = *R, *R += top;
 if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
 else BRANCH; pop; NEXT
-/* LIT */ case 0x07:         push LIT; I += CELL; NEXT
-/* CALL */ case 0x08:        w = *(unsigned short*)I; *--R = (cell)I + 2; I = m + w; NEXT
-/* unused */ case 0x09:      NEXT
+/* LIT */ case 0x08:         push LIT; I += CELL; NEXT
+/* --- */ case 0x09:         NEXT
 /* S" */ case 0x0A:          push rel(I) + 1; push *I; I = litq(I); NEXT
 /* ." */ case 0x0B:          I = dotq(I); NEXT
 /* ABORT" */ case 0x0C:      if (!top) { I = litq(I); pop; NEXT }
 show_error((char*)I, abs(HERE), abs(SOURCE));
 goto abort;
-/* unused */ case 0x0D:      NEXT
-/* unused */ case 0x0E:      NEXT
-/* unused */ case 0x0F:      NEXT
-/* DOVAR */ case 0x10:       push aligned(rel(I)); EXIT
-/* DOCREATE */ case 0x11:    push aligned(rel(I)) + CELL; w = *(cell*)aligned(I);
+/* DOCON */ case 0x10:       push LIT; EXIT
+/* DOVAR */ case 0x11:       push aligned(rel(I)); EXIT
+/* DOCREATE */ case 0x12:    push aligned(rel(I)) + CELL; w = *(cell*)aligned(I);
 if (w) I = abs(w); else EXIT
 /* LIT+ */ case 0x20:   top += *I++; NEXT
 /* LIT- */ case 0x21:    top -= *I++; NEXT
@@ -217,5 +215,6 @@ top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
       NEXT
 /* WORDS */ case 0xBF:   words(M[CONTEXT]); NEXT
 /* DUMP */ case 0xC0:   dump(*S++, top); pop; NEXT
-/* ALIGNED */ case 0xC1:    top = aligned(top); NEXT
-/* PARSE */ case 0xC2:   top = parse(SOURCE, top, --S); NEXT
+/* EXECUTE */ case 0xC1:  *--R = (cell)I, I = m + top, pop; NEXT
+/* ALIGNED */ case 0xC2:    top = aligned(top); NEXT
+/* PARSE */ case 0xC3:   top = parse(SOURCE, top, --S); NEXT

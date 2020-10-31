@@ -92,11 +92,6 @@ s" see.info" w/o create-file ?err seer !
 \ **********************************************************************
 \ Compiler
 
-: ;_  [COMPILE] ; ; IMMEDIATE \ concession
-
-\ Opcodes
-7 CONSTANT <LIT>
-
 VARIABLE ?CODE
 : LATEST ( -- n )  ?CODE @ DUP IF C@-T ELSE INVERT THEN ;
 : PATCH  ( n -- )  ?CODE @ DUP 0= ABORT" patch?" C!-T ;
@@ -106,8 +101,8 @@ VARIABLE ?CODE
     ?CODE @ 0< 0= IF
         DUP C@-T 5F >  OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
     THEN
-    DUP 10000 U< IF  8 OP, W,-T EXIT  THEN
-    1 OP, ,-T ( call ) ;
+    DUP 10000 U< IF  1 OP, W,-T ( call16 ) EXIT  THEN
+    8 OP, ,-T ( call32 ) ;
 
 : EXIT  0 OP, ;
 
@@ -162,7 +157,7 @@ VARIABLE OP  ( next opcode )
 \        IF  10 + PATCH  ELSE  OP,  THEN ;
 
 \ Target Literals
-: LITERAL  ( n -- )  ?EXEC  <LIT> OP,  ,-T ;
+: LITERAL  ( n -- )  ?EXEC  8 OP,  ,-T ;
 : $   BL WORD NUMBER DROP LITERAL ;
 
 \ Define Meta Branching Constructs
@@ -181,17 +176,17 @@ VARIABLE OP  ( next opcode )
 
 : IF        CONDITION  >MARK ;
 : THEN      >RESOLVE ;
-: ELSE      2 OP,  >MARK  2SWAP >RESOLVE ;
+: ELSE      3 OP,  >MARK  2SWAP >RESOLVE ;
 : BEGIN     <MARK ;
 : UNTIL     CONDITION  <RESOLVE ;
-: AGAIN     2 OP,  <RESOLVE ;
+: AGAIN     3 OP,  <RESOLVE ;
 : WHILE     IF  2SWAP ;
 : REPEAT    AGAIN  THEN ;
 
-: DO        3 OP,  >MARK  <MARK ;
-: ?DO       4 OP,  >MARK  <MARK ;
-: LOOP      5 OP,  <RESOLVE  >RESOLVE ;
-: +LOOP     6 OP,  <RESOLVE  >RESOLVE ;
+: DO        4 OP,  >MARK  <MARK ;
+: ?DO       5 OP,  >MARK  <MARK ;
+: LOOP      6 OP,  <RESOLVE  >RESOLVE ;
+: +LOOP     7 OP,  <RESOLVE  >RESOLVE ;
 
 \ Compile Strings into the Target
 : C"  HERE-T  [CHAR] " PARSE S,-T  0 C,-T ; \ c-style string
@@ -202,17 +197,15 @@ VARIABLE OP  ( next opcode )
 : ABORT"  0C OP,  ", ;
 
 \ Defining Words
-\ : EQU CONSTANT ;
+: CONSTANT  TARGET-CREATE  10 OP, ,-T ;
+: VARIABLE  TARGET-CREATE  11 OP, ALIGN 0 ,-T ;
 
 : [   0 STATE-T ! ;
 : ]  -1 STATE-T ! ;
 
-
-: CONSTANT  TARGET-CREATE  ] LITERAL EXIT [ ;
-: VARIABLE  TARGET-CREATE  10 OP, ALIGN 0 ,-T ;
-
 : T:  HEADER   0 ?CODE !  ] ;  \ to create words with no host header
 
+: ;_  [COMPILE] ; ; IMMEDIATE \ concession
 : ;   ?CSP EXIT [ ;
 : :   TARGET-CREATE  0 ?CODE !  !CSP ] ;_
 
@@ -243,7 +236,8 @@ VARIABLE OP  ( next opcode )
 0 OP! ( special functions )
 
 OP: EXIT        EXIT
-OP: CALL        w = LIT; *--R = (cell)I + CELL; I = m + w; NEXT
+OP: CALL        w = *(uint16_t *)I; *--R = (cell)I + 2; I = m + w; NEXT
+OP: CALL32      w = LIT; *--R = (cell)I + CELL; I = m + w; NEXT
 OP: BRANCH      BRANCH; NEXT
 OP: DO          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
 OP: ?DO         if (top == *S) BRANCH;
@@ -254,21 +248,21 @@ OP: LOOP        if ((++ *R) == 0) NOBRANCH, R += 3; else BRANCH; NEXT
 OP: +LOOP       w = *R, *R += top;
                 ` if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
                 ` else BRANCH; pop; NEXT
-OP: LIT         push LIT; I += CELL; NEXT
 
-OP: CALL        w = *(unsigned short*)I; *--R = (cell)I + 2; I = m + w; NEXT
-OP: unused      NEXT
+OP: LIT         push LIT; I += CELL; NEXT
+OP: ---         NEXT
 OP: S"          push rel(I) + 1; push *I; I = litq(I); NEXT
 OP: ."          I = dotq(I); NEXT
 OP: ABORT"      if (!top) { I = litq(I); pop; NEXT }
                 ` show_error((char*)I, abs(HERE), abs(SOURCE));
                 ` goto abort;
-OP: unused      NEXT
-OP: unused      NEXT
-OP: unused      NEXT
+\ OP:
+\ OP:
+\ OP:
 
 10 OP! ( runtime for defining words )
 
+OP: DOCON       push LIT; EXIT
 OP: DOVAR       push aligned(rel(I)); EXIT
 OP: DOCREATE    push aligned(rel(I)) + CELL; w = *(cell*)aligned(I);
                 ` if (w) I = abs(w); else EXIT
@@ -616,14 +610,14 @@ CODE DUMP  ( a n -- )  dump(*S++, top); pop; NEXT
 
 : COMPILE,  ( xt -- )
     DUP C@ $ 5F >  OVER 1+ C@ 0= AND IF  C@ C, EXIT  THEN
-    DUP $ 10000 U< IF  $ 8 C, W, EXIT  THEN
-    $ 1 C, , ;
+    DUP $ 10000 U< IF  $ 1 C, W, EXIT  THEN
+    $ 8 C, , ;
 
 COMPILER
-: LITERAL  $ 7 C, , ;
+: LITERAL  $ 8 C, , ;
 FORTH
-: EXECUTE  >ABS >R ;
-\ CODE EXECUTE  I = m + top, pop; NEXT
+\ : EXECUTE  >ABS >R ;
+CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
 : INTERPRET  ( -- )
     BEGIN   BL WORD DUP C@
@@ -677,11 +671,11 @@ VARIABLE LAST ( nfa)
     ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
     HERE LAST !  BL WORD C@  DUP $ 80 OR HERE C!  1+ ALLOT ;
 
-: CONSTANT  HEADER  LITERAL  $ 0 OP, ;
-: VARIABLE  HEADER  $ 10 OP, ALIGN $ 0 , ;
+: CONSTANT  HEADER  $ 10 OP, , ;
+: VARIABLE  HEADER  $ 11 OP, ALIGN $ 0 , ;
 
 \ | opc | align | I for does | data
-: CREATE  HEADER $ 11 C, ALIGN $ 0 , ;
+: CREATE  HEADER $ 12 C, ALIGN $ 0 , ;
 
 : PREVIOUS  ( -- nfa count )  CONTEXT @ HASH @  CELL+ DUP C@ ;
 : DOES>   R> >REL  PREVIOUS $ 1F AND + 1+ ( cfa ) 1+ ALIGNED ! ;
