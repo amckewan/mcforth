@@ -1,4 +1,6 @@
 ( decompiler )
+( intended to see what the compiler does, not to reproduce source code )
+
 base @ decimal
 
 \ cheesy decompiler
@@ -34,7 +36,7 @@ hex
     dup 1 = if drop .call exit then
     dup 2 = if drop .call32 exit then
     dup 3 8 within over 50 60 within or if drop .branch exit then
-    dup 8 = over 20 30 within or if drop .lit exit then
+    dup 8 = over 20 40 within or if drop .lit exit then
     dup A D within if drop .slit exit then
     drop ;
 
@@ -48,6 +50,6 @@ hex
 
 : see ' (see) ;
 
-: see:  here ] 1 parse evaluate [compile] ; (see) ;
+: see:  here ] 1 parse evaluate [compile] exit [compile] [ (see) ;
 
 base !

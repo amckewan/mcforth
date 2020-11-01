@@ -2,10 +2,11 @@
 
 * optimizing compiler
 * lit+op
+* lit+cond
 * cond+branch
+* lit+cond+branch
 * inline const/var
 * multi-op inline (e.g. 2dup )
-* lit+cond+branch
 * specials (e.g. dup if )
 * lit+pick
 
@@ -13,6 +14,9 @@
 * check for redefined words
 * add value
 * add defer
+* add sysvar in meta
+* move warm to 4
+* remove non-essential code words (keep opcodes trim)
 
 ### Do later
 

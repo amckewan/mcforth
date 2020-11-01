@@ -270,16 +270,24 @@ OP: DOCREATE    push aligned(rel(I)) + CELL; w = *(cell*)aligned(I);
 
 20 OP! ( lit op )
 
-PRIM LIT+          top += LIT, I += CELL; NEXT
-PRIM LIT-          top -= LIT, I += CELL; NEXT
-PRIM LIT*          top *= LIT, I += CELL; NEXT
-PRIM LIT/          top /= LIT, I += CELL; NEXT
-PRIM LITAND        top &= LIT, I += CELL; NEXT
-PRIM LITOR         top |= LIT, I += CELL; NEXT
-PRIM LITXOR        top ^= LIT, I += CELL; NEXT
+OP: LIT+        top += LIT, I += CELL; NEXT
+OP: LIT-        top -= LIT, I += CELL; NEXT
+OP: LIT*        top *= LIT, I += CELL; NEXT
+OP: LIT/        top /= LIT, I += CELL; NEXT
+OP: LITAND      top &= LIT, I += CELL; NEXT
+OP: LITOR       top |= LIT, I += CELL; NEXT
+OP: LITXOR      top ^= LIT, I += CELL; NEXT
 
 30 OP! ( lit cond )
 \ not needed for 0= 0< etc. so this frees up 6 slots, and be careful!
+OP: ---
+OP: ---
+OP: ---
+OP: LIT=        top = (top == LIT) LOGICAL; NEXT
+OP: LIT<        top = (top < LIT) LOGICAL; NEXT
+OP: LIT>        top = (top > LIT) LOGICAL; NEXT
+OP: LITU<       top = ((ucell)top < (ucell)LIT) LOGICAL; NEXT
+OP: LITU>       top = ((ucell)top > (ucell)LIT) LOGICAL; NEXT
 
 40 OP! ( lit cond branch )
 
@@ -334,7 +342,7 @@ CODE U>         top = ((ucell)*S++ > (ucell)top) LOGICAL; NEXT
 
 OP: 0<>   top = (top != 0) LOGICAL; NEXT
 OP: 0>=   top = (top >= 0) LOGICAL; NEXT
-OP: )<=   top = (top <= 0) LOGICAL; NEXT
+OP: 0<=   top = (top <= 0) LOGICAL; NEXT
 OP: <>   top = (*S++ != top) LOGICAL; NEXT
 OP: >=   top = (*S++ >= top) LOGICAL; NEXT
 OP: <=   top = (*S++ <= top) LOGICAL; NEXT
@@ -606,9 +614,12 @@ CODE DUMP  ( a n -- )  dump(*S++, top, BASE); pop; NEXT
 
 : HERE   H @  ;
 : ALLOT  H +! ;
-: ,   H @ !   $ 4 H +! ;
+: ,   H @ !  CELL H +! ;
 : C,  H @ C!  $ 1 H +! ;
 : W,  H @ W!  $ 2 H +! ;
+
+CODE ALIGNED  top = aligned(top); NEXT
+: ALIGN  BEGIN HERE DUP ALIGNED < WHILE $ 0 C, REPEAT ;
 
 VARIABLE ?CODE 0 ,-T
 : OP, ( opc -- )  ?CODE @ HERE ?CODE 2!  C, ;
@@ -659,12 +670,8 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
 ( ********** More compiler ********** )
 
-CODE ALIGNED    top = aligned(top); NEXT
-\ CODE ALIGN        while (HERE != aligned(HERE)) m[HERE++] = 0; NEXT
-: ALIGN BEGIN HERE $ 3 AND WHILE $ 0 C, REPEAT ;
-
-CODE PARSE  ( c -- a n )  top = parse(SOURCE, top, --S); NEXT
-CODE PARSE-NAME  ( -- a n )  push parse_name(SOURCE, --S); NEXT
+CODE PARSE    ( c -- a n )  top = parse(SOURCE, top, --S); NEXT
+CODE PARSE-NAME ( -- a n )  push parse_name(SOURCE, --S); NEXT
 
 : S,  ( a n -- )  BEGIN DUP WHILE >R COUNT C, R> 1- REPEAT 2DROP ;
 : ,"  $ 22 ( [CHAR] ") PARSE  DUP C, S, ;
@@ -699,6 +706,7 @@ COMPILER
 T: ;  EXIT [ REVEAL ;
 : [COMPILE]  $ 2 -' ABORT" ?" COMPILE, ;
 
+\ these can go to rth
 : S"      $ A OP,  ," ;
 : ."      $ B OP,  ," ;
 : ABORT"  $ C OP,  ," ;

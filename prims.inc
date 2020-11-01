@@ -34,13 +34,21 @@ goto abort;
 /* DOVAR */ case 0x11:       push aligned(rel(I)); EXIT
 /* DOCREATE */ case 0x12:    push aligned(rel(I)) + CELL; w = *(cell*)aligned(I);
 if (w) I = abs(w); else EXIT
-/* LIT+ */ case 0x20:          top += LIT, I += CELL; NEXT
-/* LIT- */ case 0x21:          top -= LIT, I += CELL; NEXT
-/* LIT* */ case 0x22:          top *= LIT, I += CELL; NEXT
-/* LIT/ */ case 0x23:          top /= LIT, I += CELL; NEXT
-/* LITAND */ case 0x24:        top &= LIT, I += CELL; NEXT
-/* LITOR */ case 0x25:         top |= LIT, I += CELL; NEXT
-/* LITXOR */ case 0x26:        top ^= LIT, I += CELL; NEXT
+/* LIT+ */ case 0x20:        top += LIT, I += CELL; NEXT
+/* LIT- */ case 0x21:        top -= LIT, I += CELL; NEXT
+/* LIT* */ case 0x22:        top *= LIT, I += CELL; NEXT
+/* LIT/ */ case 0x23:        top /= LIT, I += CELL; NEXT
+/* LITAND */ case 0x24:      top &= LIT, I += CELL; NEXT
+/* LITOR */ case 0x25:       top |= LIT, I += CELL; NEXT
+/* LITXOR */ case 0x26:      top ^= LIT, I += CELL; NEXT
+/* --- */ case 0x30: 
+/* --- */ case 0x31: 
+/* --- */ case 0x32: 
+/* LIT= */ case 0x33:        top = (top == LIT) LOGICAL; NEXT
+/* LIT< */ case 0x34:        top = (top < LIT) LOGICAL; NEXT
+/* LIT> */ case 0x35:        top = (top > LIT) LOGICAL; NEXT
+/* LITU< */ case 0x36:       top = ((ucell)top < (ucell)LIT) LOGICAL; NEXT
+/* LITU> */ case 0x37:       top = ((ucell)top > (ucell)LIT) LOGICAL; NEXT
 #define IF(cond)  if (cond) NOBRANCH; else BRANCH
 #define IF1(cond) IF(cond); pop; NEXT
 #define IF2(cond) IF(cond); pop2; NEXT
@@ -77,7 +85,7 @@ if (w) I = abs(w); else EXIT
 /* U> */ case 0x77:         top = ((ucell)*S++ > (ucell)top) LOGICAL; NEXT
 /* 0<> */ case 0x78:   top = (top != 0) LOGICAL; NEXT
 /* 0>= */ case 0x79:   top = (top >= 0) LOGICAL; NEXT
-/* )<= */ case 0x7A:   top = (top <= 0) LOGICAL; NEXT
+/* 0<= */ case 0x7A:   top = (top <= 0) LOGICAL; NEXT
 /* <> */ case 0x7B:   top = (*S++ != top) LOGICAL; NEXT
 /* >= */ case 0x7C:   top = (*S++ >= top) LOGICAL; NEXT
 /* <= */ case 0x7D:   top = (*S++ <= top) LOGICAL; NEXT
@@ -219,7 +227,7 @@ top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
       NEXT
 /* WORDS */ case 0xC7:   words(M[CONTEXT]); NEXT
 /* DUMP */ case 0xC8:   dump(*S++, top, BASE); pop; NEXT
-/* EXECUTE */ case 0xC9:  *--R = (cell)I, I = m + top, pop; NEXT
-/* ALIGNED */ case 0xCA:    top = aligned(top); NEXT
+/* ALIGNED */ case 0xC9:  top = aligned(top); NEXT
+/* EXECUTE */ case 0xCA:  *--R = (cell)I, I = m + top, pop; NEXT
 /* PARSE */ case 0xCB:   top = parse(SOURCE, top, --S); NEXT
 /* PARSE-NAME */ case 0xCC:   push parse_name(SOURCE, --S); NEXT
