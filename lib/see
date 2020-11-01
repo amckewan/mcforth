@@ -37,6 +37,7 @@ hex
     dup 2 = if drop .call32 exit then
     dup 3 8 within over 50 60 within or if drop .branch exit then
     dup 8 = over 20 40 within or if drop .lit exit then
+    dup 40 50 within if drop .lit .branch exit then
     dup A D within if drop .slit exit then
     drop ;
 
@@ -51,5 +52,7 @@ hex
 : see ' (see) ;
 
 : see:  here ] 1 parse evaluate [compile] exit [compile] [ (see) ;
+
+: s see: ; \ shorthand
 
 base !

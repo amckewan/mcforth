@@ -18,6 +18,24 @@ real 8.56
 user 8.56
 sys 0.00
 
+OPTIMIZED (not much better, sadly )
+
+time -p ../forth ./sieve.fs -e "main bye"
+Including ./sieve.fs
+real 3.61
+user 3.61
+sys 0.00
+time -p ../forth ./bubble-sort.fs -e "main bye"
+Including ./bubble-sort.fs
+real 11.37
+user 11.37
+sys 0.00
+time -p ../forth ./fib.fs -e "main bye"
+Including ./fib.fs
+real 4.69
+user 4.69
+sys 0.00
+
 -------------------
 
 Gforth 0.7.3

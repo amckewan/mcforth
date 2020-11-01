@@ -41,14 +41,40 @@ if (w) I = abs(w); else EXIT
 /* LITAND */ case 0x24:      top &= LIT, I += CELL; NEXT
 /* LITOR */ case 0x25:       top |= LIT, I += CELL; NEXT
 /* LITXOR */ case 0x26:      top ^= LIT, I += CELL; NEXT
+#define LITCOND(cond) top = (cond) LOGICAL; I += CELL; NEXT
 /* --- */ case 0x30: 
 /* --- */ case 0x31: 
 /* --- */ case 0x32: 
-/* LIT= */ case 0x33:        top = (top == LIT) LOGICAL; NEXT
-/* LIT< */ case 0x34:        top = (top < LIT) LOGICAL; NEXT
-/* LIT> */ case 0x35:        top = (top > LIT) LOGICAL; NEXT
-/* LITU< */ case 0x36:       top = ((ucell)top < (ucell)LIT) LOGICAL; NEXT
-/* LITU> */ case 0x37:       top = ((ucell)top > (ucell)LIT) LOGICAL; NEXT
+/* LIT= */ case 0x33:        LITCOND(top == LIT)
+/* LIT< */ case 0x34:        LITCOND(top < LIT)
+/* LIT> */ case 0x35:        LITCOND(top > LIT)
+/* LITU< */ case 0x36:       LITCOND((ucell)top < (ucell)LIT)
+/* LITU> */ case 0x37:       LITCOND((ucell)top > (ucell)LIT)
+/* --- */ case 0x38: 
+/* --- */ case 0x39: 
+/* --- */ case 0x3A: 
+/* LIT<> */ case 0x3B:       LITCOND(top != LIT)
+/* LIT>= */ case 0x3C:       LITCOND(top >= LIT)
+/* LIT<= */ case 0x3D:       LITCOND(top <= LIT)
+/* LITU>= */ case 0x3E:      LITCOND((ucell)top >= (ucell)LIT)
+/* LITU<= */ case 0x3F:      LITCOND((ucell)top <= (ucell)LIT)
+#define LITIF(cond) w = LIT, I += CELL; if (cond) NOBRANCH; else BRANCH; pop; NEXT
+/* --- */ case 0x40: 
+/* --- */ case 0x41: 
+/* --- */ case 0x42: 
+/* LIT=IF */ case 0x43:      LITIF(top == w)
+/* LIT<IF */ case 0x44:      LITIF(top < w)
+/* LIT>IF */ case 0x45:      LITIF(top > w)
+/* LITU<IF */ case 0x46:     LITIF((ucell)top < (ucell)w)
+/* LITU>IF */ case 0x47:     LITIF((ucell)top > (ucell)w)
+/* --- */ case 0x48: 
+/* --- */ case 0x49: 
+/* --- */ case 0x4A: 
+/* LIT<>IF */ case 0x4B:     LITIF(top != w)
+/* LIT>=IF */ case 0x4C:     LITIF(top >= w)
+/* LIT<=IF */ case 0x4D:     LITIF(top <= w)
+/* LITU>=IF */ case 0x4E:    LITIF((ucell)top >= (ucell)w)
+/* LITU<=IF */ case 0x4F:    LITIF((ucell)top <= (ucell)w)
 #define IF(cond)  if (cond) NOBRANCH; else BRANCH
 #define IF1(cond) IF(cond); pop; NEXT
 #define IF2(cond) IF(cond); pop2; NEXT
@@ -60,7 +86,7 @@ if (w) I = abs(w); else EXIT
 /* >IF */ case 0x55:      IF2(*S > top)
 /* U<IF */ case 0x56:     IF2((ucell)*S < (ucell)top)
 /* U>IF */ case 0x57:     IF2((ucell)*S > (ucell)top)
-/* ?BRANCH */ case 0x58:       IF1(top != 0)
+/* ?BRANCH */ case 0x58:  IF1(top != 0)
 /* 0>=IF */ case 0x59:    IF1(top >= 0)
 /* 0<=IF */ case 0x5A:    IF1(top <= 0)
 /* <>IF */ case 0x5B:     IF2(*S != top)

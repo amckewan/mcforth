@@ -182,7 +182,7 @@ next:
 }
 
 // Initial dictionary
-byte dict[10000] = {
+byte dict[] = {
 #ifdef EXTEND
     #include "extended.inc"
 #else

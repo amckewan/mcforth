@@ -267,7 +267,6 @@ OP: DOVAR       push aligned(rel(I)); EXIT
 OP: DOCREATE    push aligned(rel(I)) + CELL; w = *(cell*)aligned(I);
                 ` if (w) I = abs(w); else EXIT
 
-
 20 OP! ( lit op )
 
 OP: LIT+        top += LIT, I += CELL; NEXT
@@ -278,18 +277,50 @@ OP: LITAND      top &= LIT, I += CELL; NEXT
 OP: LITOR       top |= LIT, I += CELL; NEXT
 OP: LITXOR      top ^= LIT, I += CELL; NEXT
 
-30 OP! ( lit cond )
+30 OP! ( lit cond : op | lit )
 \ not needed for 0= 0< etc. so this frees up 6 slots, and be careful!
-OP: ---
-OP: ---
-OP: ---
-OP: LIT=        top = (top == LIT) LOGICAL; NEXT
-OP: LIT<        top = (top < LIT) LOGICAL; NEXT
-OP: LIT>        top = (top > LIT) LOGICAL; NEXT
-OP: LITU<       top = ((ucell)top < (ucell)LIT) LOGICAL; NEXT
-OP: LITU>       top = ((ucell)top > (ucell)LIT) LOGICAL; NEXT
+` #define LITCOND(cond) top = (cond) LOGICAL; I += CELL; NEXT
 
-40 OP! ( lit cond branch )
+OP: ---
+OP: ---
+OP: ---
+OP: LIT=        LITCOND(top == LIT)
+OP: LIT<        LITCOND(top < LIT)
+OP: LIT>        LITCOND(top > LIT)
+OP: LITU<       LITCOND((ucell)top < (ucell)LIT)
+OP: LITU>       LITCOND((ucell)top > (ucell)LIT)
+
+OP: ---
+OP: ---
+OP: ---
+OP: LIT<>       LITCOND(top != LIT)
+OP: LIT>=       LITCOND(top >= LIT)
+OP: LIT<=       LITCOND(top <= LIT)
+OP: LITU>=      LITCOND((ucell)top >= (ucell)LIT)
+OP: LITU<=      LITCOND((ucell)top <= (ucell)LIT)
+
+40 OP! ( lit cond branch : op | lit | offset )
+\ not needed for 0= 0< etc. so this frees up 6 slots, and be careful!
+
+` #define LITIF(cond) w = LIT, I += CELL; if (cond) NOBRANCH; else BRANCH; pop; NEXT
+
+OP: ---
+OP: ---
+OP: ---
+OP: LIT=IF      LITIF(top == w)
+OP: LIT<IF      LITIF(top < w)
+OP: LIT>IF      LITIF(top > w)
+OP: LITU<IF     LITIF((ucell)top < (ucell)w)
+OP: LITU>IF     LITIF((ucell)top > (ucell)w)
+
+OP: ---
+OP: ---
+OP: ---
+OP: LIT<>IF     LITIF(top != w)
+OP: LIT>=IF     LITIF(top >= w)
+OP: LIT<=IF     LITIF(top <= w)
+OP: LITU>=IF    LITIF((ucell)top >= (ucell)w)
+OP: LITU<=IF    LITIF((ucell)top <= (ucell)w)
 
 50 OP! ( cond branch )
 
@@ -306,7 +337,7 @@ OP: >IF      IF2(*S > top)
 OP: U<IF     IF2((ucell)*S < (ucell)top)
 OP: U>IF     IF2((ucell)*S > (ucell)top)
 
-OP: ?BRANCH       IF1(top != 0)
+OP: ?BRANCH  IF1(top != 0)
 OP: 0>=IF    IF1(top >= 0)
 OP: 0<=IF    IF1(top <= 0)
 OP: <>IF     IF2(*S != top)
@@ -626,9 +657,9 @@ VARIABLE ?CODE 0 ,-T
 
 : COMPILE,  ( xt -- )
     \ DUP W@ 60 100 WITHIN IF  C@ C, EXIT  THEN
-    DUP C@ $ 5F >  OVER 1+ C@ 0= AND IF  C@ C, EXIT  THEN
-    DUP $ 10000 U< IF  $ 1 C, W, EXIT  THEN
-    $ 8 C, , ;
+    DUP C@ $ 5F >  OVER 1+ C@ 0= AND IF  C@ OP, EXIT  THEN
+    DUP $ 10000 U< IF  $ 1 OP, W, EXIT  THEN
+    $ 8 OP, , ;
 
 COMPILER
 : LITERAL  $ 8 OP, , ;
