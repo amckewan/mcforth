@@ -48,4 +48,6 @@ hex
 
 : see ' (see) ;
 
+: see:  here ] 1 parse evaluate [compile] ; (see) ;
+
 base !

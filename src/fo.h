@@ -51,7 +51,7 @@ STATIC_ASSERT(sizeof(struct source) == 32, source_size);
 // lib.c
 cell new_string(cell str_va, int len);
 void fatal(const char *msg);
-void dump(int a, int n);
+void dump(int a, int n, int base);
 
 int source_depth();
 void push_source(FILE *file, const char *filename, int len);

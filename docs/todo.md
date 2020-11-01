@@ -7,7 +7,9 @@
 * multi-op inline (e.g. 2dup )
 * lit+cond+branch
 * specials (e.g. dup if )
+* lit+pick
 
+* move what I can from meta to rth
 * check for redefined words
 * add value
 * add defer

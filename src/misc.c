@@ -58,10 +58,10 @@ void fatal(const char *msg) {
     exit(1);
 }
 
-void dump(int a, int n) {
+void dump(int a, int n, int base) {
     int i, j;
     for (i = 0; i < n; i += 16, a += 16) {
-        printf("%04X ", a);
+        if (base == 10) printf("%d ", a); else printf("%X ", a);
         for (j = 0; j < 16; j++) {
             if (j % 4 == 0) putchar(' ');
             printf("%02X ", m[a + j]);

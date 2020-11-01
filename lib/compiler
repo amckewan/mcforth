@@ -1,0 +1,17 @@
+( compiler )
+base @ hex
+
+: LATEST ( -- op/-1 )   ?CODE @ DUP IF C@ ELSE INVERT THEN ;
+: PATCH  ( op -- )      ?CODE @ DUP 0= ABORT" patch?" C! ;
+
+
+: BINARY  ( op -- )
+    CREATE C,  DOES> C@  LATEST 8 =
+      IF  40 XOR PATCH  ELSE  OP,  THEN ;
+
+COMPILER
+60 BINARY +     61 BINARY -     62 BINARY *     63 BINARY /
+64 BINARY AND   65 BINARY OR    66 BINARY XOR
+FORTH
+
+base !

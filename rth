@@ -64,9 +64,6 @@ FORTH
 \ : DOES>  COMPILE (DOES>)  [COMPILE] EXIT ; IMMEDIATE
 : >BODY  1+ ALIGNED CELL+ ;
 
-VARIABLE ?CODE
-: OP,  HERE ?CODE ! C, ;
-
 ( *** Branching and Looping *** )
 : ?CONDITION  INVERT ABORT" unbalanced" ;
 : MARK  ( -- here )  HERE  0 ?CODE ! ;

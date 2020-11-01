@@ -63,28 +63,30 @@ opcode | function | operands
 ------ | -------- | -----
 0 | exit
 1 | call | 16-bit address
-2 | branch | offset
-3 | do | offset
-4 | ?do | offset
-5 | loop | offset
-6 | +loop | offset
-7 | lit | value
-8 | call | 32-bit address
-9 |
+2 | call32 | 32-bit address
+3 | branch | offset
+4 | do | offset
+5 | ?do | offset
+6 | loop | offset
+7 | +loop | offset
+8 | lit | value
+9 | ---
 A | s" | counted string
 B | ." | counted string
 C | abort" | counted string
-D | unused
-E | unused
-F | jump | address
+D | ---
+E | ---
+F | ---
 
 ## Page 1: Runtime
 
 opcode | function | operands
 ------ | -------- | -----
-10 | dovar | op, align, value
-11 | docreate | op, align, I for DOES>, data
-12 | dovalue | op, align value (a fetching variable)
+10 | docon| op, value
+11 | dovar | op, align, value
+12 | docreate | op, align, I for DOES>, data
+XX | dovalue | op, align, value
+XX | dodefer | op, align, xt
 
 ## Page 2: Literals
 

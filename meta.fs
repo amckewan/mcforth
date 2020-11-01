@@ -190,11 +190,11 @@ VARIABLE OP  ( next opcode )
 
 \ Compile Strings into the Target
 : C"  HERE-T  [CHAR] " PARSE S,-T  0 C,-T ; \ c-style string
-: ",  ?EXEC  [CHAR] " PARSE  DUP C,-T  S,-T  0 ?CODE ! ;
+: ,"  ?EXEC  [CHAR] " PARSE  DUP C,-T  S,-T  0 ?CODE ! ;
 
-: S"      0A OP,  ", ;
-: ."      0B OP,  ", ;
-: ABORT"  0C OP,  ", ;
+: S"      0A OP,  ," ;
+: ."      0B OP,  ," ;
+: ABORT"  0C OP,  ," ;
 
 \ Defining Words
 : CONSTANT  TARGET-CREATE  10 OP, ,-T ;
@@ -270,9 +270,13 @@ OP: DOCREATE    push aligned(rel(I)) + CELL; w = *(cell*)aligned(I);
 
 20 OP! ( lit op )
 
-OP: LIT+   top += *I++; NEXT
-OP: LIT-    top -= *I++; NEXT
-OP: LIT-AND  top &= *I++; NEXT
+PRIM LIT+          top += LIT, I += CELL; NEXT
+PRIM LIT-          top -= LIT, I += CELL; NEXT
+PRIM LIT*          top *= LIT, I += CELL; NEXT
+PRIM LIT/          top /= LIT, I += CELL; NEXT
+PRIM LITAND        top &= LIT, I += CELL; NEXT
+PRIM LITOR         top |= LIT, I += CELL; NEXT
+PRIM LITXOR        top ^= LIT, I += CELL; NEXT
 
 30 OP! ( lit cond )
 \ not needed for 0= 0< etc. so this frees up 6 slots, and be careful!
@@ -305,21 +309,17 @@ OP: U<=IF    IF2((ucell)*S <= (ucell)top)
 
 60 OP! ( binary/memory ops )
 
+60 BINARY +     61 BINARY -     62 BINARY *     63 BINARY /
+64 BINARY AND   65 BINARY OR    66 BINARY XOR
+\ 65 BINARY LSHIFT    66 BINARY RSHIFT
+
 PRIM +          top += *S++; NEXT
 PRIM -          top = *S++ - top; NEXT
+PRIM *          top *= *S++; NEXT
+PRIM /          top = *S++ / top; NEXT
 PRIM AND        top &= *S++; NEXT
 PRIM OR         top |= *S++; NEXT
 PRIM XOR        top ^= *S++; NEXT
-PRIM LSHIFT     top = *S++ << top; NEXT
-PRIM RSHIFT     top = ((ucell)*S++) >> top; NEXT
-
-CODE PICK       top = S[top]; NEXT
-CODE @          top = *(cell *)(m + top); NEXT
-CODE !          *(cell *)(m + top) = *S; pop2; NEXT
-CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
-CODE *          top *= *S++; NEXT
-CODE /          top = *S++ / top; NEXT
-CODE NOP        NEXT
 
 70 OP! ( conditionals )
 
@@ -350,6 +350,7 @@ CODE OVER       push S[1]; NEXT
 CODE ROT        w = S[1], S[1] = *S, *S = top, top = w; NEXT
 CODE NIP        S++; NEXT
 CODE ?DUP       if (top) *--S = top; NEXT
+CODE PICK       top = S[top]; NEXT
 
 CODE >R         *--R = top, pop; NEXT
 CODE R>         push *R++; NEXT
@@ -363,12 +364,10 @@ CODE UNLOOP     R += 3; NEXT
 : 2DUP      OVER OVER ;
 : 2DROP     DROP DROP ;
 
-60 BINARY +         61 BINARY -
-62 BINARY AND       63 BINARY OR        64 BINARY XOR
-65 BINARY LSHIFT    66 BINARY RSHIFT
-
 CODE INVERT  top = ~top; NEXT
 CODE NEGATE  top = -top; NEXT
+CODE LSHIFT  top = *S++ << top; NEXT
+CODE RSHIFT  top = ((ucell)*S++) >> top; NEXT
 
 CODE MOD  top = *S++ % top;  NEXT
 
@@ -419,6 +418,10 @@ CODE 2/     top >>= 1; NEXT
 CODE CELLS      top *= CELL; NEXT
 CELL-T CONSTANT CELL
 : CELL+  CELL + ;
+
+CODE @          top = *(cell *)(m + top); NEXT
+CODE !          *(cell *)(m + top) = *S; pop2; NEXT
+CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
 
 CODE C@  ( a -- c )  top = m[top]; NEXT
 CODE C!  ( c a -- )  m[top] = *S; pop2; NEXT
@@ -596,26 +599,32 @@ CODE .S ( -- )
 `           printf("%d (0x%x) ", S[i], S[i]);
 `       NEXT
 
-
 CODE WORDS  ( -- )  words(M[CONTEXT]); NEXT
-CODE DUMP  ( a n -- )  dump(*S++, top); pop; NEXT
+CODE DUMP  ( a n -- )  dump(*S++, top, BASE); pop; NEXT
 
-: HERE  H @ ;
+( ********** Compiler ********** )
+
+: HERE   H @  ;
 : ALLOT  H +! ;
 : ,   H @ !   $ 4 H +! ;
 : C,  H @ C!  $ 1 H +! ;
 : W,  H @ W!  $ 2 H +! ;
 
-( ********** Interpreter ********** )
+VARIABLE ?CODE 0 ,-T
+: OP, ( opc -- )  ?CODE @ HERE ?CODE 2!  C, ;
 
 : COMPILE,  ( xt -- )
+    \ DUP W@ 60 100 WITHIN IF  C@ C, EXIT  THEN
     DUP C@ $ 5F >  OVER 1+ C@ 0= AND IF  C@ C, EXIT  THEN
     DUP $ 10000 U< IF  $ 1 C, W, EXIT  THEN
     $ 8 C, , ;
 
 COMPILER
-: LITERAL  $ 8 C, , ;
+: LITERAL  $ 8 OP, , ;
 FORTH
+
+( ********** Interpreter ********** )
+
 \ : EXECUTE  >ABS >R ;
 CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
@@ -648,9 +657,7 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
     ARGC $ 1 ?DO  I ARGV INCLUDED  LOOP
     ." Hello" QUIT ;
 
-( ********** Compiler ********** )
-
-: OP,  C, ;
+( ********** More compiler ********** )
 
 CODE ALIGNED    top = aligned(top); NEXT
 \ CODE ALIGN        while (HERE != aligned(HERE)) m[HERE++] = 0; NEXT
@@ -660,7 +667,7 @@ CODE PARSE  ( c -- a n )  top = parse(SOURCE, top, --S); NEXT
 CODE PARSE-NAME  ( -- a n )  push parse_name(SOURCE, --S); NEXT
 
 : S,  ( a n -- )  BEGIN DUP WHILE >R COUNT C, R> 1- REPEAT 2DROP ;
-: ",  $ 22 ( [CHAR] ") PARSE  DUP C,  S,  ( 0 ?CODE !) ;
+: ,"  $ 22 ( [CHAR] ") PARSE  DUP C, S, ;
 
 VARIABLE WARNING
 : WARN  WARNING @ IF  >IN @  BL WORD CONTEXT @ -FIND 0= IF
@@ -668,7 +675,7 @@ VARIABLE WARNING
 
 VARIABLE LAST ( nfa)
 : HASH  ( v -- a )  CELLS CONTEXT + ;
-: HEADER  ( -- )  WARN
+: HEADER  ( -- )  WARN  $ 0 ?CODE !
     ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
     HERE LAST !  BL WORD C@  DUP $ 80 OR HERE C!  1+ ALLOT ;
 
@@ -690,9 +697,9 @@ COMPILER
 T: ;  SMUDGE  EXIT [ ;
 : [COMPILE]  $ 2 -' ABORT" ?" COMPILE, ;
 
-: S"      $ A OP,  ", ;
-: ."      $ B OP,  ", ;
-: ABORT"  $ C OP,  ", ;
+: S"      $ A OP,  ," ;
+: ."      $ B OP,  ," ;
+: ABORT"  $ C OP,  ," ;
 FORTH
 
 : ]  $ -1 STATE ! ;
