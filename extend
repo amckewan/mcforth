@@ -1,7 +1,9 @@
 include rth
-' BOOT 0 !
+include lib/tools
 include lib/see
+include lib/string
 
+' BOOT 0 !
 save extended.inc
 save-image extended.img
 bye

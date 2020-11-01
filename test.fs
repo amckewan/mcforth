@@ -11,6 +11,9 @@
 include test/tester.fs
 \ VERBOSE ON
 include ../forth2012-test-suite/src/core.fr
+include test/strings.fs
+
+
 
 
 decimal

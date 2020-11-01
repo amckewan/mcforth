@@ -312,7 +312,6 @@ PRIM OR         top |= *S++; NEXT
 PRIM XOR        top ^= *S++; NEXT
 PRIM LSHIFT     top = *S++ << top; NEXT
 PRIM RSHIFT     top = ((ucell)*S++) >> top; NEXT
-CODE SWAP       w = top; top = *S; *S = w; NEXT
 
 CODE PICK       top = S[top]; NEXT
 CODE @          top = *(cell *)(m + top); NEXT
@@ -344,18 +343,17 @@ OP: U<=   top = ((ucell)*S++ <= (ucell)top) LOGICAL; NEXT
 
 80 OP! ( nothing special after this )
 
-CODE DROP       pop; NEXT
 CODE DUP        *--S = top; NEXT
-CODE NIP        S++; NEXT
-CODE ?DUP       if (top) *--S = top; NEXT
-\ OP: ( SWAP )  ; NEXT
+CODE DROP       pop; NEXT
+CODE SWAP       w = top; top = *S; *S = w; NEXT
 CODE OVER       push S[1]; NEXT
 CODE ROT        w = S[1], S[1] = *S, *S = top, top = w; NEXT
+CODE NIP        S++; NEXT
+CODE ?DUP       if (top) *--S = top; NEXT
 
 CODE >R         *--R = top, pop; NEXT
 CODE R>         push *R++; NEXT
 CODE R@         push *R  ; NEXT
-
 
 CODE I          push R[0] + R[1]; NEXT
 CODE J          push R[3] + R[4]; NEXT
@@ -659,6 +657,7 @@ CODE ALIGNED    top = aligned(top); NEXT
 : ALIGN BEGIN HERE $ 3 AND WHILE $ 0 C, REPEAT ;
 
 CODE PARSE  ( c -- a n )  top = parse(SOURCE, top, --S); NEXT
+CODE PARSE-NAME  ( -- a n )  push parse_name(SOURCE, --S); NEXT
 
 : S,  ( a n -- )  BEGIN DUP WHILE >R COUNT C, R> 1- REPEAT 2DROP ;
 : ",  $ 22 ( [CHAR] ") PARSE  DUP C,  S,  ( 0 ?CODE !) ;

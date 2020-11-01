@@ -99,6 +99,16 @@ COMPILER
 : +LOOP     7 OP,  <RESOLVE  >RESOLVE ;
 FORTH
 
+\ multi-line comments
+COMPILER
+: ( BEGIN  [CHAR] ) PARSE 2DROP
+        SOURCE-ID 1+ 2 U< IF EXIT THEN
+        SOURCE DROP  >IN @ +  1- C@ [CHAR] ) = IF EXIT THEN
+        REFILL 0= ABORT" Missing )"
+    AGAIN ;
+FORTH
+: ( [COMPILE] ( ;
+
 ( *** more stuff *** )
 : ?DUP      DUP IF DUP THEN ;
 : ABS       DUP 0< IF NEGATE THEN ;

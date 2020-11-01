@@ -1,5 +1,5 @@
-( mcforth decompiler )
-decimal
+( decompiler )
+base @ decimal
 
 \ cheesy decompiler
 : cee ' >name 32 dump ;
@@ -8,13 +8,13 @@ decimal
 create ops 256 cells allot
        ops 256 cells erase
 
-: op ( op )  here swap cells ops + !  bl word c@ 1+ allot ;
+: op ( op <name> )  here swap cells ops + !  bl word c@ 1+ allot ;
 
 include see.info
 
 : op? ( op -- c-str t | 0 ) cells ops + @ ?dup ;
 
-: .op ( op )  op? if count type else ." unused" then space ;
+: .op ( op )  op? if count type else ." ---" then space ;
 
 : .ops  256 0 do  i op? if i . count type space then  loop ;
 
@@ -23,13 +23,12 @@ hex
 : .b  base @ hex  swap 0 <# # # #> type space  base ! ;
 : .name ( xt -- ) >name count 1f and type space ;
 
-: .call  ( a -- a+2 ) dup w@ ( dup . ) .name 2 + ;
-: .call32  ( a -- a+4 ) dup @ ( dup . ) .name cell+ ;
-: .branch ( a -- a+1 )  dup dup c@ dup 80 and if ffffff00 or then + . 1+ ;
+: .call ( a -- a+2 ) dup w@ ( dup . ) .name 2 + ;
+: .call32 ( a -- a+4 ) dup @ ( dup . ) .name cell+ ;
+: .branch ( a -- a+1 ) dup dup c@ dup 80 and if -1 ff xor or then + . 1+ ;
 : .lit  dup ? cell + ;
 : .slit  count 2dup type '"' emit space + ;
 
-\ now we need to know how many bytes of operand per opcode. hmm...
 : .operands ( a opc -- a' )
     \ case?
     dup 1 = if drop .call exit then
@@ -49,4 +48,4 @@ hex
 
 : see ' (see) ;
 
-decimal
+base !

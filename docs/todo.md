@@ -1,7 +1,13 @@
 ### To-do list
 
-* find and run some bechmarks before...
 * optimizing compiler
+* lit+op
+* cond+branch
+* inline const/var
+* multi-op inline (e.g. 2dup )
+* lit+cond+branch
+* specials (e.g. dup if )
+
 * check for redefined words
 * add value
 * add defer

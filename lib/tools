@@ -1,0 +1,37 @@
+\ include std/core
+\ some of standard programming tools
+\ require core-ext
+\ require std-tools
+
+( copied from standard )
+COMPILER
+: [ELSE] ( -- )
+    1 BEGIN
+        BEGIN PARSE-NAME DUP WHILE
+          2DUP S" [IF]" S= IF
+            2DROP 1+
+          ELSE
+            2DUP S" [ELSE]" S= IF
+              2DROP 1- DUP IF 1+ THEN
+            ELSE
+              S" [THEN]" S= IF
+                1-
+              THEN
+            THEN
+          THEN ?DUP 0= IF EXIT THEN
+        REPEAT 2DROP
+    REFILL 0= UNTIL  DROP ;
+
+: [IF] ( flag -- )  0= IF [COMPILE] [ELSE] THEN ;
+: [THEN] ;
+
+: [UNDEFINED] BL WORD FIND NIP 0= ;
+: [DEFINED]   [COMPILE] [UNDEFINED] INVERT ;
+
+FORTH
+\ it is a little awkward sometimes without immediate
+: [IF]        [COMPILE] [IF] ;
+: [ELSE]      [COMPILE] [ELSE] ;
+: [THEN]      [COMPILE] [THEN] ;
+: [UNDEFINED] [COMPILE] [UNDEFINED] ;
+: [DEFINED]   [COMPILE] [DEFINED] ;
