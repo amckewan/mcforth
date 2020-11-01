@@ -673,11 +673,14 @@ VARIABLE WARNING
 : WARN  WARNING @ IF  >IN @  BL WORD CONTEXT @ -FIND 0= IF
     HERE COUNT TYPE ."  redefined " THEN  DROP >IN !  THEN ;
 
-VARIABLE LAST ( nfa)
-: HASH  ( v -- a )  CELLS CONTEXT + ;
-: HEADER  ( -- )  WARN  $ 0 ?CODE !
-    ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
-    HERE LAST !  BL WORD C@  DUP $ 80 OR HERE C!  1+ ALLOT ;
+VARIABLE LAST ( link )
+: CURRENT ( -- a )  CONTEXT @ CELLS CONTEXT + ;
+: REVEAL  LAST @ CURRENT ! ;
+
+: (HEADER)  ( -- )  WARN  $ 0 ?CODE !
+    ALIGN  HERE LAST !  CURRENT @ ,
+    BL WORD C@  DUP $ 80 OR HERE C!  1+ ALLOT ;
+: HEADER  (HEADER) REVEAL ;
 
 : CONSTANT  HEADER  $ 10 OP, , ;
 : VARIABLE  HEADER  $ 11 OP, ALIGN $ 0 , ;
@@ -685,16 +688,15 @@ VARIABLE LAST ( nfa)
 \ | opc | align | I for does | data
 : CREATE  HEADER $ 12 C, ALIGN $ 0 , ;
 
-: PREVIOUS  ( -- nfa count )  CONTEXT @ HASH @  CELL+ DUP C@ ;
+: PREVIOUS  ( -- nfa count )  CURRENT @  CELL+ DUP C@ ;
 : DOES>   R> >REL  PREVIOUS $ 1F AND + 1+ ( cfa ) 1+ ALIGNED ! ;
-: SMUDGE  PREVIOUS $ 20 XOR SWAP C! ;
 
 \ Be careful from here on...
 
 COMPILER
 : [  $ 0 STATE ! ;
 : EXIT  $ 0 OP, ;
-T: ;  SMUDGE  EXIT [ ;
+T: ;  EXIT [ REVEAL ;
 : [COMPILE]  $ 2 -' ABORT" ?" COMPILE, ;
 
 : S"      $ A OP,  ," ;
@@ -703,7 +705,7 @@ T: ;  SMUDGE  EXIT [ ;
 FORTH
 
 : ]  $ -1 STATE ! ;
-T: :  HEADER SMUDGE ] ;
+T: :  (HEADER) ] ;
 
 : FORTH     $ 1 CONTEXT ! ;
 : COMPILER  $ 2 CONTEXT ! ;

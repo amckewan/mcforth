@@ -56,7 +56,7 @@ cell find(cell name, cell v) {
     cell link = M[CONTEXT + v];
     cell len = m[name];
     while (link) {
-        if ((m[link + CELL] & 63) == len
+        if ((m[link + CELL] & 31) == len
             && match((char*)m + name + 1, (char*)m + link + CELL + 1, len))
             return link + CELL;
 

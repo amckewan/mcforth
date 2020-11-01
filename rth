@@ -193,10 +193,10 @@ forth
 \ for immediate, we need to create a compiler word
 \ that executes the latest forth word
 : "header ( a n -- )
-    ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
+    ALIGN  HERE  CURRENT  DUP @ ,  !
     ( HERE LAST ! )  HERE OVER 1+ ALLOT PLACE  ALIGN ;
 : immediate
-    last @ count 31 and
+    last @ cell+ count 31 and
     compiler
     2dup "header + aligned compile, [compile] exit
     forth ;
