@@ -1,11 +1,12 @@
 ### To-do list
 
 * optimizing compiler
-* lit+op
-* lit+cond
-* cond+branch
-* lit+cond+branch
-* inline const/var
+* ok lit+op
+* ok lit+cond
+* ok cond+branch
+* ok lit+cond+branch
+* ok inline const/var
+* inline 1+ etc. (single lit op then exit)
 * multi-op inline (e.g. 2dup )
 * specials (e.g. dup if )
 * lit+pick

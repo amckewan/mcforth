@@ -3,7 +3,7 @@
 all: test
 
 CC = clang
-CFLAGS = -m32 -Wall -Werror
+CFLAGS = -m32 -Wall -Werror -Ofast
 
 SOURCES = src/fo.c src/misc.c src/parse.c src/file.c
 HEADERS = src/fo.h prims.inc kernel.inc
@@ -12,6 +12,9 @@ LIBS = -lreadline
 
 fo: $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
+
+asm: $(SOURCES) $(HEADERS)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) -S
 
 forth: $(SOURCES) $(HEADERS) extended.inc
 	$(CC) -DEXTEND $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
@@ -33,5 +36,8 @@ test: forth test.fs test/*
 testv: fo
 	@./fo -v
 
+bench: forth
+	make -C bench
+
 clean:
-	@rm fo forth *.inc *.img *.hex
+	@rm fo forth *.inc *.img *.hex *.s

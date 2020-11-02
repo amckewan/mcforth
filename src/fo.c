@@ -152,12 +152,12 @@ int run(int argc, char *argv[]) {
     BASE = 10;
 
     if (COLD) {
-        if (verbose) printf("Running from %u\n", COLD);
+//        if (verbose) printf("Running from %u\n", COLD);
         I = abs(COLD);
         goto start;
     }
 
-    printf("hi\n");
+//    printf("hi\n");
 
 abort:
     I = abs(WARM);
@@ -168,8 +168,8 @@ start:
     R = R0;
 
 next:
-    if (verbose > 2) printf("I=%X op=%02X R=%X %X %X (%d)\n",
-        rel(I), *I, rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
+    // if (verbose > 2) printf("I=%X op=%02X R=%X %X %X (%d)\n",
+    //     rel(I), *I, rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
 
     switch (w = *I++) {
 

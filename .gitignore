@@ -6,5 +6,6 @@ extended.inc
 *.hex
 *.dump
 *.info
+*.s
 bye
 scratch

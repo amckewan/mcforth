@@ -276,6 +276,10 @@ OP: LIT/        top /= LIT, I += CELL; NEXT
 OP: LITAND      top &= LIT, I += CELL; NEXT
 OP: LITOR       top |= LIT, I += CELL; NEXT
 OP: LITXOR      top ^= LIT, I += CELL; NEXT
+OP: ---
+
+OP: LIT@        push *(cell*)(m + LIT); I += CELL; NEXT
+OP: LIT!        *(cell*)(m + LIT) = top, pop; I += CELL; NEXT
 
 30 OP! ( lit cond : op | lit )
 \ not needed for 0= 0< etc. so this frees up 6 slots, and be careful!
@@ -359,6 +363,11 @@ PRIM /          top = *S++ / top; NEXT
 PRIM AND        top &= *S++; NEXT
 PRIM OR         top |= *S++; NEXT
 PRIM XOR        top ^= *S++; NEXT
+OP: ---
+
+CODE @          top = *(cell *)(m + top); NEXT
+CODE !          *(cell *)(m + top) = *S; pop2; NEXT
+
 
 70 OP! ( conditionals )
 
@@ -458,16 +467,16 @@ CODE CELLS      top *= CELL; NEXT
 CELL-T CONSTANT CELL
 : CELL+  CELL + ;
 
-CODE @          top = *(cell *)(m + top); NEXT
-CODE !          *(cell *)(m + top) = *S; pop2; NEXT
 CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
 
 CODE C@  ( a -- c )  top = m[top]; NEXT
 CODE C!  ( c a -- )  m[top] = *S; pop2; NEXT
 : COUNT  DUP 1+ SWAP C@ ;
 
-: 2@    DUP CELL+ @ SWAP @ ;
-: 2!    DUP >R ! R> CELL+ ! ;
+\ : 2@    DUP CELL+ @ SWAP @ ;
+\ : 2!    DUP >R ! R> CELL+ ! ;
+CODE 2@     *--S = *(cell*)(m + top + CELL); top = *(cell*)(m + top); NEXT
+CODE 2!     *(cell*)(m + top) = *S++; *(cell*)(m + top + CELL) = *S++; pop; NEXT
 
 \ 16-bit memory
 ` #define W(a)  *(unsigned short *)(m + (a))
@@ -655,15 +664,17 @@ CODE ALIGNED  top = aligned(top); NEXT
 VARIABLE ?CODE 0 ,-T
 : OP, ( opc -- )  ?CODE @ HERE ?CODE 2!  C, ;
 
-: COMPILE,  ( xt -- )
-    \ DUP W@ 60 100 WITHIN IF  C@ C, EXIT  THEN
-    DUP C@ $ 5F >  OVER 1+ C@ 0= AND IF  C@ OP, EXIT  THEN
-    DUP $ 10000 U< IF  $ 1 OP, W, EXIT  THEN
-    $ 8 OP, , ;
-
 COMPILER
 : LITERAL  $ 8 OP, , ;
 FORTH
+
+: COMPILE,  ( xt -- )
+    \ DUP W@ 60 100 WITHIN IF  C@ C, EXIT  THEN
+    DUP C@ $ 5F >  OVER 1+ C@ 0= AND IF  C@ OP, EXIT  THEN
+    DUP C@ $ 10 = IF ( constant ) 1+ @ LITERAL EXIT  THEN
+    DUP C@ $ 11 = IF ( variable ) 1+ ALIGNED LITERAL EXIT  THEN
+    DUP $ 10000 U< IF  $ 1 OP, W, EXIT  THEN
+    $ 8 OP, , ;
 
 ( ********** Interpreter ********** )
 

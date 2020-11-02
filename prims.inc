@@ -41,6 +41,9 @@ if (w) I = abs(w); else EXIT
 /* LITAND */ case 0x24:      top &= LIT, I += CELL; NEXT
 /* LITOR */ case 0x25:       top |= LIT, I += CELL; NEXT
 /* LITXOR */ case 0x26:      top ^= LIT, I += CELL; NEXT
+/* --- */ case 0x27: 
+/* LIT@ */ case 0x28:        push *(cell*)(m + LIT); I += CELL; NEXT
+/* LIT! */ case 0x29:        *(cell*)(m + LIT) = top, pop; I += CELL; NEXT
 #define LITCOND(cond) top = (cond) LOGICAL; I += CELL; NEXT
 /* --- */ case 0x30: 
 /* --- */ case 0x31: 
@@ -101,6 +104,9 @@ if (w) I = abs(w); else EXIT
 /* AND */ case 0x64:        top &= *S++; NEXT
 /* OR */ case 0x65:         top |= *S++; NEXT
 /* XOR */ case 0x66:        top ^= *S++; NEXT
+/* --- */ case 0x67: 
+/* @ */ case 0x68:          top = *(cell *)(m + top); NEXT
+/* ! */ case 0x69:          *(cell *)(m + top) = *S; pop2; NEXT
 /* 0= */ case 0x70:         top = (top == 0) LOGICAL; NEXT
 /* 0< */ case 0x71:         top = (top < 0) LOGICAL; NEXT
 /* 0> */ case 0x72:         top = (top > 0) LOGICAL; NEXT
@@ -175,11 +181,11 @@ if (w) I = abs(w); else EXIT
 /* 2* */ case 0x9B:     top <<= 1; NEXT
 /* 2/ */ case 0x9C:     top >>= 1; NEXT
 /* CELLS */ case 0x9D:      top *= CELL; NEXT
-/* @ */ case 0x9E:          top = *(cell *)(m + top); NEXT
-/* ! */ case 0x9F:          *(cell *)(m + top) = *S; pop2; NEXT
-/* +! */ case 0xA0:         *(cell *)(m + top) += *S; pop2; NEXT
-/* C@ */ case 0xA1:   top = m[top]; NEXT
-/* C! */ case 0xA2:   m[top] = *S; pop2; NEXT
+/* +! */ case 0x9E:         *(cell *)(m + top) += *S; pop2; NEXT
+/* C@ */ case 0x9F:   top = m[top]; NEXT
+/* C! */ case 0xA0:   m[top] = *S; pop2; NEXT
+/* 2@ */ case 0xA1:     *--S = *(cell*)(m + top + CELL); top = *(cell*)(m + top); NEXT
+/* 2! */ case 0xA2:     *(cell*)(m + top) = *S++; *(cell*)(m + top + CELL) = *S++; pop; NEXT
 #define W(a)  *(unsigned short *)(m + (a))
 /* W@ */ case 0xA3:     top = W(top); NEXT
 /* W! */ case 0xA4:     W(top) = *S; pop2; NEXT
