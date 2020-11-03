@@ -1,10 +1,10 @@
 #define COLD M[0]
-#define HERE M[1]
-#define SOURCE M[2]
+#define WARM M[1]
+#define HERE M[2]
 #define BASE M[3]
 #define STATE M[4]
-#define CONTEXT 5 /* 3 cells */
-#define WARM M[8]
+#define SOURCE M[5]
+#define CONTEXT 6
 
 cell *S, top;
 cell *R;
@@ -30,6 +30,7 @@ next:
     // if (verbose > 2) printf("I=%X op=%02X R=%X %X %X (%d)\n",
     //     rel(I), *I, rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
     switch (w = *I++) {
+
 #define push *--S = top, top =
 #define pop top = *S++
 #define pop2 top = S[1], S += 2
@@ -218,10 +219,10 @@ if (w) I = abs(w); else EXIT
 /* C! */ case 0xA0:   m[top] = *S; pop2; NEXT
 /* 2@ */ case 0xA1:     *--S = *(cell*)(m + top + CELL); top = *(cell*)(m + top); NEXT
 /* 2! */ case 0xA2:     *(cell*)(m + top) = *S++; *(cell*)(m + top + CELL) = *S++; pop; NEXT
-#define W(a)  *(unsigned short *)(m + (a))
+#define W(a)  *(uint16_t *)(m + (a))
 /* W@ */ case 0xA3:     top = W(top); NEXT
-/* W! */ case 0xA4:     W(top) = *S; pop2; NEXT
-/* FILL */ case 0xA5:   memset(abs(S[1]), top, *S); pop3; NEXT
+/* W! */ case 0xA4:     W(top) = *S++, pop; NEXT
+/* FILL */ case 0xA5:        memset(abs(S[1]), top, *S);       pop3; NEXT
 /* MOVE */ case 0xA6:   memmove(abs(*S), abs(S[1]), top); pop3; NEXT
 /* >ABS */ case 0xA7:  top += (cell)m; NEXT   // convert to absolute address
 /* >REL */ case 0xA8:  top -= (cell)m; NEXT   // convert to relative address
@@ -229,23 +230,24 @@ if (w) I = abs(w); else EXIT
 /* EMIT */ case 0xAA:   putchar(top); pop; NEXT
 /* TYPE */ case 0xAB:    type(*S, top); pop2; NEXT
 /* COMPARE */ case 0xAC:  top = compare(abs(S[2]), S[1], abs(*S), top); S += 3; NEXT
-/* BYE */ case 0xAD:  return 0;
-/* ACCEPT */ case 0xAE:   top = accept(*S++, top);
+/* SEARCH */ case 0xAD:   top = search(S++, top); NEXT
+/* BYE */ case 0xAE:  return 0;
+/* ACCEPT */ case 0xAF:   top = accept(*S++, top);
 /* FIXME */ if (top < 0) exit(0); NEXT
-/* ARGC */ case 0xAF:  push argc; NEXT
-/* ARGV */ case 0xB0:  *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEXT
-/* CREATE-FILE */ case 0xB1: 
+/* ARGC */ case 0xB0:  push argc; NEXT
+/* ARGV */ case 0xB1:  *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEXT
+/* CREATE-FILE */ case 0xB2: 
 top = (cell)open_file(abs(S[1]), *S, abs(top));
 *++S = top, top = top ? 0 : -1; NEXT
-/* OPEN-FILE */ case 0xB2: 
+/* OPEN-FILE */ case 0xB3: 
 top = (cell)open_file(abs(S[1]), *S, abs(top));
 *++S = top, top = top ? 0 : -1; NEXT
-/* CLOSE-FILE */ case 0xB3: 
+/* CLOSE-FILE */ case 0xB4: 
 top = fclose((FILE*)top); NEXT
-/* READ-FILE */ case 0xB4: 
+/* READ-FILE */ case 0xB5: 
 w = fread(abs(S[1]), 1, *S, (FILE*)top);
 top = w == *S ? 0 : ferror((FILE*)top); *++S = w; NEXT
-/* READ-LINE */ case 0xB5: 
+/* READ-LINE */ case 0xB6: 
 w = (cell)fgets(abs(S[1]), *S + 1, (FILE*)top);
 if (!w) {
   top = feof((FILE*)top) ? 0 : ferror((FILE*)top);
@@ -254,44 +256,45 @@ if (!w) {
 top = strlen((char*)w);
 if (top > 0 && ((char*)w)[top-1] == '\n') --top;
 S[1] = top, *S = TRUE, top = 0; NEXT
-/* WRITE-FILE */ case 0xB6: 
+/* WRITE-FILE */ case 0xB7: 
 w = fwrite(abs(S[1]), 1, *S, (FILE*)top);
 top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
-/* WRITE-LINE */ case 0xB7: 
+/* WRITE-LINE */ case 0xB8: 
 w = fwrite(abs(S[1]), 1, *S, (FILE*)top);
 if (w == *S) *S = 1, w = fwrite("\n", 1, 1, (FILE*)top);
 top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
-/* ALLOCATE */ case 0xB8:   *--S = rel(malloc(top)), top = *S ? 0 : -1; NEXT
-/* RESIZE */ case 0xB9:     *S = rel(realloc(abs(*S), top)), top = *S ? 0 : -1; NEXT
-/* FREE */ case 0xBA:       if (top) free(abs(top)); top = 0; NEXT
-/* NEW-STRING */ case 0xBB: top = new_string(*S++, top); NEXT
-/* REFILL */ case 0xBC:   push refill(SOURCE); NEXT
-/* . */ case 0xBD:   printf("%d ", top); pop; NEXT
-/* -NUMBER */ case 0xBE:  w = number(abs(top), --S, BASE);
+/* ALLOCATE */ case 0xB9:   *--S = rel(malloc(top)), top = *S ? 0 : -1; NEXT
+/* RESIZE */ case 0xBA:     *S = rel(realloc(abs(*S), top)), top = *S ? 0 : -1; NEXT
+/* FREE */ case 0xBB:       if (top) free(abs(top)); top = 0; NEXT
+/* NEW-STRING */ case 0xBC: top = new_string(*S++, top); NEXT
+/* REFILL */ case 0xBD:   push refill(SOURCE); NEXT
+/* . */ case 0xBE:   printf("%d ", top); pop; NEXT
+/* -NUMBER */ case 0xBF:  w = number(abs(top), --S, BASE);
   if (w) top = 0; else *S = top, top = -1; NEXT
-/* >NUMBER */ case 0xBF:  top = to_number(S, top, BASE); NEXT
-/* WORD */ case 0xC0: 
+/* >NUMBER */ case 0xC0:  top = to_number(S, top, BASE); NEXT
+/* WORD */ case 0xC1: 
   top = word(SOURCE, top, HERE); NEXT
-/* FIND */ case 0xC1: 
+/* FIND */ case 0xC2: 
       w = find(top, M[CONTEXT + 1]);
       if (w) *--S = cfa(w), top = -1;
       else push 0; NEXT
-/* -FIND */ case 0xC2: 
+/* -FIND */ case 0xC3: 
       w = find(*S, M[CONTEXT + top]);
       if (w) *S = cfa(w), top = 0;
       else top = -1; NEXT
-/* >NAME */ case 0xC3:   top = nfa(top); NEXT
-/* NAME> */ case 0xC4:   top = cfa(top); NEXT
-/* DEPTH */ case 0xC5:   w = S0 - S; push w; NEXT
-/* .S */ case 0xC6: 
+/* >NAME */ case 0xC4:   top = nfa(top); NEXT
+/* NAME> */ case 0xC5:   top = cfa(top); NEXT
+/* DEPTH */ case 0xC6:   w = S0 - S; push w; NEXT
+/* .S */ case 0xC7: 
       w = S0 - S;  S[-1] = top;
       printf("[%d] ", w);
       for (int i = w - 2; i >= -1; i--)
           printf("%d (0x%x) ", S[i], S[i]);
       NEXT
-/* WORDS */ case 0xC7:   words(M[CONTEXT + M[CONTEXT]]); NEXT
-/* DUMP */ case 0xC8:   dump(*S++, top, BASE); pop; NEXT
-/* ALIGNED */ case 0xC9:  top = aligned(top); NEXT
-/* EXECUTE */ case 0xCA:  *--R = (cell)I, I = m + top, pop; NEXT
-/* PARSE */ case 0xCB:   top = parse(SOURCE, top, --S); NEXT
-/* PARSE-NAME */ case 0xCC:   push parse_name(SOURCE, --S); NEXT
+/* WORDS */ case 0xC8:   words(M[CONTEXT + M[CONTEXT]]); NEXT
+/* DUMP */ case 0xC9:   dump(*S++, top, BASE); pop; NEXT
+/* ALIGNED */ case 0xCA:  top = aligned(top); NEXT
+/* EXECUTE */ case 0xCB:  *--R = (cell)I, I = m + top, pop; NEXT
+/* R0! */ case 0xCC:  R = R0; NEXT
+/* PARSE */ case 0xCD:   top = parse(SOURCE, top, --S); NEXT
+/* PARSE-NAME */ case 0xCE:   push parse_name(SOURCE, --S); NEXT

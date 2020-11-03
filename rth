@@ -1,4 +1,8 @@
 5 5 + BASE !
+
+: FORTH     1 CONTEXT ! ;
+: COMPILER  2 CONTEXT ! ;
+
 COMPILER
 : \  SOURCE >IN ! DROP ;
 : (  ')' PARSE 2DROP ;
@@ -8,7 +12,12 @@ FORTH
 : (  [COMPILE] ( ;
 : .( [COMPILE] .( ;
 
-\ Now we can explain a bit...
+: ,"        '"' PARSE  DUP C, S, ;
+COMPILER
+: S"        $A C, ," ;
+: ."        $B C, ," ;
+: ABORT"    $C C, ," ;
+FORTH
 
 : DECIMAL   10 BASE ! ;
 : HEX       16 BASE ! ;

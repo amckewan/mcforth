@@ -1,6 +1,25 @@
-### To-do list
+# To-do list
 
-* optimizing compiler
+## Self-compile
+
+### Ideas from cmForth
+
+* RECURSIVE instead of REVEAL
+* Build target at 2000 (8000 for us)
+* SMUDGE has value in that we can forget any word, not just the last
+* \ for [COMPILE] but we don't want that
+* \\ for -opt
+* BEGIN for MARK
+
+In current meta:
+
+* add dA
+* identify what is relocatable and what is not
+* consider changing things like call to relative addresses
+
+
+## Optimizing compiler
+
 * ok lit+op
 * ok lit+cond
 * ok cond+branch
@@ -11,15 +30,15 @@
 * specials (e.g. dup if )
 * lit+pick
 
-* move what I can from meta to rth
 * check for redefined words
+* move stuff from meta to rth
 * add value
 * add defer
 * add sysvar in meta
 * move warm to 4
 * remove non-essential code words (keep opcodes trim)
 
-### Do later
+## Do later
 
 * improve documentation (wip)
 * use 64-bit compiler
@@ -27,7 +46,7 @@
 * view source
 
 
-### Could-do list
+## Could-do list
 
 ...but not really necessary for my purposes (see goals)
 

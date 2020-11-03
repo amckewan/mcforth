@@ -21,8 +21,6 @@ int verbose;
 #define CELL sizeof(cell)
 #define aligned(x) (((cell)(x) + (CELL - 1)) & ~(CELL - 1))
 
-// Memory Map
-#define CONTEXT 5 /* 3 cells */
 
 cell cfa(cell nfa) // convert nfa to cfa (NAME>)
 {
@@ -49,7 +47,7 @@ cell find(cell name, cell link) {
     // return nfa if found, else zero
     cell len = m[name];
     while (link) {
-        if ((m[link + CELL] & 31) == len
+        if ((m[link + CELL] & 63) == len
             && match((char*)m + name + 1, (char*)m + link + CELL + 1, len))
             return link + CELL;
 

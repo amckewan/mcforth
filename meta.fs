@@ -206,6 +206,7 @@ VARIABLE OP  ( next opcode )
 : T:  HEADER   0 ?CODE !  ] ;  \ to create words with no host header
 
 : ;_  [COMPILE] ; ; IMMEDIATE \ concession
+: [COMPILE] ;
 : ;   ?CSP EXIT [ ;
 : :   TARGET-CREATE  0 ?CODE !  !CSP ] ;_
 
@@ -214,16 +215,23 @@ VARIABLE OP  ( next opcode )
 \ Start of Kernel
 \ **********************************************************************
 
-\ TODO put the system variable here
+40 DP-T !
+
+\ Variables shared with C code at fixed offsets
+08 CONSTANT H
+0C CONSTANT BASE
+10 CONSTANT STATE
+14 CONSTANT 'IN
+18 CONSTANT CONTEXT ( 3 cells )
 
 ``
 #define COLD M[0]
-#define HERE M[1]
-#define SOURCE M[2]
+#define WARM M[1]
+#define HERE M[2]
 #define BASE M[3]
 #define STATE M[4]
-#define CONTEXT 5 /* 3 cells */
-#define WARM M[8]
+#define SOURCE M[5]
+#define CONTEXT 6
 
 cell *S, top;
 cell *R;
@@ -249,11 +257,7 @@ next:
     // if (verbose > 2) printf("I=%X op=%02X R=%X %X %X (%d)\n",
     //     rel(I), *I, rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
     switch (w = *I++) {
-``
 
-200 DP-T !
-
-``
 #define push *--S = top, top =
 #define pop top = *S++
 #define pop2 top = S[1], S += 2
@@ -508,17 +512,15 @@ CODE C@  ( a -- c )  top = m[top]; NEXT
 CODE C!  ( c a -- )  m[top] = *S; pop2; NEXT
 : COUNT  DUP 1+ SWAP C@ ;
 
-\ : 2@    DUP CELL+ @ SWAP @ ;
-\ : 2!    DUP >R ! R> CELL+ ! ;
 CODE 2@     *--S = *(cell*)(m + top + CELL); top = *(cell*)(m + top); NEXT
 CODE 2!     *(cell*)(m + top) = *S++; *(cell*)(m + top + CELL) = *S++; pop; NEXT
 
-\ 16-bit memory
-` #define W(a)  *(unsigned short *)(m + (a))
+( 16-bit fetch and store )
+` #define W(a)  *(uint16_t *)(m + (a))
 CODE W@     top = W(top); NEXT
-CODE W!     W(top) = *S; pop2; NEXT
+CODE W!     W(top) = *S++, pop; NEXT
 
-CODE FILL  ( a u c -- )  memset(abs(S[1]), top, *S); pop3; NEXT
+CODE FILL  ( a u c -- )       memset(abs(S[1]), top, *S);       pop3; NEXT
 CODE MOVE  ( src dest u -- )  memmove(abs(*S), abs(S[1]), top); pop3; NEXT
 
 CODE >ABS  top += (cell)m; NEXT   // convert to absolute address
@@ -528,25 +530,17 @@ CODE KEY   ( -- char )  push getchar(); NEXT
 CODE EMIT  ( char -- )  putchar(top); pop; NEXT
 CODE TYPE  ( a n -- )   type(*S, top); pop2; NEXT
 
-\ : X $ 12345 >R KEY DROP R> KEY DROP ;
-
 : CR     $ 0A EMIT ;
 : SPACE  $ 20 EMIT ;
 
 CODE COMPARE  top = compare(abs(S[2]), S[1], abs(*S), top); S += 3; NEXT
+CODE SEARCH   top = search(S++, top); NEXT
 
 CODE BYE  return 0;
 
 CODE ACCEPT ( a n -- n )  top = accept(*S++, top);
 ` /* FIXME */ if (top < 0) exit(0); NEXT
 
-
-\ Variables shared with C code at fixed offsets
-04 CONSTANT H
-08 CONSTANT 'IN
-0C CONSTANT BASE
-10 CONSTANT STATE
-14 CONSTANT CONTEXT
 
 CODE ARGC ( -- n ) push argc; NEXT
 CODE ARGV ( n -- a n ) *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEXT
@@ -706,39 +700,35 @@ FORTH
 : COMPILE,  ( xt -- )
     \ DUP W@ 60 100 WITHIN IF  C@ C, EXIT  THEN
     DUP C@ $ 5F >  OVER 1+ C@ 0= AND IF  C@ OP, EXIT  THEN
-    DUP C@ $ 10 = IF ( constant ) 1+ @ LITERAL EXIT  THEN
-    DUP C@ $ 11 = IF ( variable ) 1+ ALIGNED LITERAL EXIT  THEN
+    DUP C@ $ 10 = IF ( constant ) 1+ @       [COMPILE] LITERAL EXIT  THEN
+    DUP C@ $ 11 = IF ( variable ) 1+ ALIGNED [COMPILE] LITERAL EXIT  THEN
     DUP $ 10000 U< IF  $ 1 OP, W, EXIT  THEN
     $ 8 OP, , ;
 
 ( ********** Interpreter ********** )
 
-\ : EXECUTE  >ABS >R ;
 CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
 : INTERPRET  ( -- )
     BEGIN   BL WORD DUP C@
     WHILE   STATE @
-        IF    $ 2 -FIND IF  $ 1 -FIND IF  NUMBER  LITERAL
+        IF    $ 2 -FIND IF  $ 1 -FIND IF  NUMBER  [COMPILE] LITERAL
               ELSE  COMPILE,  THEN  ELSE  EXECUTE  THEN
         ELSE  $ 1 -FIND IF  NUMBER  ELSE  EXECUTE  THEN
         THEN  DEPTH 0< ABORT" stack? "
     REPEAT DROP ;
 
-: QUIT [ HERE-T 20 !-T ]
-    BEGIN SOURCE-DEPTH 0> WHILE SOURCE> REPEAT
-    \ RP0 @ RP!
-\   ." hi" CR
-\       WORDS CR
-    BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF  ."  ok"  THEN  AGAIN ;
+CODE R0!  R = R0; NEXT
+
+: QUIT [ HERE-T 4 !-T ] R0!
+    BEGIN  SOURCE-DEPTH 0> WHILE  SOURCE>  REPEAT
+    BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
 
 : INCLUDED  ( str len -- )
     2DUP R/O OPEN-FILE ABORT" file not found"
     >SOURCE  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
 
 : INCLUDE  BL WORD COUNT INCLUDED ;
-
-: TEST S" test.fs" INCLUDED ;
 
 : BOOT  [ HERE-T 0 !-T ]
     SOURCE-STACK 'IN !
@@ -751,7 +741,6 @@ CODE PARSE    ( c -- a n )  top = parse(SOURCE, top, --S); NEXT
 CODE PARSE-NAME ( -- a n )  push parse_name(SOURCE, --S); NEXT
 
 : S,  ( a n -- )  BEGIN DUP WHILE >R COUNT C, R> 1- REPEAT 2DROP ;
-: ,"  $ 22 ( [CHAR] ") PARSE  DUP C, S, ;
 
 VARIABLE WARNING
 : WARN  WARNING @ IF  >IN @  BL WORD CONTEXT @ -FIND 0= IF
@@ -782,19 +771,11 @@ COMPILER
 : EXIT  $ 0 OP, ;
 T: ;  EXIT [ REVEAL ;
 : [COMPILE]  $ 2 -' ABORT" ?" COMPILE, ;
-
-\ these can go to rth
-: S"      $ A OP,  ," ;
-: ."      $ B OP,  ," ;
-: ABORT"  $ C OP,  ," ;
 FORTH
 
 : ]  $ -1 STATE ! ;
 T: :  (HEADER) ] ;
 
-: FORTH     $ 1 CONTEXT ! ;
-: COMPILER  $ 2 CONTEXT ! ;
-
-HERE-T 4 !-T  ( here )
-14 EMPLACE  ( context )
+HERE-T 8 !-T  ( here )
+18 EMPLACE  ( context )
 SAVE

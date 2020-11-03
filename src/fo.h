@@ -58,6 +58,7 @@ void push_source(FILE *file, const char *filename, int len);
 void pop_source();
 void show_error(const char *msg, const char *here, const struct source *source);
 int compare(const char *a1, int n1, const char *a2, int n2);
+int search(cell *sp, cell top);
 
 // parse.c
 cell parse(cell source_va, char c, cell *start_addr);
