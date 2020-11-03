@@ -22,13 +22,7 @@ int verbose;
 #define aligned(x) (((cell)(x) + (CELL - 1)) & ~(CELL - 1))
 
 // Memory Map
-#define COLD M[0]
-#define HERE M[1]
-#define SOURCE M[2]
-#define BASE M[3]
-#define STATE M[4]
 #define CONTEXT 5 /* 3 cells */
-#define WARM M[8]
 
 cell cfa(cell nfa) // convert nfa to cfa (NAME>)
 {
@@ -50,10 +44,9 @@ int match(const char *name, const char *str, int len) {
     return 1;
 }
 
-cell find(cell name, cell v) {
+cell find(cell name, cell link) {
     //printf("find '"); typex((char*)m+name+1, m[name]); printf("'\n");
     // return nfa if found, else zero
-    cell link = M[CONTEXT + v];
     cell len = m[name];
     while (link) {
         if ((m[link + CELL] & 31) == len
@@ -69,9 +62,8 @@ int digit(char c) {
     return (c <= '9') ? c - '0' : 10 + toupper(c) - 'A';
 }
 
-int number(const char *str, cell *num) {
+int number(const char *str, cell *num, int base) {
     int len = *str++;
-    int base = BASE;
     int n = 0;
     int sign = 1;
     if (len == 3 && *str == '\'' && str[2] == '\'') {
@@ -97,13 +89,13 @@ int number(const char *str, cell *num) {
     return TRUE;
 }
 
-cell to_number(cell *sp, cell top) {
+cell to_number(cell *sp, cell top, int base) {
     uint64_t u = (uint32_t)sp[2] | ((uint64_t)sp[1] << 32);
     char *str = abs(sp[0]);
     while (top) {
         int d = digit(*str);
-        if (d < 0 || d >= BASE) break;
-        u = u * BASE + d;
+        if (d < 0 || d >= base) break;
+        u = u * base + d;
         ++str;
         --top;
     }
@@ -135,8 +127,7 @@ void dotid(cell nfa) {
     if ((m[nfa] & 0x20)) printf("(smudged) ");
 }
 
-void words(cell v) {
-    cell link = M[CONTEXT + v];
+void words(cell link) {
     while (link) {
         dotid(link + CELL);
         link = *(cell*)(m + link);
@@ -144,34 +135,6 @@ void words(cell v) {
 }
 
 int run(int argc, char *argv[]) {
-    cell *S, top;
-    cell *R;
-    byte *I;
-    cell w;
-
-    BASE = 10;
-
-    if (COLD) {
-//        if (verbose) printf("Running from %u\n", COLD);
-        I = abs(COLD);
-        goto start;
-    }
-
-//    printf("hi\n");
-
-abort:
-    I = abs(WARM);
-start:
-    STATE = 0;
-    M[CONTEXT] = 1;
-    S = S0;
-    R = R0;
-
-next:
-    // if (verbose > 2) printf("I=%X op=%02X R=%X %X %X (%d)\n",
-    //     rel(I), *I, rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
-
-    switch (w = *I++) {
 
 #include "prims.inc"
 

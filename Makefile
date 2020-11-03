@@ -40,4 +40,4 @@ bench: forth
 	make -C bench
 
 clean:
-	@rm fo forth *.inc *.img *.hex *.s
+	@rm -f fo forth *.inc *.img *.hex *.s

@@ -1,3 +1,35 @@
+#define COLD M[0]
+#define HERE M[1]
+#define SOURCE M[2]
+#define BASE M[3]
+#define STATE M[4]
+#define CONTEXT 5 /* 3 cells */
+#define WARM M[8]
+
+cell *S, top;
+cell *R;
+byte *I;
+cell w;
+
+BASE = 10;
+
+if (COLD) {
+//  if (verbose) printf("Running from %u\n", COLD);
+    I = abs(COLD);
+    goto start;
+}
+
+abort:
+    I = abs(WARM);
+start:
+    STATE = 0;
+    M[CONTEXT] = 1;
+    S = S0;
+    R = R0;
+next:
+    // if (verbose > 2) printf("I=%X op=%02X R=%X %X %X (%d)\n",
+    //     rel(I), *I, rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
+    switch (w = *I++) {
 #define push *--S = top, top =
 #define pop top = *S++
 #define pop2 top = S[1], S += 2
@@ -235,17 +267,17 @@ top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
 /* NEW-STRING */ case 0xBB: top = new_string(*S++, top); NEXT
 /* REFILL */ case 0xBC:   push refill(SOURCE); NEXT
 /* . */ case 0xBD:   printf("%d ", top); pop; NEXT
-/* -NUMBER */ case 0xBE:  w = number(abs(top), --S);
+/* -NUMBER */ case 0xBE:  w = number(abs(top), --S, BASE);
   if (w) top = 0; else *S = top, top = -1; NEXT
-/* >NUMBER */ case 0xBF:  top = to_number(S, top); NEXT
+/* >NUMBER */ case 0xBF:  top = to_number(S, top, BASE); NEXT
 /* WORD */ case 0xC0: 
   top = word(SOURCE, top, HERE); NEXT
 /* FIND */ case 0xC1: 
-      w = find(top, 1);
+      w = find(top, M[CONTEXT + 1]);
       if (w) *--S = cfa(w), top = -1;
       else push 0; NEXT
 /* -FIND */ case 0xC2: 
-      w = find(*S, top);
+      w = find(*S, M[CONTEXT + top]);
       if (w) *S = cfa(w), top = 0;
       else top = -1; NEXT
 /* >NAME */ case 0xC3:   top = nfa(top); NEXT
@@ -257,7 +289,7 @@ top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
       for (int i = w - 2; i >= -1; i--)
           printf("%d (0x%x) ", S[i], S[i]);
       NEXT
-/* WORDS */ case 0xC7:   words(M[CONTEXT]); NEXT
+/* WORDS */ case 0xC7:   words(M[CONTEXT + M[CONTEXT]]); NEXT
 /* DUMP */ case 0xC8:   dump(*S++, top, BASE); pop; NEXT
 /* ALIGNED */ case 0xC9:  top = aligned(top); NEXT
 /* EXECUTE */ case 0xCA:  *--R = (cell)I, I = m + top, pop; NEXT

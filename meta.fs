@@ -216,6 +216,41 @@ VARIABLE OP  ( next opcode )
 
 \ TODO put the system variable here
 
+``
+#define COLD M[0]
+#define HERE M[1]
+#define SOURCE M[2]
+#define BASE M[3]
+#define STATE M[4]
+#define CONTEXT 5 /* 3 cells */
+#define WARM M[8]
+
+cell *S, top;
+cell *R;
+byte *I;
+cell w;
+
+BASE = 10;
+
+if (COLD) {
+//  if (verbose) printf("Running from %u\n", COLD);
+    I = abs(COLD);
+    goto start;
+}
+
+abort:
+    I = abs(WARM);
+start:
+    STATE = 0;
+    M[CONTEXT] = 1;
+    S = S0;
+    R = R0;
+next:
+    // if (verbose > 2) printf("I=%X op=%02X R=%X %X %X (%d)\n",
+    //     rel(I), *I, rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
+    switch (w = *I++) {
+``
+
 200 DP-T !
 
 ``
@@ -612,11 +647,11 @@ VARIABLE TIB 80 ALLOT-T
 CODE .  ( n -- )  printf("%d ", top); pop; NEXT
 : ?  @ . ;
 
-CODE -NUMBER  ( a -- a t, n f ) w = number(abs(top), --S);
+CODE -NUMBER  ( a -- a t, n f ) w = number(abs(top), --S, BASE);
 `   if (w) top = 0; else *S = top, top = -1; NEXT
 : NUMBER  ( a -- n )  -NUMBER ABORT" ? " ;
 
-CODE >NUMBER  top = to_number(S, top); NEXT
+CODE >NUMBER  top = to_number(S, top, BASE); NEXT
 
 20 CONSTANT BL
 
@@ -624,12 +659,12 @@ CODE WORD  ( char -- addr )
 `   top = word(SOURCE, top, HERE); NEXT
 
 CODE FIND  ( str -- xt flag | str 0 )
-`       w = find(top, 1);
+`       w = find(top, M[CONTEXT + 1]);
 `       if (w) *--S = cfa(w), top = -1;
 `       else push 0; NEXT
 
 CODE -FIND  ( str v -- str t | xt f )
-`       w = find(*S, top);
+`       w = find(*S, M[CONTEXT + top]);
 `       if (w) *S = cfa(w), top = 0;
 `       else top = -1; NEXT
 
@@ -647,7 +682,7 @@ CODE .S ( -- )
 `           printf("%d (0x%x) ", S[i], S[i]);
 `       NEXT
 
-CODE WORDS  ( -- )  words(M[CONTEXT]); NEXT
+CODE WORDS  ( -- )  words(M[CONTEXT + M[CONTEXT]]); NEXT
 CODE DUMP  ( a n -- )  dump(*S++, top, BASE); pop; NEXT
 
 ( ********** Compiler ********** )
