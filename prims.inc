@@ -233,7 +233,6 @@ if (w) I = abs(w); else EXIT
 /* SEARCH */ case 0xAD:   top = search(S++, top); NEXT
 /* BYE */ case 0xAE:  return 0;
 /* ACCEPT */ case 0xAF:   top = accept(*S++, top);
-/* FIXME */ if (top < 0) exit(0); NEXT
 /* ARGC */ case 0xB0:  push argc; NEXT
 /* ARGV */ case 0xB1:  *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEXT
 /* CREATE-FILE */ case 0xB2: 
@@ -276,11 +275,11 @@ top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
   top = word(SOURCE, top, HERE); NEXT
 /* FIND */ case 0xC2: 
       w = find(top, M[CONTEXT + 1]);
-      if (w) *--S = cfa(w), top = -1;
+      if (w) *--S = w, top = -1;
       else push 0; NEXT
 /* -FIND */ case 0xC3: 
       w = find(*S, M[CONTEXT + top]);
-      if (w) *S = cfa(w), top = 0;
+      if (w) *S = w, top = 0;
       else top = -1; NEXT
 /* >NAME */ case 0xC4:   top = nfa(top); NEXT
 /* NAME> */ case 0xC5:   top = cfa(top); NEXT

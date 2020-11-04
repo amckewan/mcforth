@@ -42,14 +42,26 @@ int match(const char *name, const char *str, int len) {
     return 1;
 }
 
+void type(cell addr, cell len);
+
 cell find(cell name, cell link) {
     //printf("find '"); typex((char*)m+name+1, m[name]); printf("'\n");
-    // return nfa if found, else zero
+    // return xt if found, else zero
     cell len = m[name];
     while (link) {
         if ((m[link + CELL] & 63) == len
-            && match((char*)m + name + 1, (char*)m + link + CELL + 1, len))
-            return link + CELL;
+              && match((char*)m + name + 1, (char*)m + link + CELL + 1, len)) {
+//            return link + CELL;
+//            cell xt = link + CELL + 1 + len;
+            cell xt = aligned(link + CELL + 1 + len);
+            // xt = aligned(xt)
+            // if ((m[link + CELL] & 0x80) == 0) { // headless?
+            //     type(link + CELL + 1, len);
+            //     printf(" oops ");
+            //     return *(cell *)(m + xt);
+            // }
+            return xt;
+        }
 
         link = *(cell *)(m + link);
     }
@@ -122,6 +134,7 @@ void *dotq(void *I) {
 void dotid(cell nfa) {
     type(nfa + 1, m[nfa] & 31);
     putchar(BL);
+    if ((m[nfa] & 0x80)) printf("%% ");
     if ((m[nfa] & 0x20)) printf("(smudged) ");
 }
 
@@ -137,7 +150,7 @@ int run(int argc, char *argv[]) {
 #include "prims.inc"
 
     default:
-        printf("Invalid opcode %X\n", w);
+        printf("Invalid opcode 0x%02X\n", w);
         goto abort;
     }
 }

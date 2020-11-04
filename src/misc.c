@@ -2,39 +2,6 @@
 
 #include "fo.h"
 
-#define MAX_SOURCE_DEPTH 8
-
-//static struct source source_stack[MAX_SOURCE_DEPTH+1];
-//struct source *source; // current input source
-
-/*
- * Source stack handling
- */
-
-#if 0
-int source_depth() { return source - source_stack; }
-
-void push_source(FILE *file, const char *filename, int len) {
-    //printf("push depth = %d\n", source_depth());
-    if (source_depth() >= MAX_SOURCE_DEPTH)
-        fatal("include nesting too deep");
-    ++source;
-    source->file = file;
-    source->filename = len ? new_string(filename, len) : 0;
-    source->line = 0;
-}
-
-void pop_source() {
-    //printf("pop depth = %d\n", source_depth());
-    if (source_depth() < 1)
-        fatal("trying to pop empty source stack!");
-    if (source->file != SOURCE_CONSOLE && source->file != SOURCE_EVALUATE)
-        fclose(source->file);
-    free(source->filename);
-    --source;
-}
-#endif
-
 /*
  * Utilities
  */

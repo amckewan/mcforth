@@ -120,7 +120,7 @@ CREATE CONTEXT  1 , 0 , ( FORTH ) 0 , ( COMPILER )
 
 : HEADER   ( -- )
     ALIGN  HERE-T  CONTEXT @ HASH  DUP @ ,-T  !
-    HERE-T LAST !  BL WORD COUNT DUP 80 OR C,-T S,-T ;
+    HERE-T LAST !  BL WORD COUNT DUP ( 80 OR)  C,-T S,-T  ALIGN ;
 
 VARIABLE STATE-T
 : ?EXEC  STATE-T @ 0= ABORT" cannot execute target word!" ;
@@ -539,8 +539,6 @@ CODE SEARCH   top = search(S++, top); NEXT
 CODE BYE  return 0;
 
 CODE ACCEPT ( a n -- n )  top = accept(*S++, top);
-` /* FIXME */ if (top < 0) exit(0); NEXT
-
 
 CODE ARGC ( -- n ) push argc; NEXT
 CODE ARGV ( n -- a n ) *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEXT
@@ -595,15 +593,15 @@ ALIGN  HERE-T 8 !-T  HERE-T 100 ( 20 8 *) ALLOT-T
 CONSTANT SOURCE-STACK
 
 : >IN           'IN @ ;
-: #TIB          >IN     CELL+ ;
-: 'TIB          >IN $ 2 CELLS + ;
-: SID           >IN $ 3 CELLS + ;
-: SOURCE-BUF    >IN $ 4 CELLS + ;
+( source-len )
+( source-addr )
+: FILE          >IN $ 3 CELLS + ;
+: 'TIB          >IN $ 4 CELLS + ;
 : SOURCE-NAME   >IN $ 5 CELLS + ;
 : SOURCE-LINE   >IN $ 6 CELLS + ;
 
 : SOURCE        >IN CELL+ 2@ ;
-: SOURCE-ID     SID @ ;
+: SOURCE-ID     FILE @ ;
 
 : SOURCE-DEPTH  >IN SOURCE-STACK -  $ 5 RSHIFT ( 32 /) ;
 
@@ -618,15 +616,15 @@ CODE NEW-STRING top = new_string(*S++, top); NEXT
 : >SOURCE ( filename len fileid | -1 -- ) \ CR ." Including " DROP TYPE SPACE ;
     SOURCE-DEPTH $ 7 U> ABORT" nested too deep"
     $ 20 'IN +!
-    DUP SID !
-    FILE? IF  $ 80 ALLOCATE DROP SOURCE-BUF !  NEW-STRING SOURCE-NAME !  THEN
+    DUP FILE !
+    FILE? IF  $ 80 ALLOCATE DROP 'TIB !  NEW-STRING SOURCE-NAME !  THEN
     $ 0 SOURCE-LINE ! ;
 
 : SOURCE> ( -- )
     SOURCE-DEPTH $ 1 < ABORT" trying to pop empty source"
     SOURCE-ID FILE? IF
         SOURCE-ID CLOSE-FILE DROP
-        SOURCE-BUF @ FREE DROP
+        'TIB @ FREE DROP
         SOURCE-NAME @ FREE DROP
     THEN
     $ -20 'IN +! ;
@@ -634,12 +632,11 @@ CODE NEW-STRING top = new_string(*S++, top); NEXT
 CODE REFILL ( -- f )  push refill(SOURCE); NEXT
 
 VARIABLE TIB 80 ALLOT-T
-: QUERY  ( -- )  $ 0 SID !  TIB SOURCE-BUF !  REFILL 0= IF BYE THEN ;
+: QUERY  ( -- )  $ 0 FILE !  TIB 'TIB !  REFILL 0= IF BYE THEN ;
 
 \ ********** Numbers **********
 
 CODE .  ( n -- )  printf("%d ", top); pop; NEXT
-: ?  @ . ;
 
 CODE -NUMBER  ( a -- a t, n f ) w = number(abs(top), --S, BASE);
 `   if (w) top = 0; else *S = top, top = -1; NEXT
@@ -654,12 +651,12 @@ CODE WORD  ( char -- addr )
 
 CODE FIND  ( str -- xt flag | str 0 )
 `       w = find(top, M[CONTEXT + 1]);
-`       if (w) *--S = cfa(w), top = -1;
+`       if (w) *--S = w, top = -1;
 `       else push 0; NEXT
 
 CODE -FIND  ( str v -- str t | xt f )
 `       w = find(*S, M[CONTEXT + top]);
-`       if (w) *S = cfa(w), top = 0;
+`       if (w) *S = w, top = 0;
 `       else top = -1; NEXT
 
 CODE >NAME ( xt -- nfa )  top = nfa(top); NEXT
@@ -681,11 +678,15 @@ CODE DUMP  ( a n -- )  dump(*S++, top, BASE); pop; NEXT
 
 ( ********** Compiler ********** )
 
+VARIABLE dA ( offset for target compiler )
+
 : HERE   H @  ;
 : ALLOT  H +! ;
 : ,   H @ !  CELL H +! ;
 : C,  H @ C!  $ 1 H +! ;
 : W,  H @ W!  $ 2 H +! ;
+
+\ : ,A  dA @ - , ;
 
 CODE ALIGNED  top = aligned(top); NEXT
 : ALIGN  BEGIN HERE DUP ALIGNED < WHILE $ 0 C, REPEAT ;
@@ -698,12 +699,14 @@ COMPILER
 FORTH
 
 : COMPILE,  ( xt -- )
-    \ DUP W@ 60 100 WITHIN IF  C@ C, EXIT  THEN
-    DUP C@ $ 5F >  OVER 1+ C@ 0= AND IF  C@ OP, EXIT  THEN
-    DUP C@ $ 10 = IF ( constant ) 1+ @       [COMPILE] LITERAL EXIT  THEN
-    DUP C@ $ 11 = IF ( variable ) 1+ ALIGNED [COMPILE] LITERAL EXIT  THEN
-    DUP $ 10000 U< IF  $ 1 OP, W, EXIT  THEN
-    $ 8 OP, , ;
+\ TODO: multi-op inlining
+    DUP C@ $ 5F > OVER 1+ C@ 0= AND IF  C@ OP,  EXIT THEN
+
+    DUP C@ $ 10 = IF ( constant ) 1+ @              [COMPILE] LITERAL  EXIT THEN
+    DUP C@ $ 11 = IF ( variable ) 1+ ALIGNED dA @ - [COMPILE] LITERAL  EXIT THEN
+
+    DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN
+    $ 8 OP, dA @ - , ;
 
 ( ********** Interpreter ********** )
 
@@ -751,8 +754,9 @@ VARIABLE LAST ( link )
 : REVEAL  LAST @ CURRENT ! ;
 
 : (HEADER)  ( -- )  WARN  $ 0 ?CODE !
+\    ALIGN  HERE  DUP LAST !  CURRENT @ ,  CURRENT !
     ALIGN  HERE LAST !  CURRENT @ ,
-    BL WORD C@  DUP $ 80 OR HERE C!  1+ ALLOT ;
+    BL WORD C@  ( DUP $ 80 OR HERE C!)  1+ ALLOT  ALIGN ;
 : HEADER  (HEADER) REVEAL ;
 
 : CONSTANT  HEADER  $ 10 OP, , ;
@@ -762,7 +766,8 @@ VARIABLE LAST ( link )
 : CREATE  HEADER $ 12 C, ALIGN $ 0 , ;
 
 : PREVIOUS  ( -- nfa count )  CURRENT @  CELL+ DUP C@ ;
-: DOES>   R> >REL  PREVIOUS $ 1F AND + 1+ ( cfa ) 1+ ALIGNED ! ;
+\ : SMUDGE  LAST @ IF  PREVIOUS  $ 20 XOR  SWAP C!  THEN ;
+: DOES>   R> >REL  PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) 1+ ALIGNED ! ;
 
 \ Be careful from here on...
 
