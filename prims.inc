@@ -11,7 +11,7 @@ cell *R;
 byte *I;
 cell w;
 
-BASE = 10;
+//BASE = 10;
 
 if (COLD) {
 //  if (verbose) printf("Running from %u\n", COLD);
@@ -67,6 +67,9 @@ else BRANCH; pop; NEXT
 /* ABORT" */ case 0x0C:      if (!top) { I = litq(I); pop; NEXT }
 show_error((char*)I, abs(HERE), abs(SOURCE));
 goto abort;
+/* --- */ case 0x0D: 
+/* --- */ case 0x0E: 
+/* --- */ case 0x0F: 
 /* DOCON */ case 0x10:       push LIT; EXIT
 /* DOVAR */ case 0x11:       push aligned(rel(I)); EXIT
 /* DOCREATE */ case 0x12:    push aligned(rel(I)) + CELL; w = *(cell*)aligned(I);
@@ -287,8 +290,8 @@ top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
       w = find(*S, M[CONTEXT + top]);
       if (w) *S = w, top = 0;
       else top = -1; NEXT
-/* >NAME */ case 0xC6:   top = nfa(top); NEXT
-/* NAME> */ case 0xC7:   top = cfa(top); NEXT
+/* >NAME */ case 0xC6:   top = xt_to_name(top); NEXT
+/* NAME> */ case 0xC7:   top = name_to_xt(top); NEXT
 /* DEPTH */ case 0xC8:   w = S0 - S; push w; NEXT
 /* .S */ case 0xC9: 
       w = S0 - S;  S[-1] = top;

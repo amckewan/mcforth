@@ -1,14 +1,14 @@
 ( decompiler )
 ( intended to see what the compiler does, not to reproduce source code )
 
-base @ decimal
+base @ hex
 
 \ cheesy decompiler
-: cee ' >name 32 dump ;
+: cee ' >name 20 dump ;
 
 \ build opcode table
-create ops 256 cells allot
-       ops 256 cells erase
+create ops 100 cells allot
+       ops 100 cells erase
 
 : op ( op <name> )  here swap cells ops + !  bl word c@ 1+ allot ;
 
@@ -18,9 +18,7 @@ include see.info
 
 : .op ( op )  op? if count type else ." ---" then space ;
 
-: .ops  256 0 do  i op? if i . count type space then  loop ;
-
-hex
+: .ops  100 0 do  i op? if i . count type space then  loop ;
 
 : .b  base @ hex  swap 0 <# # # #> type space  base ! ;
 : .name ( xt -- ) >name count 1f and type space ;

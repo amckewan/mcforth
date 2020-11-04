@@ -22,17 +22,14 @@ int verbose;
 #define aligned(x) (((cell)(x) + (CELL - 1)) & ~(CELL - 1))
 
 
-cell cfa(cell nfa) // convert nfa to cfa (NAME>)
-{
-    return nfa + (m[nfa] & 31) + 1;
+cell name_to_xt(cell nfa) {
+    return aligned(nfa + (m[nfa] & 31) + 1);
 }
 
-cell nfa(cell cfa) {
-    // convert cfa to nfa (>NAME)
-    do
-        --cfa;
-    while ((m[cfa] & 0x80) == 0);
-    return cfa;
+cell xt_to_name(cell cfa) {
+    cell nfa = cfa - CELL;
+    while (nfa > cfa - 32 && name_to_xt(nfa) != cfa) nfa -= CELL;
+    return nfa;
 }
 
 int match(const char *name, const char *str, int len) {

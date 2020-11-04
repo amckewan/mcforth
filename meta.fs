@@ -56,11 +56,9 @@ CREATE EOL 1 C, 0A C,
 variable seer
 s" see.info" w/o create-file ?err seer !
 : info ( opc -- )
-    base @ decimal swap
-    0 <# #S #> seer @ write-file ?err
+    0 <# # # #> seer @ write-file ?err
     s"  OP " seer @ write-file ?err
-    >in @  bl word count seer @ write-line ?err  >in !
-    base ! ;
+    >in @  bl word count seer @ write-line ?err  >in ! ;
 
 : CLOSE  OUT @ CLOSE-FILE ?ERR ;
 
@@ -111,8 +109,10 @@ VARIABLE LAST
 CREATE CONTEXT  1 , 24 , ( FORTH ) 24 , ( COMPILER )
 : FORTH     1 CONTEXT ! ; FORTH
 : COMPILER  2 CONTEXT ! ;
-: EMPLACE  ( targ-context -- )
-    CELL+-T >R  CONTEXT CELL+ 2@  R@ !-T  R> CELL+-T !-T ;
+
+: EMPLACE  ( targ-h targ-context -- )
+    CELL+-T >R  CONTEXT CELL+ 2@  R@ !-T  R> CELL+-T !-T
+    HERE-T SWAP !-T ;
 
 : HASH   ( voc -- thread )  CELLS CONTEXT + ;
 
@@ -158,10 +158,6 @@ VARIABLE OP  ( next opcode )
 : LITERAL  ( n -- )  ?EXEC  8 OP,  ,-T ;
 : $   BL WORD NUMBER DROP LITERAL ;
 
-\ Transition
-: ,   ,-T ;
-
-
 \ Define Meta Branching Constructs
 : ?CONDITION  INVERT ABORT" unbalanced" ;
 : MARK      ( -- here )     ?EXEC  HERE-T  0 ?CODE ! ;
@@ -198,6 +194,10 @@ VARIABLE OP  ( next opcode )
 : ."      0B OP,  ," ;
 : ABORT"  0C OP,  ," ;
 
+: ORG  DP-T ! ;
+: ,    ,-T ;
+: C,   C,-T ;
+
 \ Defining Words
 : CONSTANT  TARGET-CREATE  10 OP, ,-T ;
 : VARIABLE  TARGET-CREATE  11 OP, ALIGN 0 ,-T ;
@@ -217,20 +217,20 @@ VARIABLE OP  ( next opcode )
 \ Start of Kernel
 \ **********************************************************************
 
-0 DP-T !
+0 ORG
 
-( COLD )  0 ,  ( WARM ) 0 ,  ( H ) 0 ,  ( BASE ) 5 5 + ,
+( COLD )  0 ,  ( WARM ) 0 ,  ( H ) 0 ,  ( BASE ) #10 ,
 ( STATE ) 0 ,  ( 'IN )  0 ,
-( CONTEXT ) 1 , 0 , 0 ,  ( NULL ) 0 , 0 , 8009 ,
+( CONTEXT ) 1 , 0 , 0 ,  ( NULL ) 0 , 0 , 8009 , ( NOP R>DROP EXIT )
 
-40 DP-T !
+40 ORG
 
 \ Variables shared with C code at fixed offsets
 08 CONSTANT H
 0C CONSTANT BASE
 10 CONSTANT STATE
 14 CONSTANT 'IN
-18 CONSTANT CONTEXT ( 3 cells )
+18 CONSTANT CONTEXT
 
 ``
 #define COLD M[0]
@@ -246,7 +246,7 @@ cell *R;
 byte *I;
 cell w;
 
-BASE = 10;
+//BASE = 10;
 
 if (COLD) {
 //  if (verbose) printf("Running from %u\n", COLD);
@@ -307,9 +307,9 @@ OP: ."          I = dotq(I); NEXT
 OP: ABORT"      if (!top) { I = litq(I); pop; NEXT }
                 ` show_error((char*)I, abs(HERE), abs(SOURCE));
                 ` goto abort;
-\ OP:
-\ OP:
-\ OP:
+OP: ---
+OP: ---
+OP: ---
 
 10 OP! ( runtime for defining words )
 
@@ -674,8 +674,8 @@ CODE -FIND  ( str v -- str t | xt f )
 `       if (w) *S = w, top = 0;
 `       else top = -1; NEXT
 
-CODE >NAME ( xt -- nfa )  top = nfa(top); NEXT
-CODE NAME> ( nfa -- xt )  top = cfa(top); NEXT
+CODE >NAME ( xt -- nfa )  top = xt_to_name(top); NEXT
+CODE NAME> ( nfa -- xt )  top = name_to_xt(top); NEXT
 
 : -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
 : '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
@@ -793,6 +793,5 @@ FORTH
 : ]  $ -1 STATE ! ;
 T: :  (HEADER) ] ;
 
-HERE-T 8 !-T  ( here )
-18 EMPLACE  ( context )
+8 18 EMPLACE
 SAVE
