@@ -27,8 +27,12 @@ start:
     S = S0;
     R = R0;
 next:
-    // if (verbose > 2) printf("I=%X op=%02X R=%X %X %X (%d)\n",
-    //     rel(I), *I, rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
+    if (verbose > 2) {
+        printf("I=%X op=%02X ", rel(I), *I);
+        printf("R=%X %X %X (%d) ", rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
+        printf("S=[%d] %X %X %X %X ", S0-S, S[2], S[1], S[0], top);
+        printf("H=%X\n", HERE);
+    }
     switch (w = *I++) {
 
 #define push *--S = top, top =

@@ -108,7 +108,7 @@ VARIABLE ?CODE
 
 \ Create Headers in Target Image
 VARIABLE LAST
-CREATE CONTEXT  1 , 0 , ( FORTH ) 0 , ( COMPILER )
+CREATE CONTEXT  1 , 24 , ( FORTH ) 24 , ( COMPILER )
 : FORTH     1 CONTEXT ! ; FORTH
 : COMPILER  2 CONTEXT ! ;
 : EMPLACE  ( targ-context -- )
@@ -158,6 +158,10 @@ VARIABLE OP  ( next opcode )
 : LITERAL  ( n -- )  ?EXEC  8 OP,  ,-T ;
 : $   BL WORD NUMBER DROP LITERAL ;
 
+\ Transition
+: ,   ,-T ;
+
+
 \ Define Meta Branching Constructs
 : ?CONDITION  INVERT ABORT" unbalanced" ;
 : MARK      ( -- here )     ?EXEC  HERE-T  0 ?CODE ! ;
@@ -200,12 +204,11 @@ VARIABLE OP  ( next opcode )
 
 : [   0 STATE-T ! ;
 : ]  -1 STATE-T ! ;
-: ,   ,-T ;
 
 : T:  HEADER   0 ?CODE !  ] ;  \ to create words with no host header
 
 : ;_  [COMPILE] ; ; IMMEDIATE \ concession
-: [COMPILE] ;
+: \\ ;
 : ;   ?CSP EXIT [ ;
 : :   TARGET-CREATE  0 ?CODE !  !CSP ] ;_
 
@@ -218,7 +221,7 @@ VARIABLE OP  ( next opcode )
 
 ( COLD )  0 ,  ( WARM ) 0 ,  ( H ) 0 ,  ( BASE ) 5 5 + ,
 ( STATE ) 0 ,  ( 'IN )  0 ,
-( CONTEXT ) 1 , 0 , 0 ,  ( NULL ) : % [ 8009 ,
+( CONTEXT ) 1 , 0 , 0 ,  ( NULL ) 0 , 0 , 8009 ,
 
 40 DP-T !
 
@@ -259,8 +262,12 @@ start:
     S = S0;
     R = R0;
 next:
-    // if (verbose > 2) printf("I=%X op=%02X R=%X %X %X (%d)\n",
-    //     rel(I), *I, rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
+    if (verbose > 2) {
+        printf("I=%X op=%02X ", rel(I), *I);
+        printf("R=%X %X %X (%d) ", rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
+        printf("S=[%d] %X %X %X %X ", S0-S, S[2], S[1], S[0], top);
+        printf("H=%X\n", HERE);
+    }
     switch (w = *I++) {
 
 #define push *--S = top, top =
@@ -710,8 +717,8 @@ FORTH
 \ TODO: multi-op inlining
     DUP C@ $ 5F > OVER 1+ C@ 0= AND IF  C@ OP,  EXIT THEN
 
-    DUP C@ $ 10 = IF ( constant ) 1+ @              [COMPILE] LITERAL  EXIT THEN
-    DUP C@ $ 11 = IF ( variable ) 1+ ALIGNED dA @ - [COMPILE] LITERAL  EXIT THEN
+    DUP C@ $ 10 = IF ( constant ) 1+ @              \\ LITERAL  EXIT THEN
+    DUP C@ $ 11 = IF ( variable ) 1+ ALIGNED dA @ - \\ LITERAL  EXIT THEN
 
     DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN
     $ 8 OP, dA @ - , ;
@@ -721,13 +728,10 @@ FORTH
 CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
 : INTERPRET  ( -- )
-    BEGIN   BL WORD DUP C@
-    WHILE   STATE @
-        IF    $ 2 -FIND IF  $ 1 -FIND IF  NUMBER  [COMPILE] LITERAL
-              ELSE  COMPILE,  THEN  ELSE  EXECUTE  THEN
-        ELSE  $ 1 -FIND IF  NUMBER  ELSE  EXECUTE  THEN
-        THEN  DEPTH 0< ABORT" stack? "
-    REPEAT DROP ;
+    BEGIN  STATE @ IF  $ 2 -' IF  $ 1 -FIND IF  NUMBER \\ LITERAL
+        ELSE  COMPILE, THEN  ELSE  EXECUTE  THEN
+        ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE  THEN THEN
+    AGAIN ;
 
 CODE R0!  R = R0; NEXT
 
@@ -791,5 +795,4 @@ T: :  (HEADER) ] ;
 
 HERE-T 8 !-T  ( here )
 18 EMPLACE  ( context )
-0 28 !-T ( NULL )
 SAVE
