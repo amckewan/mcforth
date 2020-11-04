@@ -111,10 +111,8 @@ VARIABLE LAST
 CREATE CONTEXT  1 , 0 , ( FORTH ) 0 , ( COMPILER )
 : FORTH     1 CONTEXT ! ; FORTH
 : COMPILER  2 CONTEXT ! ;
-: EMPLACE  ( targ-addr -- )  FORTH  \ TODO CONTEXT SWAP THERE 3 CELLS MOVE ;
-    CONTEXT @ OVER !-T
-    CONTEXT CELL+ @ OVER CELL+-T !-T
-    CONTEXT 2 CELLS + @ SWAP 2 CELLS-T + !-T ;
+: EMPLACE  ( targ-context -- )
+    CELL+-T >R  CONTEXT CELL+ 2@  R@ !-T  R> CELL+-T !-T ;
 
 : HASH   ( voc -- thread )  CELLS CONTEXT + ;
 
@@ -202,6 +200,7 @@ VARIABLE OP  ( next opcode )
 
 : [   0 STATE-T ! ;
 : ]  -1 STATE-T ! ;
+: ,   ,-T ;
 
 : T:  HEADER   0 ?CODE !  ] ;  \ to create words with no host header
 
@@ -214,6 +213,12 @@ VARIABLE OP  ( next opcode )
 \ **********************************************************************
 \ Start of Kernel
 \ **********************************************************************
+
+0 DP-T !
+
+( COLD )  0 ,  ( WARM ) 0 ,  ( H ) 0 ,  ( BASE ) 5 5 + ,
+( STATE ) 0 ,  ( 'IN )  0 ,
+( CONTEXT ) 1 , 0 , 0 ,  ( NULL ) : % [ 8009 ,
 
 40 DP-T !
 
@@ -289,7 +294,7 @@ OP: +LOOP       w = *R, *R += top;
                 ` else BRANCH; pop; NEXT
 
 OP: LIT         push LIT; I += CELL; NEXT
-OP: ---         NEXT
+OP: NOP         NEXT
 OP: S"          push rel(I) + 1; push *I; I = litq(I); NEXT
 OP: ."          I = dotq(I); NEXT
 OP: ABORT"      if (!top) { I = litq(I); pop; NEXT }
@@ -428,7 +433,14 @@ OP: <=   top = (*S++ <= top) LOGICAL; NEXT
 OP: U>=   top = ((ucell)*S++ >= (ucell)top) LOGICAL; NEXT
 OP: U<=   top = ((ucell)*S++ <= (ucell)top) LOGICAL; NEXT
 
-80 OP! ( nothing special after this )
+80 OP! ( nothing special after this, except for R>DROP )
+
+CODE R>DROP     ++R; NEXT // don't move
+CODE DUP>R      *--R = top; NEXT
+
+CODE >R         *--R = top, pop; NEXT
+CODE R>         push *R++; NEXT
+CODE R@         push *R  ; NEXT
 
 CODE DUP        *--S = top; NEXT
 CODE DROP       pop; NEXT
@@ -438,10 +450,6 @@ CODE ROT        w = S[1], S[1] = *S, *S = top, top = w; NEXT
 CODE NIP        S++; NEXT
 CODE ?DUP       if (top) *--S = top; NEXT
 CODE PICK       top = S[top]; NEXT
-
-CODE >R         *--R = top, pop; NEXT
-CODE R>         push *R++; NEXT
-CODE R@         push *R  ; NEXT
 
 CODE I          push R[0] + R[1]; NEXT
 CODE J          push R[3] + R[4]; NEXT
@@ -679,6 +687,7 @@ CODE DUMP  ( a n -- )  dump(*S++, top, BASE); pop; NEXT
 ( ********** Compiler ********** )
 
 VARIABLE dA ( offset for target compiler )
+VARIABLE ?CODE 0 ,
 
 : HERE   H @  ;
 : ALLOT  H +! ;
@@ -691,7 +700,6 @@ VARIABLE dA ( offset for target compiler )
 CODE ALIGNED  top = aligned(top); NEXT
 : ALIGN  BEGIN HERE DUP ALIGNED < WHILE $ 0 C, REPEAT ;
 
-VARIABLE ?CODE 0 ,-T
 : OP, ( opc -- )  ?CODE @ HERE ?CODE 2!  C, ;
 
 COMPILER
@@ -783,4 +791,5 @@ T: :  (HEADER) ] ;
 
 HERE-T 8 !-T  ( here )
 18 EMPLACE  ( context )
+0 28 !-T ( NULL )
 SAVE

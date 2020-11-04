@@ -70,7 +70,7 @@ opcode | function | operands
 6 | loop | offset
 7 | +loop | offset
 8 | lit | value
-9 | ---
+9 | nop
 A | s" | counted string
 B | ." | counted string
 C | abort" | counted string

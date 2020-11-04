@@ -47,19 +47,13 @@ void type(cell addr, cell len);
 cell find(cell name, cell link) {
     //printf("find '"); typex((char*)m+name+1, m[name]); printf("'\n");
     // return xt if found, else zero
-    cell len = m[name];
+    int len = m[name];
     while (link) {
         if ((m[link + CELL] & 63) == len
               && match((char*)m + name + 1, (char*)m + link + CELL + 1, len)) {
-//            return link + CELL;
-//            cell xt = link + CELL + 1 + len;
             cell xt = aligned(link + CELL + 1 + len);
-            // xt = aligned(xt)
-            // if ((m[link + CELL] & 0x80) == 0) { // headless?
-            //     type(link + CELL + 1, len);
-            //     printf(" oops ");
-            //     return *(cell *)(m + xt);
-            // }
+            if (m[link + CELL] & 0x80) // headless
+                xt = *(cell *)(m + xt);
             return xt;
         }
 
