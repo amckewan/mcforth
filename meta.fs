@@ -199,7 +199,7 @@ VARIABLE OP  ( next opcode )
 : C,   C,-T ;
 
 \ Defining Words
-: CONSTANT  TARGET-CREATE  10 OP, ,-T ;
+: CONSTANT  TARGET-CREATE  10 OP, ALIGN   ,-T ;
 : VARIABLE  TARGET-CREATE  11 OP, ALIGN 0 ,-T ;
 
 : [   0 STATE-T ! ;
@@ -313,9 +313,9 @@ OP: ---
 
 10 OP! ( runtime for defining words )
 
-OP: DOCON       push LIT; EXIT
-OP: DOVAR       push aligned(rel(I)); EXIT
-OP: DOCREATE    push aligned(rel(I)) + CELL; w = *(cell*)aligned(I);
+OP: DOCON       push *(cell*)aligned(I); EXIT
+OP: DOVAR       push rel(aligned(I)); EXIT
+OP: DOCREATE    push rel(aligned(I)); w = *(cell*)(I - 1) >> 8;
                 ` if (w) I = abs(w); else EXIT
 
 20 OP! ( lit op )
@@ -717,8 +717,8 @@ FORTH
 \ TODO: multi-op inlining
     DUP C@ $ 5F > OVER 1+ C@ 0= AND IF  C@ OP,  EXIT THEN
 
-    DUP C@ $ 10 = IF ( constant ) 1+ @              \\ LITERAL  EXIT THEN
-    DUP C@ $ 11 = IF ( variable ) 1+ ALIGNED dA @ - \\ LITERAL  EXIT THEN
+    DUP C@ $ 10 = IF ( constant ) CELL+ @      \\ LITERAL  EXIT THEN
+    DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
 
     DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN
     $ 8 OP, dA @ - , ;
@@ -771,15 +771,16 @@ VARIABLE LAST ( link )
     BL WORD C@  ( DUP $ 80 OR HERE C!)  1+ ALLOT  ALIGN ;
 : HEADER  (HEADER) REVEAL ;
 
-: CONSTANT  HEADER  $ 10 OP, , ;
-: VARIABLE  HEADER  $ 11 OP, ALIGN $ 0 , ;
-
-\ | opc | align | I for does | data
-: CREATE  HEADER $ 12 C, ALIGN $ 0 , ;
-
 : PREVIOUS  ( -- nfa count )  CURRENT @  CELL+ DUP C@ ;
 \ : SMUDGE  LAST @ IF  PREVIOUS  $ 20 XOR  SWAP C!  THEN ;
-: DOES>   R>  PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) 1+ ALIGNED ! ;
+
+: CONSTANT  HEADER  $ 10 , , ;
+: VARIABLE  HEADER  $ 11 , $ 0 , ;
+
+\ | opc | I for does | data
+: CREATE  HEADER $ 12 , ;
+: DOES>   R> $ 8 LSHIFT $ 12 OR  PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) ! ;
+: >BODY   CELL+ ;
 
 \ Be careful from here on...
 

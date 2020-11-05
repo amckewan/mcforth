@@ -70,9 +70,9 @@ goto abort;
 /* --- */ case 0x0D: 
 /* --- */ case 0x0E: 
 /* --- */ case 0x0F: 
-/* DOCON */ case 0x10:       push LIT; EXIT
-/* DOVAR */ case 0x11:       push aligned(rel(I)); EXIT
-/* DOCREATE */ case 0x12:    push aligned(rel(I)) + CELL; w = *(cell*)aligned(I);
+/* DOCON */ case 0x10:       push *(cell*)aligned(I); EXIT
+/* DOVAR */ case 0x11:       push rel(aligned(I)); EXIT
+/* DOCREATE */ case 0x12:    push rel(aligned(I)); w = *(cell*)(I - 1) >> 8;
 if (w) I = abs(w); else EXIT
 /* LIT+ */ case 0x20:        top += LIT, I += CELL; NEXT
 /* LIT- */ case 0x21:        top -= LIT, I += CELL; NEXT
