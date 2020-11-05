@@ -29,7 +29,7 @@ start:
 next:
     if (verbose > 2) {
         printf("I=%X op=%02X ", rel(I), *I);
-        printf("R=%X %X %X (%d) ", rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
+        printf("R=%X %X %X (%d) ", R[0], R[1], R[2], R0-R);
         printf("S=[%d] %X %X %X %X ", S0-S, S[2], S[1], S[0], top);
         printf("H=%X\n", HERE);
     }
@@ -46,10 +46,10 @@ next:
 #define OFFSET      *(signed char*)I
 #define BRANCH      I += OFFSET
 #define NOBRANCH    I += 1
-#define EXIT        I = (byte*) *R++; NEXT
+#define EXIT        I = m + *R++; NEXT
 /* EXIT */ case 0x00:        EXIT
-/* CALL */ case 0x01:        w = *(uint16_t *)I; *--R = (cell)I + 2; I = m + w; NEXT
-/* CALL32 */ case 0x02:      w = LIT; *--R = (cell)I + CELL; I = m + w; NEXT
+/* CALL */ case 0x01:        w = *(uint16_t *)I; *--R = I + 2 - m; I = m + w; NEXT
+/* CALL32 */ case 0x02:      w = LIT; *--R = I + CELL - m; I = m + w; NEXT
 /* BRANCH */ case 0x03:      BRANCH; NEXT
 /* DO */ case 0x04:          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
 /* ?DO */ case 0x05:         if (top == *S) BRANCH;
@@ -302,7 +302,7 @@ top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
 /* WORDS */ case 0xCA:   words(M[CONTEXT + M[CONTEXT]]); NEXT
 /* DUMP */ case 0xCB:   dump(*S++, top, BASE); pop; NEXT
 /* ALIGNED */ case 0xCC:  top = aligned(top); NEXT
-/* EXECUTE */ case 0xCD:  *--R = (cell)I, I = m + top, pop; NEXT
+/* EXECUTE */ case 0xCD:  *--R = I - m, I = m + top, pop; NEXT
 /* R0! */ case 0xCE:  R = R0; NEXT
 /* PARSE */ case 0xCF:   top = parse(SOURCE, top, --S); NEXT
 /* PARSE-NAME */ case 0xD0:   push parse_name(SOURCE, --S); NEXT

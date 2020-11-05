@@ -264,7 +264,7 @@ start:
 next:
     if (verbose > 2) {
         printf("I=%X op=%02X ", rel(I), *I);
-        printf("R=%X %X %X (%d) ", rel(R[0]), rel(R[1]), rel(R[2]), R0-R);
+        printf("R=%X %X %X (%d) ", R[0], R[1], R[2], R0-R);
         printf("S=[%d] %X %X %X %X ", S0-S, S[2], S[1], S[0], top);
         printf("H=%X\n", HERE);
     }
@@ -281,14 +281,14 @@ next:
 #define OFFSET      *(signed char*)I
 #define BRANCH      I += OFFSET
 #define NOBRANCH    I += 1
-#define EXIT        I = (byte*) *R++; NEXT
+#define EXIT        I = m + *R++; NEXT
 ``
 
 0 OP! ( special functions )
 
 OP: EXIT        EXIT
-OP: CALL        w = *(uint16_t *)I; *--R = (cell)I + 2; I = m + w; NEXT
-OP: CALL32      w = LIT; *--R = (cell)I + CELL; I = m + w; NEXT
+OP: CALL        w = *(uint16_t *)I; *--R = I + 2 - m; I = m + w; NEXT
+OP: CALL32      w = LIT; *--R = I + CELL - m; I = m + w; NEXT
 OP: BRANCH      BRANCH; NEXT
 OP: DO          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
 OP: ?DO         if (top == *S) BRANCH;
@@ -725,7 +725,7 @@ FORTH
 
 ( ********** Interpreter ********** )
 
-CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
+CODE EXECUTE  *--R = I - m, I = m + top, pop; NEXT
 
 : INTERPRET  ( -- )
     BEGIN  STATE @ IF  $ 2 -' IF  $ 1 -FIND IF  NUMBER \\ LITERAL
@@ -779,7 +779,7 @@ VARIABLE LAST ( link )
 
 : PREVIOUS  ( -- nfa count )  CURRENT @  CELL+ DUP C@ ;
 \ : SMUDGE  LAST @ IF  PREVIOUS  $ 20 XOR  SWAP C!  THEN ;
-: DOES>   R> >REL  PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) 1+ ALIGNED ! ;
+: DOES>   R>  PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) 1+ ALIGNED ! ;
 
 \ Be careful from here on...
 
