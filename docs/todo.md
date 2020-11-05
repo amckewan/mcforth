@@ -1,6 +1,15 @@
 # To-do list
 
-## Self-compile
+* put relative address on return stack for nesting
+* self-compile
+* immediate in a standard way
+* check for redefined words
+* move stuff from meta to rth
+* add value
+* add defer
+* add sysvar in meta
+* move warm to 4
+* remove non-essential code words (keep opcodes trim)
 
 ### Ideas from cmForth
 
@@ -17,7 +26,6 @@ In current meta:
 * identify what is relocatable and what is not
 * consider changing things like call to relative addresses
 
-
 ## Optimizing compiler
 
 * ok lit+op
@@ -30,25 +38,10 @@ In current meta:
 * specials (e.g. dup if )
 * lit+pick
 
-* check for redefined words
-* move stuff from meta to rth
-* add value
-* add defer
-* add sysvar in meta
-* move warm to 4
-* remove non-essential code words (keep opcodes trim)
+## Do later (or never)
 
-## Do later
-
-* improve documentation (wip)
+* improve documentation
 * use 64-bit compiler
 * allow 32 or 64-bit to work
 * view source
-
-
-## Could-do list
-
-...but not really necessary for my purposes (see goals)
-
-* immediate in a standard way
 * fm/mod (steal from Wil)

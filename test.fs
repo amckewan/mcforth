@@ -18,3 +18,4 @@ include test/strings.fs
 
 decimal
 CR .( Testing finished: ) .TESTS
+

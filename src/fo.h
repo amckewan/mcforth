@@ -69,3 +69,4 @@ cell word(cell source_va, char c, cell here_va);
 FILE *open_file(const char *str, int len, const char *mode);
 cell accept(cell addr_va, cell max);
 cell refill(cell source_va);
+void type(cell addr, cell len);

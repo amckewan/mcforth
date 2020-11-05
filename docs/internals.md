@@ -14,7 +14,21 @@ The return stack grows down from the top of memory.
 
 The data stack grows down in a separate area of memory. The top of the stack is cached in the variable 'top'. The next stack entry is S[0], then S[1], etc. The bottom of the stack (or maybe top since it groes down) is S0.
 
-The first
+The first X byte of memory are used for variables at fixed offsets that are shared between Forth and C. Some of these are also known b the target compiler so must only be changed with caution.
+
+| offset    | variable  | notes
+| ----------| ----------| -----
+| 00        |           | cold-start xt
+| 04        |           | warm start (abort)
+| 08        | H         | dictionary pointer
+| 0C        | BASE
+| 10        | STATE
+| 14        | 'IN       | points to current input source
+| 18        | CONTEXT
+| 1C        |           | forth vocabulary
+| 20        |           | compiler vocabulary
+| 24        |           | NULL word to end each vocabulary
+| 30        |           | next available slot
 
 ## Forth registers
 

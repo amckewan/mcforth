@@ -234,3 +234,5 @@ FORTH
     doargs
     ." Hi" QUIT ;
 
+: MARKER  ALIGN HERE  CONTEXT CELL+ 2@ , ,  CREATE ,
+    DOES> @  DUP H !  2@ CONTEXT CELL+ 2!  FORTH ;
