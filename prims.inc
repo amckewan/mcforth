@@ -284,11 +284,12 @@ top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
   top = word(SOURCE, top, HERE); NEXT
 /* FIND */ case 0xC4: 
       w = find(top, M[CONTEXT + 1]);
-      if (w) *--S = w, top = -1;
+      if (w > 0) *--S = w, top = -1;
+      else if (w < 0) *--S = -w, top = 1;
       else push 0; NEXT
 /* -FIND */ case 0xC5: 
       w = find(*S, M[CONTEXT + top]);
-      if (w) *S = w, top = 0;
+      if (w) *S = w < 0 ? -w : w, top = 0;
       else top = -1; NEXT
 /* >NAME */ case 0xC6:   top = xt_to_name(top); NEXT
 /* NAME> */ case 0xC7:   top = name_to_xt(top); NEXT

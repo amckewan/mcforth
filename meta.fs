@@ -197,6 +197,7 @@ VARIABLE OP  ( next opcode )
 : ORG  DP-T ! ;
 : ,    ,-T ;
 : C,   C,-T ;
+: \\ ;
 
 \ Defining Words
 : CONSTANT  TARGET-CREATE  10 OP, ALIGN   ,-T ;
@@ -208,7 +209,6 @@ VARIABLE OP  ( next opcode )
 : T:  HEADER   0 ?CODE !  ] ;  \ to create words with no host header
 
 : ;_  [COMPILE] ; ; IMMEDIATE \ concession
-: \\ ;
 : ;   ?CSP EXIT [ ;
 : :   TARGET-CREATE  0 ?CODE !  !CSP ] ;_
 
@@ -666,12 +666,13 @@ CODE WORD  ( char -- addr )
 
 CODE FIND  ( str -- xt flag | str 0 )
 `       w = find(top, M[CONTEXT + 1]);
-`       if (w) *--S = w, top = -1;
+`       if (w > 0) *--S = w, top = -1;
+`       else if (w < 0) *--S = -w, top = 1;
 `       else push 0; NEXT
 
 CODE -FIND  ( str v -- str t | xt f )
 `       w = find(*S, M[CONTEXT + top]);
-`       if (w) *S = w, top = 0;
+`       if (w) *S = w < 0 ? -w : w, top = 0;
 `       else top = -1; NEXT
 
 CODE >NAME ( xt -- nfa )  top = xt_to_name(top); NEXT
@@ -727,10 +728,23 @@ FORTH
 
 CODE EXECUTE  *--R = I - m, I = m + top, pop; NEXT
 
-: INTERPRET  ( -- )
+: xINTERPRET  ( -- )
     BEGIN  STATE @ IF  $ 2 -' IF  $ 1 -FIND IF  NUMBER \\ LITERAL
         ELSE  COMPILE, THEN  ELSE  EXECUTE  THEN
         ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE  THEN THEN
+    AGAIN ;
+
+: INTERPRET  ( -- )
+    BEGIN  STATE @
+        IF  $ 2 -'
+            IF  FIND DUP
+                IF  0< IF  COMPILE,  ELSE  EXECUTE  THEN
+                ELSE  DROP NUMBER \\ LITERAL
+                THEN
+            ELSE  EXECUTE
+            THEN
+        ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE  THEN
+        THEN
     AGAIN ;
 
 CODE R0!  R = R0; NEXT
@@ -773,6 +787,7 @@ VARIABLE LAST ( link )
 
 : PREVIOUS  ( -- nfa count )  CURRENT @  CELL+ DUP C@ ;
 \ : SMUDGE  LAST @ IF  PREVIOUS  $ 20 XOR  SWAP C!  THEN ;
+: IMMEDIATE  PREVIOUS  $ 40 XOR  SWAP C! ;
 
 : CONSTANT  HEADER  $ 10 , , ;
 : VARIABLE  HEADER  $ 11 , $ 0 , ;
@@ -788,7 +803,7 @@ COMPILER
 : [  $ 0 STATE ! ;
 : EXIT  $ 0 OP, ;
 T: ;  EXIT [ REVEAL ;
-: [COMPILE]  $ 2 -' ABORT" ?" COMPILE, ;
+: \\  $ 2 -' ABORT" ?" COMPILE, ;
 FORTH
 
 : ]  $ -1 STATE ! ;

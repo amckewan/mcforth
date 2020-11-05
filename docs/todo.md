@@ -1,14 +1,11 @@
 # To-do list
 
-* put relative address on return stack for nesting
 * self-compile
-* immediate in a standard way
 * check for redefined words
 * move stuff from meta to rth
 * add value
 * add defer
 * add sysvar in meta
-* move warm to 4
 * remove non-essential code words (keep opcodes trim)
 
 ### Ideas from cmForth
@@ -22,7 +19,6 @@
 
 In current meta:
 
-* add dA
 * identify what is relocatable and what is not
 * consider changing things like call to relative addresses
 

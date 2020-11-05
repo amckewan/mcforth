@@ -3,14 +3,9 @@
 : FORTH     1 CONTEXT ! ;
 : COMPILER  2 CONTEXT ! ;
 
-COMPILER
-: \  SOURCE >IN ! DROP ;
-: (  ')' PARSE 2DROP ;
-: .( ')' PARSE TYPE ;
-FORTH
-: \  [COMPILE] \ ;
-: (  [COMPILE] ( ;
-: .( [COMPILE] .( ;
+: \         SOURCE >IN ! DROP ; IMMEDIATE
+: (         ')' PARSE 2DROP ; IMMEDIATE
+: .(        ')' PARSE TYPE  ; IMMEDIATE
 
 : ,"        '"' PARSE  DUP C, S, ;
 COMPILER
@@ -61,11 +56,9 @@ FORTH
 
 : CHAR  BL WORD 1+ C@ ;
 COMPILER
-: [CHAR]  CHAR [COMPILE] LITERAL ;
-: [']     ' [COMPILE] LITERAL ;
+: [CHAR]  CHAR \\ LITERAL ;
+: [']     ' \\ LITERAL ;
 FORTH
-: CHARS  ; \ useless
-: CHAR+  1 + ; \ almost useless
 
 : ERASE  0 FILL ;
 : PLACE  ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;
@@ -93,8 +86,8 @@ COMPILER
 : BEGIN     <MARK ;
 : UNTIL     CONDITION  <RESOLVE ;
 : AGAIN     3 OP,  <RESOLVE ;
-: WHILE     [COMPILE] IF  2SWAP ;
-: REPEAT    [COMPILE] AGAIN  [COMPILE] THEN ;
+: WHILE     \\ IF  2SWAP ;
+: REPEAT    \\ AGAIN  \\ THEN ;
 
 : DO        4 OP,  >MARK  <MARK ;
 : ?DO       5 OP,  >MARK  <MARK ;
@@ -103,14 +96,11 @@ COMPILER
 FORTH
 
 \ multi-line comments
-COMPILER
-: ( BEGIN  [CHAR] ) PARSE 2DROP
+: (   BEGIN  [CHAR] ) PARSE 2DROP
         SOURCE-ID 1+ 2 U< IF EXIT THEN
         SOURCE DROP  >IN @ +  1- C@ [CHAR] ) = IF EXIT THEN
         REFILL 0= ABORT" Missing )"
-    AGAIN ;
-FORTH
-: ( [COMPILE] ( ;
+      AGAIN ; IMMEDIATE
 
 ( *** more stuff *** )
 : ?DUP      DUP IF DUP THEN ;
@@ -180,32 +170,12 @@ VARIABLE HLD
     CLOSE-FILE ?IOERR ;
 
 
-\ ===============================================
-\ stuff for core test
+( *** more stuff *** )
 
-: fm/mod sm/rem ; \ wrong behavior
-
-' compile, constant compile,-xt
-compiler
-: postpone  bl word
-    2 -find if
-        1 -find abort" ?"
-        [compile] literal  [ forth ' compile, compiler ] literal compile,
-    else
-        compile,
-    then ;
-forth
-
-\ for immediate, we need to create a compiler word
-\ that executes the latest forth word
-: "header ( a n -- )
-    ALIGN  HERE  CURRENT  DUP @ ,  !
-    ( HERE LAST ! )  HERE OVER 1+ ALLOT PLACE  ALIGN ;
-: immediate
-    last @ cell+ count 31 and
-    compiler
-    2dup "header + aligned compile, [compile] exit
-    forth ;
+COMPILER
+: POSTPONE  2 -' IF  FIND DUP 0= ABORT" ?"
+    0< IF  \\ LITERAL  [ FORTH ' COMPILE, COMPILER ] LITERAL  THEN THEN  COMPILE, ;
+FORTH
 
 COMPILER
 : RECURSE  LAST @ CELL+  COUNT 31 AND +  COMPILE, ;

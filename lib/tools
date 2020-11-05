@@ -4,7 +4,6 @@
 \ require std-tools
 
 ( copied from standard )
-COMPILER
 : [ELSE] ( -- )
     1 BEGIN
         BEGIN PARSE-NAME DUP WHILE
@@ -20,18 +19,10 @@ COMPILER
             THEN
           THEN ?DUP 0= IF EXIT THEN
         REPEAT 2DROP
-    REFILL 0= UNTIL  DROP ;
+    REFILL 0= UNTIL  DROP ; IMMEDIATE
 
-: [IF] ( flag -- )  0= IF [COMPILE] [ELSE] THEN ;
-: [THEN] ;
+: [IF]  0= IF  POSTPONE [ELSE]  THEN ; IMMEDIATE
+: [THEN] ; IMMEDIATE
 
-: [UNDEFINED] BL WORD FIND NIP 0= ;
-: [DEFINED]   [COMPILE] [UNDEFINED] INVERT ;
-
-FORTH
-\ it is a little awkward sometimes without immediate
-: [IF]        [COMPILE] [IF] ;
-: [ELSE]      [COMPILE] [ELSE] ;
-: [THEN]      [COMPILE] [THEN] ;
-: [UNDEFINED] [COMPILE] [UNDEFINED] ;
-: [DEFINED]   [COMPILE] [DEFINED] ;
+: [UNDEFINED]   BL WORD FIND NIP 0= ; IMMEDIATE
+: [DEFINED]     POSTPONE [UNDEFINED] NOT ; IMMEDIATE

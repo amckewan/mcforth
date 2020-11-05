@@ -49,9 +49,8 @@ cell find(cell name, cell link) {
             cell xt = aligned(link + CELL + 1 + len);
             if (m[link + CELL] & 0x80) // headless
                 xt = *(cell *)(m + xt);
-            // todo flag if immediate
-            // if (m[link + CELL] & 0x40) // immediate
-            //     xt |= 0x80000000;
+            if (m[link + CELL] & 0x40) // immediate
+                xt = -xt;
             return xt;
         }
 

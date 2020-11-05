@@ -49,7 +49,7 @@ include see.info
 
 : see ' (see) ;
 
-: see:  here ] 1 parse evaluate [compile] exit [compile] [ (see) ;
+: see:  here ] 1 parse evaluate \\ exit \\ [ (see) ;
 
 : s see: ; \ shorthand
 

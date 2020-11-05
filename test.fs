@@ -8,8 +8,10 @@
 : yy 10 0 do i . i 5 = if leave ." oops " then loop ;
 : zz 10 0 do i . i 5 = if unloop exit then loop ." oops " ;
 
+
 include test/tester.fs
 \ VERBOSE ON
+include lib/standard.fs
 include ../forth2012-test-suite/src/core.fr
 include test/strings.fs
 
