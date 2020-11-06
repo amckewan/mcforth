@@ -32,7 +32,7 @@ VARIABLE SEER
 
 ( save dictionary image )
 : SAVE-IMAGE ( for hexdump )
-    OPEN  H' 2@ DUP ROT - WRITE  CLOSE ;
+    OPEN  H' 2@ OVER - WRITE  CLOSE ;
 : SAVE-DICT ( for #include )
     OPEN  BASE @ DECIMAL
     H' 2@ SWAP DO
@@ -90,7 +90,11 @@ FORTH    \ : forget   SMUDGE ;
    8024 XOR  dA @ -  SWAP !  DUP @  SWAP dA @ +  ! ;
 : PRUNE   { CONTEXT CELL+  DUP CLIP  CELL+ CLIP  HERE 8008 !  { EMPTY ;
 
-: $ ; \ leftover
+: CHECK CR SOURCE-LINE ? .S ;
+
+\ temp stuff for compatibility
+: $ ;
+: #SOURCE 20 8 * ;
 
 \ ========== Kernel ==========
 
@@ -100,7 +104,7 @@ HEX  8000 1000 0 FILL  8000 H' !  {
 ( STATE ) 0 ,  ( 'IN )  0 ,
 ( CONTEXT ) 1 , 0 , 0 ,  ( NULL ) 0 , 0 , 8009 , ( NOP R>DROP EXIT )
 
-8040 H !
+0 , 0 , 0 , 0 ,
 
 \ Variables shared with C code at fixed offsets
 08 CONSTANT H
@@ -179,7 +183,7 @@ OP: +LOOP       w = *R, *R += top;
 
 OP: LIT         push LIT; I += CELL; NEXT
 OP: NOP         NEXT
-OP: "           push rel(I) + 1; push *I; I = litq(I); NEXT
+OP: S"          push rel(I) + 1; push *I; I = litq(I); NEXT
 OP: ."          I = dotq(I); NEXT
 OP: ABORT"      if (!top) { I = litq(I); pop; NEXT }
                 ` show_error((char*)I, abs(HERE), abs(SOURCE));
@@ -280,8 +284,10 @@ OP: U<=IF    IF2((ucell)*S <= (ucell)top)
 
 60 OP! ( binary/memory ops )
 
-60 BINARY +     61 BINARY -     62 BINARY *     63 BINARY /
-64 BINARY AND   65 BINARY OR    66 BINARY XOR
+: + + ;         : - - ;         : * * ;         : / / ;
+: AND AND ;     : OR OR ;       : XOR XOR ;
+\ 60 BINARY +     61 BINARY -     62 BINARY *     63 BINARY /
+\ 64 BINARY AND   65 BINARY OR    66 BINARY XOR
 \ 65 BINARY LSHIFT    66 BINARY RSHIFT
 
 OP: +          top += *S++; NEXT
@@ -395,7 +401,7 @@ CODE 2*     top <<= 1; NEXT
 CODE 2/     top >>= 1; NEXT
 
 CODE CELLS      top *= CELL; NEXT
-4 CONSTANT CELL
+CELL CONSTANT CELL
 : CELL+  CELL + ;
 
 CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
@@ -479,9 +485,9 @@ CODE WRITE-LINE ( a u fid -- ior )
 
 ( ********** Input source processig ********** )
 
-\ 8 CONSTANT SOURCE-CELLS ( sizeof )
+\ $20 bytes per stack entry
 
-CREATE SOURCE-STACK   HERE 8014 !   HERE 20 8 * ALLOT
+CREATE SOURCE-STACK   HERE 8014 !   #SOURCE ALLOT
 
 : >IN           'IN @ ;
 : FILE          >IN $ 3 CELLS + ;

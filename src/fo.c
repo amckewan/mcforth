@@ -149,20 +149,38 @@ int run(int argc, char *argv[]) {
 // Initial dictionary
 byte dict[] = {
 #ifdef EXTEND
-    #include "extended.inc"
+    #include "forth.inc"
 #else
     #include "kernel.inc"
 #endif
 };
 
+void load_image(const char *filename) {
+    printf("load image %s\n", filename);
+    FILE *f = fopen(filename, "r");
+    if (!f) {
+        printf("can't open image %s\n", filename);
+        return;
+    }
+    fread(M, 1, sizeof M, f);
+    fclose(f);
+}
+
 int main(int argc, char *argv[]) {
     memcpy(m, dict, sizeof dict);
 
-    if (argc > 1 && !strncmp(argv[1], "-v", 2)) {
-        verbose = strlen(argv[1]) - 1;
-        for (int i = 2; i < argc; i++)
-            argv[i-1] = argv[i];
-        argc--;
+    for (int i = 1; i < argc; i++) {
+        char *arg = argv[i];
+        if (*arg++ == '-') {
+            switch (*arg) {
+                case 'v':
+                    verbose = strlen(arg);
+                    break;
+                case 'i':
+                    if (++i < argc) load_image(argv[i]);
+                    break;
+            }
+        }
     }
 
     if (verbose > 1) {
@@ -171,18 +189,6 @@ int main(int argc, char *argv[]) {
         byte *temp = malloc(100);
         printf("m = %p, malloc = %p, diff = %td\n", m, temp, temp-m);
     }
-
-    return run(argc, argv);
-
-    const char *filename = "dict.img";
-    if (argc > 1) filename = argv[1];
-    FILE *f = fopen(filename, "r");
-    if (!f) {
-        printf("Cannot open %s\n", filename);
-        return 1;
-    }
-    fread(m, 1, 0x2000, f);
-    fclose(f);
 
     return run(argc, argv);
 }

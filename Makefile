@@ -16,22 +16,20 @@ fo: $(SOURCES) $(HEADERS)
 asm: $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) -S
 
-forth: $(SOURCES) $(HEADERS) extended.inc
+forth: $(SOURCES) $(HEADERS) forth.inc
 	$(CC) -DEXTEND $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
 
 prims.inc kernel.inc: meta.fs
 	gforth meta.fs -e ciao
 	hexdump -C kernel.img > kernel.hex
 
-prims2.inc kernel2.inc: kernel.fs
+new:
 	./forth kernel.fs -e "prune save cr bye"
 	hexdump -C kernel2.img > kernel2.hex
 
-new: kernel2.inc
-
-extended.inc: fo rth extend lib/*
+forth.inc: fo rth extend lib/*
 	./fo extend
-	hexdump -C extended.img > extended.hex
+	hexdump -C forth.img > forth.hex
 
 run: forth
 	@./forth

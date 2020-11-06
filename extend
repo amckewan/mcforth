@@ -5,6 +5,6 @@ include lib/see
 include lib/string
 
 ' BOOT 0 !
-save extended.inc
-save-image extended.img
+save forth.inc
+save-image forth.img
 bye
