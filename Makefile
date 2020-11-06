@@ -26,6 +26,7 @@ prims.inc kernel.inc: meta.fs
 new:
 	./forth kernel.fs -e "prune save cr bye"
 	hexdump -C kernel2.img > kernel2.hex
+	diff kernel.hex kernel2.hex
 
 forth.inc: fo rth extend lib/*
 	./fo extend

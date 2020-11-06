@@ -1,11 +1,10 @@
 *sublime*
 fo
 forth
-extended.inc
+forth.inc
 *.img
 *.hex
 *.dump
 *.info
 *.s
-bye
 scratch

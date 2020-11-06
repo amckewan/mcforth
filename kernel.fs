@@ -34,6 +34,7 @@ VARIABLE SEER
 : SAVE-IMAGE ( for hexdump )
     OPEN  H' 2@ OVER - WRITE  CLOSE ;
 : SAVE-DICT ( for #include )
+    H' @ 10 ERASE ( for diff )
     OPEN  BASE @ DECIMAL
     H' 2@ SWAP DO
         I  10 0 DO  COUNT 0 <# #S #> WRITE  " ," WRITE  LOOP DROP
@@ -70,11 +71,12 @@ VARIABLE OP  ( next opcode )
 : CODE  >IN @ HEADER >IN !  OP @ OP,  \\ EXIT  OP: ;
 
 ( misc. stuff )
-: C" ( -- a )  HERE  [CHAR] " PARSE S,  0 C, ; \ null-terminated string
+: C" ( -- a )  HERE dA @ -  [CHAR] " PARSE S,  0 C, ; \ null-terminated string
 
 \ ========== Target Compiler ==========
 
 MARKER EMPTY
+: THERE  HERE dA @ - ;
 
          : {   dA @  HERE  H' 2@ H !  dA !  H' 2! ;
          : }   { ;
@@ -88,13 +90,13 @@ FORTH    \ : forget   SMUDGE ;
    DUP CELL+  DUP C@  DF AND  SWAP C! ;
 : CLIP ( a)   DUP BEGIN  DUP SCAN  DUP WHILE  TRIM  REPEAT
    8024 XOR  dA @ -  SWAP !  DUP @  SWAP dA @ +  ! ;
-: PRUNE   { CONTEXT CELL+  DUP CLIP  CELL+ CLIP  HERE 8008 !  { EMPTY ;
+: PRUNE   { CONTEXT CELL+  DUP CLIP  CELL+ CLIP
+    THERE 8008 !  { EMPTY ;
 
 : CHECK CR SOURCE-LINE ? .S ;
 
 \ temp stuff for compatibility
-: $ ;
-: #SOURCE 20 8 * ;
+: $ ; IMMEDIATE
 
 \ ========== Kernel ==========
 
@@ -236,7 +238,7 @@ OP: LITU>=      LITCOND((ucell)top >= (ucell)LIT)
 OP: LITU<=      LITCOND((ucell)top <= (ucell)LIT)
 
 40 OP! ( lit cond branch : op | lit | offset )
-\ not needed for 0= 0< etc. so this frees up 6 slots, but be careful!
+\ not needed for 0= 0< etc. so this frees up 6 slots, and be careful!
 
 ` #define LITIF(cond) w = LIT, I += CELL; if (cond) NOBRANCH; else BRANCH; pop; NEXT
 
@@ -487,7 +489,9 @@ CODE WRITE-LINE ( a u fid -- ior )
 
 \ $20 bytes per stack entry
 
-CREATE SOURCE-STACK   HERE 8014 !   #SOURCE ALLOT
+\ CREATE SOURCE-STACK   HERE 8014 !   #SOURCE ALLOT
+
+ALIGN  THERE  HERE 100 ALLOT  100 ERASE  CONSTANT SOURCE-STACK
 
 : >IN           'IN @ ;
 : FILE          >IN $ 3 CELLS + ;
@@ -526,7 +530,7 @@ CODE NEW-STRING top = new_string(*S++, top); NEXT
 
 CODE REFILL ( -- f )  push refill(SOURCE); NEXT
 
-VARIABLE TIB 80 ALLOT
+VARIABLE TIB  HERE 80 ALLOT  80 ERASE
 : QUERY  ( -- )  $ 0 FILE !  TIB 'TIB !  REFILL 0= IF BYE THEN ;
 
 \ ********** Numbers **********
@@ -598,8 +602,8 @@ FORTH
 \ TODO: multi-op inlining
     DUP C@ $ 5F > OVER 1+ C@ 0= AND IF  C@ OP,  EXIT THEN
 
-    DUP C@ $ 10 = IF ( constant ) CELL+ @      \\ LITERAL  EXIT THEN
-    DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
+\    DUP C@ $ 10 = IF ( constant ) CELL+ @      \\ LITERAL  EXIT THEN
+\    DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
 
     DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN
     $ 8 OP, dA @ - , ;
@@ -607,12 +611,6 @@ FORTH
 ( ********** Interpreter ********** )
 
 CODE EXECUTE  *--R = I - m, I = m + top, pop; NEXT
-
-: xINTERPRET  ( -- )
-    BEGIN  STATE @ IF  $ 2 -' IF  $ 1 -FIND IF  NUMBER \\ LITERAL
-        ELSE  COMPILE, THEN  ELSE  EXECUTE  THEN
-        ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE  THEN THEN
-    AGAIN ;
 
 : INTERPRET  ( -- )
     BEGIN  STATE @
@@ -629,7 +627,7 @@ CODE EXECUTE  *--R = I - m, I = m + top, pop; NEXT
 
 CODE R0!  R = R0; NEXT
 
-: QUIT [ HERE 8004 ! ] R0!
+: QUIT [ THERE 8004 ! ] R0!
     BEGIN  SOURCE-DEPTH 0> WHILE  SOURCE>  REPEAT
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
 
@@ -639,7 +637,7 @@ CODE R0!  R = R0; NEXT
 
 : INCLUDE  BL WORD COUNT INCLUDED ;
 
-: BOOT  [ HERE 8000 ! ]
+: BOOT  [ THERE 8000 ! ]
     SOURCE-STACK 'IN !
     ARGC $ 1 ?DO  I ARGV INCLUDED  LOOP
     ." Hello" QUIT ;
@@ -666,7 +664,7 @@ VARIABLE LAST ( link )
 : HEADER  (HEADER) REVEAL ;
 
 : PREVIOUS  ( -- nfa count )  CURRENT @  CELL+ DUP C@ ;
-\ : SMUDGE  LAST @ IF  PREVIOUS  $ 20 XOR  SWAP C!  THEN ;
+: SMUDGE  LAST @ IF  PREVIOUS  $ 20 XOR  SWAP C!  THEN ;
 : IMMEDIATE  PREVIOUS  $ 40 XOR  SWAP C! ;
 
 : CONSTANT  HEADER  $ 10 , , ;
