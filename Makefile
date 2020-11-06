@@ -23,6 +23,12 @@ prims.inc kernel.inc: meta.fs
 	gforth meta.fs -e ciao
 	hexdump -C kernel.img > kernel.hex
 
+prims2.inc kernel2.inc: kernel.fs
+	./forth kernel.fs -e "prune save cr bye"
+	hexdump -C kernel2.img > kernel2.hex
+
+new: kernel2.inc
+
 extended.inc: fo rth extend lib/*
 	./fo extend
 	hexdump -C extended.img > extended.hex

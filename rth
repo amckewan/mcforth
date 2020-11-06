@@ -9,6 +9,7 @@
 
 : ,"        '"' PARSE  DUP C, S, ;
 COMPILER
+: "         $A C, ," ;
 : S"        $A C, ," ;
 : ."        $B C, ," ;
 : ABORT"    $C C, ," ;
@@ -125,6 +126,7 @@ VARIABLE #SBUF
     DUP #SBUF @ + 300 > IF  #SBUF OFF ( wrap ) THEN
     #SBUF @  OVER #SBUF +!  SBUF + SWAP  ( a a' n )
     DUP >R OVER >R  MOVE  R> R> ;
+:  "  [CHAR] " PARSE STASH ;
 : S"  [CHAR] " PARSE STASH ;
 
 ( *** Pictured numeric output *** )
