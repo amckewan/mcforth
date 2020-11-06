@@ -1,5 +1,5 @@
 include rth
-include lib/compiler
+\ include lib/compiler
 include lib/tools
 include lib/see
 include lib/string

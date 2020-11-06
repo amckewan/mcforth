@@ -7,6 +7,7 @@
 * add defer
 * add sysvar in meta
 * remove non-essential code words (keep opcodes trim)
+* fm/mod from f83
 
 ### Ideas from cmForth
 

@@ -96,11 +96,8 @@ VARIABLE ?CODE
 : OP,  ( opcode -- )  HERE-T ?CODE !  C,-T ;
 
 : COMPILE,  ( addr -- )
-    ?CODE @ 0< 0= IF
-        DUP C@-T 5F >  OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
-    THEN
-    DUP 10000 U< IF  1 OP, W,-T ( call16 ) EXIT  THEN
-    8 OP, ,-T ( call32 ) ;
+    DUP C@-T 5F >  OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
+    1 OP, W,-T ;
 
 : EXIT  0 OP, ;
 
@@ -170,6 +167,7 @@ VARIABLE OP  ( next opcode )
     58 OP, ;
 
 : NOT  ( invert last conditional op )  ?EXEC  LATEST 70 78 WITHIN
+0 AND
     IF  LATEST 8 XOR PATCH  ELSE  70 OP, ( 0= )  THEN ;
 
 : IF        CONDITION  >MARK ;
@@ -718,8 +716,8 @@ FORTH
 \ TODO: multi-op inlining
     DUP C@ $ 5F > OVER 1+ C@ 0= AND IF  C@ OP,  EXIT THEN
 
-    DUP C@ $ 10 = IF ( constant ) CELL+ @      \\ LITERAL  EXIT THEN
-    DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
+\     DUP C@ $ 10 = IF ( constant ) CELL+ @      \\ LITERAL  EXIT THEN
+\     DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
 
     DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN
     $ 8 OP, dA @ - , ;
@@ -727,12 +725,6 @@ FORTH
 ( ********** Interpreter ********** )
 
 CODE EXECUTE  *--R = I - m, I = m + top, pop; NEXT
-
-: xINTERPRET  ( -- )
-    BEGIN  STATE @ IF  $ 2 -' IF  $ 1 -FIND IF  NUMBER \\ LITERAL
-        ELSE  COMPILE, THEN  ELSE  EXECUTE  THEN
-        ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE  THEN THEN
-    AGAIN ;
 
 : INTERPRET  ( -- )
     BEGIN  STATE @
