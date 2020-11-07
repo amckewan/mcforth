@@ -1,8 +1,8 @@
 include rth
-\ include lib/compiler
-include lib/tools
-include lib/see
-include lib/string
+\ include lib/compiler.f
+include lib/tools.f
+include lib/see.f
+include lib/string.f
 
 ' BOOT 0 !
 save forth.inc

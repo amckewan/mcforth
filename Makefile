@@ -19,16 +19,16 @@ asm: $(SOURCES) $(HEADERS)
 forth: $(SOURCES) $(HEADERS) forth.inc
 	$(CC) -DEXTEND $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
 
-prims.inc kernel.inc: cross.fs kernel.fs
-	gforth cross.fs kernel.fs -e ciao
+prims.inc kernel.inc: cross.f kernel.f
+	gforth cross.f kernel.f -e ciao
 	hexdump -C kernel.img > kernel.hex
 
 bootstrap:
-	gforth cross.fs kernel.fs -e ciao
+	gforth cross.f kernel.f -e ciao
 	hexdump -C kernel.img > kernel.hex
 
 new:
-	./forth meta.fs kernel2.fs -e "cr bye"
+	./forth meta.f kernel.f -e "cr bye"
 	hexdump -C kernel2.img > kernel2.hex
 	diff prims.inc prims2.inc
 	diff kernel.inc kernel2.inc
@@ -41,8 +41,8 @@ forth.inc: fo rth extend lib/*
 run: forth
 	@./forth
 
-test: forth test.fs test/*
-	@./forth test.fs -e "cr bye"
+test: forth test.f test/*
+	@./forth test.f -e "cr bye"
 
 testv: fo
 	@./fo -v

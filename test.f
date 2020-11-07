@@ -9,11 +9,11 @@
 : zz 10 0 do i . i 5 = if unloop exit then loop ." oops " ;
 
 
-include test/tester.fs
+include test/tester.f
 \ VERBOSE ON
-include lib/standard.fs
+include lib/standard.f
 include ../forth2012-test-suite/src/core.fr
-include test/strings.fs
+include test/strings.f
 
 
 
