@@ -28,7 +28,7 @@ bootstrap:
 	hexdump -C kernel.img > kernel.hex
 
 new:
-	./forth meta.fs kernel2.fs -e "prune save cr bye"
+	./forth meta.fs kernel2.fs -e "cr bye"
 	hexdump -C kernel2.img > kernel2.hex
 	diff prims.inc prims2.inc
 	diff kernel.inc kernel2.inc

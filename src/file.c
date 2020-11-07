@@ -21,6 +21,7 @@ cell accept(cell addr_va, cell max) {
     char *line = readline(0);
     if (!line) return -1;
 
+    // TODO: check max length
     int len = strlen(line);
     if (len && line[len-1] == '\n') len--;
     if (len > max) len = max;

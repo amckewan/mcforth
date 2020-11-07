@@ -73,6 +73,11 @@ VARIABLE OP  ( next opcode )
 ( misc. stuff )
 : C" ( -- a )  HERE dA @ -  [CHAR] " PARSE S,  0 C, ; \ null-terminated string
 
+: BUFFER ( n <name> -- )  ALIGN  HERE dA @ - SWAP
+    HERE OVER 0 FILL  ALLOT  CONSTANT ;
+
+: HAS ( a -- )  ' dA @ -  SWAP dA @ +  ! ;
+
 \ ========== Target Compiler ==========
 
 MARKER EMPTY
@@ -95,5 +100,7 @@ FORTH    \ : forget   SMUDGE ;
 
 \ for compatibility with cross.fs
 : $ ; IMMEDIATE
+: T: : ;
+: forget SMUDGE ;
 
 HEX  8000 1000 0 FILL  8000 H' !  {

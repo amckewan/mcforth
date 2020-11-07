@@ -128,6 +128,10 @@ VARIABLE CSP
    >IN @ HEADER >IN !  CREATE  HERE-T ,
    DOES>  ?EXEC  @ COMPILE, ;
 
+: H. . ;
+: '-T  ' >BODY @ ;
+: HAS ( a -- )  '-T  SWAP !-T ;
+
 \ Generate primatives
 : ?COMMENT  ( allow Forth comment after OP: etc. )
     >IN @  BL WORD COUNT S" (" COMPARE
@@ -195,10 +199,15 @@ VARIABLE OP  ( next opcode )
 : ,    ,-T ;
 : C,   C,-T ;
 : \\ ;
+: { ;
+: } ;
+: forget ;
 
 \ Defining Words
 : CONSTANT  TARGET-CREATE  10 OP, ALIGN   ,-T ;
 : VARIABLE  TARGET-CREATE  11 OP, ALIGN 0 ,-T ;
+
+: BUFFER ( n <name> -- )  ALIGN  HERE-T  SWAP ALLOT-T  CONSTANT ;
 
 : [   0 STATE-T ! ;
 : ]  -1 STATE-T ! ;

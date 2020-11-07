@@ -184,17 +184,17 @@ OP: U<=IF    IF2((ucell)*S <= (ucell)top)
 
 60 OP! ( binary/memory ops )
 
-60 BINARY +     61 BINARY -     62 BINARY *     63 BINARY /
-64 BINARY AND   65 BINARY OR    66 BINARY XOR
-\ 65 BINARY LSHIFT    66 BINARY RSHIFT
+\ : + + ;         : - - ;         : * * ;         : / / ;
+\ : AND AND ;     : OR OR ;       : XOR XOR ;
 
-PRIM +          top += *S++; NEXT
-PRIM -          top = *S++ - top; NEXT
-PRIM *          top *= *S++; NEXT
-PRIM /          top = *S++ / top; NEXT
-PRIM AND        top &= *S++; NEXT
-PRIM OR         top |= *S++; NEXT
-PRIM XOR        top ^= *S++; NEXT
+\ temporary use CODE instead of OP:
+CODE +          top += *S++; NEXT
+CODE -          top = *S++ - top; NEXT
+CODE *          top *= *S++; NEXT
+CODE /          top = *S++ / top; NEXT
+CODE AND        top &= *S++; NEXT
+CODE OR         top |= *S++; NEXT
+CODE XOR        top ^= *S++; NEXT
 OP: ---
 
 CODE @          top = *(cell *)(m + top); NEXT
@@ -299,7 +299,7 @@ CODE 2*     top <<= 1; NEXT
 CODE 2/     top >>= 1; NEXT
 
 CODE CELLS      top *= CELL; NEXT
-CELL-T CONSTANT CELL
+4 CONSTANT CELL
 : CELL+  CELL + ;
 
 CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
@@ -383,14 +383,10 @@ CODE WRITE-LINE ( a u fid -- ior )
 
 ( ********** Input source processig ********** )
 
-\ 8 CONSTANT SOURCE-CELLS ( sizeof )
-
-ALIGN  HERE-T 8 !-T  HERE-T 100 ( 20 8 *) ALLOT-T
-CONSTANT SOURCE-STACK
+\ 8 entries * 32 bytes per entry
+100 BUFFER SOURCE-STACK
 
 : >IN           'IN @ ;
-( source-len )
-( source-addr )
 : FILE          >IN $ 3 CELLS + ;
 : 'TIB          >IN $ 4 CELLS + ;
 : SOURCE-NAME   >IN $ 5 CELLS + ;
@@ -427,7 +423,7 @@ CODE NEW-STRING top = new_string(*S++, top); NEXT
 
 CODE REFILL ( -- f )  push refill(SOURCE); NEXT
 
-VARIABLE TIB 80 ALLOT-T
+80 BUFFER TIB
 : QUERY  ( -- )  $ 0 FILE !  TIB 'TIB !  REFILL 0= IF BYE THEN ;
 
 \ ********** Numbers **********
@@ -524,9 +520,10 @@ CODE EXECUTE  *--R = I - m, I = m + top, pop; NEXT
 
 CODE R0!  R = R0; NEXT
 
-: QUIT [ HERE-T 4 !-T ] R0!
+: QUIT  R0!
     BEGIN  SOURCE-DEPTH 0> WHILE  SOURCE>  REPEAT
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
+4 HAS QUIT
 
 : INCLUDED  ( str len -- )
     2DUP R/O OPEN-FILE ABORT" file not found"
@@ -534,10 +531,11 @@ CODE R0!  R = R0; NEXT
 
 : INCLUDE  BL WORD COUNT INCLUDED ;
 
-: BOOT  [ HERE-T 0 !-T ]
+: BOOT
     SOURCE-STACK 'IN !
     ARGC $ 1 ?DO  I ARGV INCLUDED  LOOP
     ." Hello" QUIT ;
+0 HAS BOOT
 
 ( ********** More compiler ********** )
 
@@ -577,12 +575,13 @@ VARIABLE LAST ( link )
 COMPILER
 : [  $ 0 STATE ! ;
 : EXIT  $ 0 OP, ;
-T: ;  EXIT [ REVEAL ;
+T: ;  \\ EXIT \\ [ REVEAL ; forget
 : \\  $ 2 -' ABORT" ?" COMPILE, ;
 FORTH
 
 : ]  $ -1 STATE ! ;
 T: :  (HEADER) ] ;
 
+}
 PRUNE
 SAVE
