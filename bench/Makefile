@@ -1,5 +1,5 @@
 FORTH = ../forth
-#FORTH = gforth -e "warnings off"
+#FORTH = gforth-fast -e "warnings off"
 TIME = time -p
 
 all:

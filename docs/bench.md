@@ -1,94 +1,16 @@
-11/2/2020 A few more optimizations, compile with -Ofast
+## Benchmarks
 
-Approaching gforth speed
+bench | gforth | gforth-fast | 10/31 | 11/1 | 11/2
+--- | ------| ---- | --- | --- | ---
+seive | 1.15 | 0.61 | 3.24 | 3.61 | 1.97
+bubble | 1.72 | 0.94 | 12.05 | 11.37 | 1.92
+fib | 2.86 | 1.73 | 8.56 | 4.69 | 3.18
 
-sieve  1.97 vs. 1.15
-bubble 1.92 vs. 1.72
-fib    3.18 vs. 2.86
+## Builds
 
-time -p ../forth ./sieve.fs -e "main bye"
-Including ./sieve.fs
-real 1.97
-user 1.97
-sys 0.00
-time -p ../forth ./bubble-sort.fs -e "main bye"
-Including ./bubble-sort.fs
-real 1.92
-user 1.92
-sys 0.00
-time -p ../forth ./fib.fs -e "main bye"
-Including ./fib.fs
-real 3.18
-user 3.18
-sys 0.00
+ab5ce02 Sat Oct 31 09:09:37 2020 - inlining
 
-OPTIMIZED (not much better, sadly )
-00e26ba Sun Nov 1 18:10:24 2020
+00e26ba Sun Nov 1 18:10:24 2020 - optimized
 
-time -p ../forth ./sieve.fs -e "main bye"
-Including ./sieve.fs
-real 3.61
-user 3.61
-sys 0.00
-time -p ../forth ./bubble-sort.fs -e "main bye"
-Including ./bubble-sort.fs
-real 11.37
-user 11.37
-sys 0.00
-time -p ../forth ./fib.fs -e "main bye"
-Including ./fib.fs
-real 4.69
-user 4.69
-sys 0.00
+a8a1729 Mon Nov 2 15:59:06 2020 - more opt, -Ofast
 
-------------------------
-MCFORTH ab5ce02 Sat Oct 31 09:09:37 2020
-
-time -p ../forth ./sieve.fs -e "main bye"
-Including ./sieve.fs
-real 3.24
-user 3.24
-sys 0.00
-
-time -p ../forth ./bubble-sort.fs -e "main bye"
-Including ./bubble-sort.fs
-real 12.05
-user 12.05
-sys 0.00
-
-time -p ../forth ./fib.fs -e "main bye"
-Including ./fib.fs
-real 8.56
-user 8.56
-sys 0.00
-
--------------------
-
-Gforth 0.7.3
-
-time -p gforth -e "warnings off" ./sieve.fs -e "main bye"
-real 1.15
-user 1.15
-sys 0.00
-
-time -p gforth -e "warnings off" ./bubble-sort.fs -e "main bye"
-real 1.72
-user 1.72
-sys 0.00
-
-time -p gforth -e "warnings off" ./fib.fs -e "main bye"
-real 2.86
-user 2.86
-sys 0.00
-
-------------
-
-time -p gforth -e "warnings off" ./matrix-mult.fs -e "main bye"
-real 1.25
-user 1.25
-sys 0.00
-
-time -p gforth -e "warnings off" ./ssieve-a.frt -e "?silent on list-primes 1 20000000 bye"
-real 0.31
-user 0.31
-sys 0.00
