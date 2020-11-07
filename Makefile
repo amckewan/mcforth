@@ -6,33 +6,37 @@ CC = clang
 CFLAGS = -m32 -Wall -Werror -Ofast
 
 SOURCES = src/fo.c src/misc.c src/parse.c src/file.c
-HEADERS = src/fo.h prims.inc kernel.inc
+HEADERS = src/fo.h
 INCLUDES = -I.
 LIBS = -lreadline
 
-fo: $(SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
+#forth: forth.inc $(SOURCES) $(HEADERS)
+#	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o $@
+
+forth: rth extend lib/* $(SOURCES) $(HEADERS)
+	gforth cross.f kernel.f -e ciao
+	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
+	./fo extend
+	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
+	./forth meta.f kernel.f -e ciao
+	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
+	./fo extend
+	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
+
+
+fo: kernel.inc $(SOURCES) $(HEADERS)
+	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o $@
 
 asm: $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) -S
 
-forth: $(SOURCES) $(HEADERS) forth.inc
-	$(CC) -DEXTEND $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
-
-prims.inc kernel.inc: cross.f kernel.f
-	gforth cross.f kernel.f -e ciao
-	hexdump -C kernel.img > kernel.hex
-
 bootstrap:
 	gforth cross.f kernel.f -e ciao
-	hexdump -C kernel.img > kernel.hex
+	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
 
-new:
-	./forth meta.f kernel.f -e "cr bye"
-	hexdump -C kernel2.img > kernel2.hex
-	diff prims.inc prims2.inc
-	diff kernel.inc kernel2.inc
-	diff kernel.hex kernel2.hex
+kernel.inc: meta.f kernel.f
+	./forth meta.f kernel.f -e ciao
+	hexdump -C kernel.img > kernel.hex
 
 forth.inc: fo rth extend lib/*
 	./fo extend

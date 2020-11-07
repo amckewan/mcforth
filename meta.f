@@ -1,5 +1,7 @@
 ( metacompiler )
 
+: TAG " Hello" ;
+
 VARIABLE H'  HEX 8000 ,
 
 \ ========== Save target ==========
@@ -44,12 +46,12 @@ VARIABLE SEER
 : SAVE  ( -- )
     CLOSE  CLOSE-INFO
     CR ." Saving " BASE @ DECIMAL H' 2@ SWAP - . BASE ! ." bytes..."
-    " kernel2.img" SAVE-IMAGE
-    " kernel2.inc" SAVE-DICT
+    " kernel.img" SAVE-IMAGE
+    " kernel.inc" SAVE-DICT
     ." done " ;
 
-" prims2.inc" OPEN
-" see2.info"  OPEN-INFO
+" prims.inc" OPEN
+" see.info"  OPEN-INFO
 
 
 \ ========== Generate Primatives ==========
@@ -76,9 +78,13 @@ VARIABLE OP  ( next opcode )
 : BUFFER ( n <name> -- )  ALIGN  HERE dA @ - SWAP
     HERE OVER 0 FILL  ALLOT  CONSTANT ;
 
+: TAG  HERE dA @ -  TAG DUP C, S,  CONSTANT ;
+
 : HAS ( a -- )  ' dA @ -  SWAP dA @ +  ! ;
 
 \ ========== Target Compiler ==========
+
+: ciao CR BYE ;
 
 MARKER EMPTY
 : THERE  HERE dA @ - ;

@@ -148,10 +148,10 @@ int run(int argc, char *argv[]) {
 
 // Initial dictionary
 byte dict[] = {
-#ifdef EXTEND
-    #include "forth.inc"
-#else
+#ifdef KERNEL
     #include "kernel.inc"
+#else
+    #include "forth.inc"
 #endif
 };
 

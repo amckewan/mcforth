@@ -1,5 +1,7 @@
 \ Cross compiler
 
+: TAG S" cross" ;
+
 HEX
 \ Support 64-bit gforth host
 4 CONSTANT CELL-T
@@ -39,8 +41,6 @@ VARIABLE OUT
 : OPEN   R/W CREATE-FILE ?ERR OUT ! ;
 : WRITE  ( adr len -- )  OUT @ WRITE-FILE ?ERR ;
 
-S" prims.inc" OPEN
-
 CREATE EOL 1 C, 0A C,
 : NEWLINE   EOL COUNT WRITE ;
 
@@ -52,7 +52,9 @@ CREATE EOL 1 C, 0A C,
 
 \ write decompiler information
 variable seer
-s" see.info" w/o create-file ?err seer !
+: open-info     w/o create-file ?err seer ! ;
+: close-info    seer @ close-file ?err ;
+
 : info ( opc -- )
     0 <# # # #> seer @ write-file ?err
     s"  OP " seer @ write-file ?err
@@ -75,12 +77,14 @@ s" see.info" w/o create-file ?err seer !
     10 +LOOP  CLOSE  BASE ! ;
 
 : SAVE  ( -- )
-    seer @ close-file ?err
-    CLOSE
+    CLOSE  close-info
     CR ." Saving " BASE @ DECIMAL HERE-T . BASE ! ." bytes..."
     S" kernel.img" SAVE-IMG
     S" kernel.inc" SAVE-INC
     ." done" ;
+
+S" prims.inc" OPEN
+S" see.info" open-info
 
 : ciao cr bye ;
 
@@ -208,6 +212,7 @@ VARIABLE OP  ( next opcode )
 : VARIABLE  TARGET-CREATE  11 OP, ALIGN 0 ,-T ;
 
 : BUFFER ( n <name> -- )  ALIGN  HERE-T  SWAP ALLOT-T  CONSTANT ;
+: TAG  HERE-T  TAG DUP C,-T S,-T  CONSTANT ;
 
 : [   0 STATE-T ! ;
 : ]  -1 STATE-T ! ;

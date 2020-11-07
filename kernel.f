@@ -531,10 +531,12 @@ CODE R0!  R = R0; NEXT
 
 : INCLUDE  BL WORD COUNT INCLUDED ;
 
+TAG TAG
+
 : BOOT
     SOURCE-STACK 'IN !
     ARGC $ 1 ?DO  I ARGV INCLUDED  LOOP
-    ." Hello" QUIT ;
+    TAG COUNT TYPE  QUIT ;
 0 HAS BOOT
 
 ( ********** More compiler ********** )
