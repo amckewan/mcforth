@@ -184,17 +184,19 @@ OP: U<=IF    IF2((ucell)*S <= (ucell)top)
 
 60 OP! ( binary/memory ops )
 
-60 BINARY +     61 BINARY -     62 BINARY *     63 BINARY /
-64 BINARY AND   65 BINARY OR    66 BINARY XOR
+: + + ;         : - - ;         : * * ;         : / / ;
+: AND AND ;     : OR OR ;       : XOR XOR ;
+\ 60 BINARY +     61 BINARY -     62 BINARY *     63 BINARY /
+\ 64 BINARY AND   65 BINARY OR    66 BINARY XOR
 \ 65 BINARY LSHIFT    66 BINARY RSHIFT
 
-PRIM +          top += *S++; NEXT
-PRIM -          top = *S++ - top; NEXT
-PRIM *          top *= *S++; NEXT
-PRIM /          top = *S++ / top; NEXT
-PRIM AND        top &= *S++; NEXT
-PRIM OR         top |= *S++; NEXT
-PRIM XOR        top ^= *S++; NEXT
+OP: +          top += *S++; NEXT
+OP: -          top = *S++ - top; NEXT
+OP: *          top *= *S++; NEXT
+OP: /          top = *S++ / top; NEXT
+OP: AND        top &= *S++; NEXT
+OP: OR         top |= *S++; NEXT
+OP: XOR        top ^= *S++; NEXT
 OP: ---
 
 CODE @          top = *(cell *)(m + top); NEXT
@@ -299,7 +301,7 @@ CODE 2*     top <<= 1; NEXT
 CODE 2/     top >>= 1; NEXT
 
 CODE CELLS      top *= CELL; NEXT
-CELL-T CONSTANT CELL
+CELL CONSTANT CELL
 : CELL+  CELL + ;
 
 CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
@@ -383,14 +385,13 @@ CODE WRITE-LINE ( a u fid -- ior )
 
 ( ********** Input source processig ********** )
 
-\ 8 CONSTANT SOURCE-CELLS ( sizeof )
+\ $20 bytes per stack entry
 
-ALIGN  HERE-T 8 !-T  HERE-T 100 ( 20 8 *) ALLOT-T
-CONSTANT SOURCE-STACK
+\ CREATE SOURCE-STACK   HERE 8014 !   #SOURCE ALLOT
+
+ALIGN  THERE  HERE 100 ALLOT  100 ERASE  CONSTANT SOURCE-STACK
 
 : >IN           'IN @ ;
-( source-len )
-( source-addr )
 : FILE          >IN $ 3 CELLS + ;
 : 'TIB          >IN $ 4 CELLS + ;
 : SOURCE-NAME   >IN $ 5 CELLS + ;
@@ -427,7 +428,7 @@ CODE NEW-STRING top = new_string(*S++, top); NEXT
 
 CODE REFILL ( -- f )  push refill(SOURCE); NEXT
 
-VARIABLE TIB 80 ALLOT-T
+VARIABLE TIB  HERE 80 ALLOT  80 ERASE
 : QUERY  ( -- )  $ 0 FILE !  TIB 'TIB !  REFILL 0= IF BYE THEN ;
 
 \ ********** Numbers **********
@@ -499,8 +500,8 @@ FORTH
 \ TODO: multi-op inlining
     DUP C@ $ 5F > OVER 1+ C@ 0= AND IF  C@ OP,  EXIT THEN
 
-\     DUP C@ $ 10 = IF ( constant ) CELL+ @      \\ LITERAL  EXIT THEN
-\     DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
+\    DUP C@ $ 10 = IF ( constant ) CELL+ @      \\ LITERAL  EXIT THEN
+\    DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
 
     DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN
     $ 8 OP, dA @ - , ;
@@ -524,7 +525,7 @@ CODE EXECUTE  *--R = I - m, I = m + top, pop; NEXT
 
 CODE R0!  R = R0; NEXT
 
-: QUIT [ HERE-T 4 !-T ] R0!
+: QUIT [ THERE 8004 ! ] R0!
     BEGIN  SOURCE-DEPTH 0> WHILE  SOURCE>  REPEAT
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
 
@@ -534,7 +535,7 @@ CODE R0!  R = R0; NEXT
 
 : INCLUDE  BL WORD COUNT INCLUDED ;
 
-: BOOT  [ HERE-T 0 !-T ]
+: BOOT  [ THERE 8000 ! ]
     SOURCE-STACK 'IN !
     ARGC $ 1 ?DO  I ARGV INCLUDED  LOOP
     ." Hello" QUIT ;
@@ -577,12 +578,12 @@ VARIABLE LAST ( link )
 COMPILER
 : [  $ 0 STATE ! ;
 : EXIT  $ 0 OP, ;
-T: ;  EXIT [ REVEAL ;
+: ;  \\ EXIT \\ [ REVEAL ; SMUDGE
 : \\  $ 2 -' ABORT" ?" COMPILE, ;
 FORTH
 
 : ]  $ -1 STATE ! ;
-T: :  (HEADER) ] ;
+: :  (HEADER) ] ;
 
-PRUNE
-SAVE
+}
+

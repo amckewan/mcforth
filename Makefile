@@ -1,4 +1,4 @@
-# fo makefile
+# mcforth makefile
 
 all: test
 
@@ -19,13 +19,19 @@ asm: $(SOURCES) $(HEADERS)
 forth: $(SOURCES) $(HEADERS) forth.inc
 	$(CC) -DEXTEND $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
 
-prims.inc kernel.inc: meta.fs
-	gforth meta.fs -e ciao
+prims.inc kernel.inc: cross.fs kernel.fs
+	gforth cross.fs kernel.fs -e ciao
+	hexdump -C kernel.img > kernel.hex
+
+bootstrap:
+	gforth cross.fs kernel.fs -e ciao
 	hexdump -C kernel.img > kernel.hex
 
 new:
-	./forth kernel.fs -e "prune save cr bye"
+	./forth meta.fs kernel2.fs -e "prune save cr bye"
 	hexdump -C kernel2.img > kernel2.hex
+	diff prims.inc prims2.inc
+	diff kernel.inc kernel2.inc
 	diff kernel.hex kernel2.hex
 
 forth.inc: fo rth extend lib/*
