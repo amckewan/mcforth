@@ -302,8 +302,9 @@ top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
       NEXT
 /* WORDS */ case 0xCA:   words(M[CONTEXT + M[CONTEXT]]); NEXT
 /* DUMP */ case 0xCB:   dump(*S++, top, BASE); pop; NEXT
-/* ALIGNED */ case 0xCC:  top = aligned(top); NEXT
-/* EXECUTE */ case 0xCD:  *--R = I - m, I = m + top, pop; NEXT
-/* R0! */ case 0xCE:  R = R0; NEXT
-/* PARSE */ case 0xCF:   top = parse(SOURCE, top, --S); NEXT
-/* PARSE-NAME */ case 0xD0:   push parse_name(SOURCE, --S); NEXT
+/* VERBOSE */ case 0xCC:  push (byte *)&verbose - m; NEXT
+/* ALIGNED */ case 0xCD:  top = aligned(top); NEXT
+/* EXECUTE */ case 0xCE:  *--R = I - m, I = m + top, pop; NEXT
+/* R0! */ case 0xCF:  R = R0; NEXT
+/* PARSE */ case 0xD0:   top = parse(SOURCE, top, --S); NEXT
+/* PARSE-NAME */ case 0xD1:   push parse_name(SOURCE, --S); NEXT

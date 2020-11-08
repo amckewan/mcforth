@@ -13,34 +13,35 @@ LIBS = -lreadline
 #forth: forth.inc $(SOURCES) $(HEADERS)
 #	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o $@
 
-forth: rth extend lib/* $(SOURCES) $(HEADERS)
-	gforth cross.f kernel.f -e ciao
-	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
-	./fo extend
-	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
-	./forth meta.f kernel.f -e ciao
-	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
-	./fo extend
-	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
+forth: forth.inc $(SOURCES) $(HEADERS)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o $@
 
+forth.inc: fo rth extend lib/*
+	./fo extend
+	hexdump -C forth.img > forth.hex
 
 fo: kernel.inc $(SOURCES) $(HEADERS)
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o $@
-
-asm: $(SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) -S
-
-bootstrap:
-	gforth cross.f kernel.f -e ciao
-	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
 
 kernel.inc: meta.f kernel.f
 	./forth meta.f kernel.f -e ciao
 	hexdump -C kernel.img > kernel.hex
 
-forth.inc: fo rth extend lib/*
+bootstrap:
+	gforth cross.f kernel.f -e ciao
+	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
 	./fo extend
-	hexdump -C forth.img > forth.hex
+	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
+
+#	./forth meta.f kernel.f -e ciao
+#	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
+#	./fo extend
+#	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
+
+asm: $(SOURCES) $(HEADERS)
+	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) -S
+
+
 
 run: forth
 	@./forth

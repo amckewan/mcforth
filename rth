@@ -1,11 +1,4 @@
-5 5 + BASE !
-
-: FORTH     1 CONTEXT ! ;
-: COMPILER  2 CONTEXT ! ;
-
-: \         SOURCE >IN ! DROP ; IMMEDIATE
-: (         ')' PARSE 2DROP ; IMMEDIATE
-: .(        ')' PARSE TYPE  ; IMMEDIATE
+( stuff )
 
 : ,"        '"' PARSE  DUP C, S, ;
 COMPILER
@@ -14,9 +7,6 @@ COMPILER
 : ."        $B C, ," ;
 : ABORT"    $C C, ," ;
 FORTH
-
-: DECIMAL   10 BASE ! ;
-: HEX       16 BASE ! ;
 
 -1 CONSTANT TRUE
  0 CONSTANT FALSE
@@ -63,38 +53,6 @@ FORTH
 
 : ERASE  0 FILL ;
 : PLACE  ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;
-
-( *** Branching and Looping *** )
-: ?CONDITION  INVERT ABORT" unbalanced" ;
-: MARK  ( -- here )  HERE  0 ?CODE ! ;
-: >MARK      ( -- f addr )   TRUE  MARK   0 C, ;
-: >RESOLVE   ( f addr -- )   MARK  OVER -  SWAP C!   ?CONDITION ;
-: <MARK      ( -- f addr )   TRUE  MARK ;
-: <RESOLVE   ( f addr -- )   MARK  - C,   ?CONDITION ;
-
-\ HEX ( does nothing)
-: CONDITION  ( optimizer todo )
-    $58 OP, ;
-
-COMPILER
-\ : NOT  ( invert last conditional op )  LATEST 70 80 WITHIN ( F0 AND 70 = )
-\     IF  LATEST 8 XOR PATCH  ELSE  70 ( 0= ) OP, THEN ; IMMEDIATE
-\ DECIMAL
-
-: IF        CONDITION  >MARK ;
-: THEN      >RESOLVE ;
-: ELSE      3 OP,  >MARK  2SWAP >RESOLVE ;
-: BEGIN     <MARK ;
-: UNTIL     CONDITION  <RESOLVE ;
-: AGAIN     3 OP,  <RESOLVE ;
-: WHILE     \\ IF  2SWAP ;
-: REPEAT    \\ AGAIN  \\ THEN ;
-
-: DO        4 OP,  >MARK  <MARK ;
-: ?DO       5 OP,  >MARK  <MARK ;
-: LOOP      6 OP,  <RESOLVE  >RESOLVE ;
-: +LOOP     7 OP,  <RESOLVE  >RESOLVE ;
-FORTH
 
 \ multi-line comments
 : (   BEGIN  [CHAR] ) PARSE 2DROP

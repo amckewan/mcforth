@@ -468,6 +468,7 @@ CODE .S ( -- )
 
 CODE WORDS  ( -- )  words(M[CONTEXT + M[CONTEXT]]); NEXT
 CODE DUMP  ( a n -- )  dump(*S++, top, BASE); pop; NEXT
+CODE VERBOSE  push (byte *)&verbose - m; NEXT
 
 ( ********** Compiler ********** )
 
@@ -495,8 +496,8 @@ FORTH
 \ TODO: multi-op inlining
     DUP C@ $ 5F > OVER 1+ C@ 0= AND IF  C@ OP,  EXIT THEN
 
-\     DUP C@ $ 10 = IF ( constant ) CELL+ @      \\ LITERAL  EXIT THEN
-\     DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
+     DUP C@ $ 10 = IF ( constant ) CELL+ @      \\ LITERAL  EXIT THEN
+     DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
 
     DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN
     $ 8 OP, dA @ - , ;

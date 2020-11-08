@@ -1,6 +1,6 @@
 \ Cross compiler
 
-: TAG S" cross" ;
+: TAG S" cross forth" ;
 
 HEX
 \ Support 64-bit gforth host
