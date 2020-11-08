@@ -1,10 +1,35 @@
+include lib/preamble.f
 include lib/compiler.f
-include rth
+include lib/core.f
 include lib/tools.f
 include lib/see.f
 include lib/string.f
 
+\ Process command-line arguments
+\ Ignore -v and -i which are handled in C code
+
+: doargs
+    1 begin dup argc < while
+        dup >r argv
+        over c@ '-' = if
+            1 /string dup if
+            over c@ 'v' = if ( ignore ) else
+            over c@ 'i' = if ( ignore 2 ) r> 1+ >r  else
+            over c@ 'e' = if
+                r> 1+ >r  r@ argc < if r@ argv evaluate then
+            then then then then 2drop
+        else
+            included
+        then
+        r> 1+
+    repeat drop ;
+
+: BOOT
+    SOURCE-STACK 'IN !
+    doargs
+    TAG COUNT TYPE QUIT ;
 ' BOOT 0 !
+
 save forth.inc
 save-image forth.img
 bye

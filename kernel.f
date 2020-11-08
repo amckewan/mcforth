@@ -475,6 +475,8 @@ CODE VERBOSE  push (byte *)&verbose - m; NEXT
 VARIABLE dA ( offset for target compiler )
 VARIABLE ?CODE 0 ,
 
+: -OPT  $ 0 ?CODE ! ;
+
 : HERE   H @  ;
 : ALLOT  H +! ;
 : ,   H @ !  CELL H +! ;
@@ -555,7 +557,7 @@ VARIABLE LAST ( link )
 : CURRENT ( -- a )  CONTEXT @ CELLS CONTEXT + ;
 : REVEAL  LAST @ CURRENT ! ;
 
-: (HEADER)  ( -- )  WARN  $ 0 ?CODE !
+: (HEADER)  ( -- )  WARN  -OPT
 \    ALIGN  HERE  DUP LAST !  CURRENT @ ,  CURRENT !
     ALIGN  HERE LAST !  CURRENT @ ,
     BL WORD C@  ( DUP $ 80 OR HERE C!)  1+ ALLOT  ALIGN ;
