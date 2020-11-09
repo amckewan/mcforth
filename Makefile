@@ -32,11 +32,8 @@ bootstrap:
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
 	./fo extend
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
-
-#	./forth meta.f kernel.f -e ciao
-#	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
-#	./fo extend
-#	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
+	touch kernel.f
+	$(MAKE) test
 
 asm: $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) -S
