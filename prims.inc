@@ -8,19 +8,19 @@
 
 cell *S, top;
 cell *R;
-byte *I;
+cell I;
 cell w;
 
 //BASE = 10;
 
 if (COLD) {
 //  if (verbose) printf("Running from %u\n", COLD);
-    I = abs(COLD);
+    I = COLD;
     goto start;
 }
 
 abort:
-    I = abs(WARM);
+    I = WARM;
 start:
     STATE = 0;
     M[CONTEXT] = 1;
@@ -28,12 +28,12 @@ start:
     R = R0;
 next:
     if (verbose > 2) {
-        printf("I=%X op=%02X ", rel(I), *I);
-        printf("R=%X %X %X (%d) ", R[0], R[1], R[2], R0-R);
-        printf("S=[%d] %X %X %X %X ", S0-S, S[2], S[1], S[0], top);
+        printf("I=%X op=%02X ", I, m[I]);
+        printf("R=%X %X %X (%td) ", R[0], R[1], R[2], R0-R);
+        printf("S=[%td] %X %X %X %X ", S0-S, S[2], S[1], S[0], top);
         printf("H=%X\n", HERE);
     }
-    switch (w = *I++) {
+    switch (w = m[I++]) {
 
 #define push *--S = top, top =
 #define pop top = *S++
@@ -42,18 +42,18 @@ next:
 #define LOGICAL ? -1 : 0
 
 #define NEXT        goto next;
-#define LIT         *(cell*)I
-#define OFFSET      *(signed char*)I
+#define LIT         *(cell*)(m + I)
+#define OFFSET      *(signed char*)(m + I)
 #define BRANCH      I += OFFSET
 #define NOBRANCH    I += 1
-#define EXIT        I = m + *R++; NEXT
+#define EXIT        I = *R++; NEXT
 /* EXIT */ case 0x00:        EXIT
-/* CALL */ case 0x01:        w = *(uint16_t *)I; *--R = I + 2 - m; I = m + w; NEXT
-/* CALL32 */ case 0x02:      w = LIT; *--R = I + CELL - m; I = m + w; NEXT
+/* CALL */ case 0x01:        w = *(uint16_t *)(m + I); *--R = I + 2; I = w; NEXT
+/* CALL32 */ case 0x02:      w = LIT; *--R = I + CELL; I = w; NEXT
 /* BRANCH */ case 0x03:      BRANCH; NEXT
-/* DO */ case 0x04:          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
+/* DO */ case 0x04:          *--R = I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
 /* ?DO */ case 0x05:         if (top == *S) BRANCH;
-else *--R = (cell)I + OFFSET,
+else *--R = I + OFFSET,
      *--R = *S, *--R = top - *S, NOBRANCH;
 S++, pop; NEXT
 /* LOOP */ case 0x06:        if ((++ *R) == 0) NOBRANCH, R += 3; else BRANCH; NEXT
@@ -62,18 +62,18 @@ if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
 else BRANCH; pop; NEXT
 /* LIT */ case 0x08:         push LIT; I += CELL; NEXT
 /* NOP */ case 0x09:         NEXT
-/* S" */ case 0x0A:          push rel(I) + 1; push *I; I = litq(I); NEXT
+/* S" */ case 0x0A:          push I + 1; push m[I]; I = litq(I); NEXT
 /* ." */ case 0x0B:          I = dotq(I); NEXT
 /* ABORT" */ case 0x0C:      if (!top) { I = litq(I); pop; NEXT }
-show_error((char*)I, abs(HERE), abs(SOURCE));
+show_error((char*)(m + I), abs(HERE), abs(SOURCE));
 goto abort;
 /* --- */ case 0x0D: 
 /* --- */ case 0x0E: 
 /* --- */ case 0x0F: 
-/* DOCON */ case 0x10:       push *(cell*)aligned(I); EXIT
-/* DOVAR */ case 0x11:       push rel(aligned(I)); EXIT
-/* DOCREATE */ case 0x12:    push rel(aligned(I)); w = *(cell*)(I - 1) >> 8;
-if (w) I = abs(w); else EXIT
+/* DOCON */ case 0x10:       push *(cell*)(m + aligned(I)); EXIT
+/* DOVAR */ case 0x11:       push aligned(I); EXIT
+/* DOCREATE */ case 0x12:    push aligned(I); w = *(cell*)(m + I - 1) >> 8;
+if (w) I = w; else EXIT
 /* LIT+ */ case 0x20:        top += LIT, I += CELL; NEXT
 /* LIT- */ case 0x21:        top -= LIT, I += CELL; NEXT
 /* LIT* */ case 0x22:        top *= LIT, I += CELL; NEXT
@@ -178,7 +178,7 @@ if (w) I = abs(w); else EXIT
 /* PICK */ case 0x8C:       top = S[top]; NEXT
 /* I */ case 0x8D:          push R[0] + R[1]; NEXT
 /* J */ case 0x8E:          push R[3] + R[4]; NEXT
-/* LEAVE */ case 0x8F:      I = (byte*)R[2];
+/* LEAVE */ case 0x8F:      I = R[2];
 /* UNLOOP */ case 0x90:     R += 3; NEXT
 /* INVERT */ case 0x91:  top = ~top; NEXT
 /* NEGATE */ case 0x92:  top = -top; NEXT
@@ -304,7 +304,7 @@ top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
 /* DUMP */ case 0xCB:   dump(*S++, top, BASE); pop; NEXT
 /* VERBOSE */ case 0xCC:  push (byte *)&verbose - m; NEXT
 /* ALIGNED */ case 0xCD:  top = aligned(top); NEXT
-/* EXECUTE */ case 0xCE:  *--R = I - m, I = m + top, pop; NEXT
+/* EXECUTE */ case 0xCE:  *--R = I, I = top, pop; NEXT
 /* R0! */ case 0xCF:  R = R0; NEXT
 /* PARSE */ case 0xD0:   top = parse(SOURCE, top, --S); NEXT
 /* PARSE-NAME */ case 0xD1:   push parse_name(SOURCE, --S); NEXT

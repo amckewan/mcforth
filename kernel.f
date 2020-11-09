@@ -24,19 +24,19 @@
 
 cell *S, top;
 cell *R;
-byte *I;
+cell I;
 cell w;
 
 //BASE = 10;
 
 if (COLD) {
 //  if (verbose) printf("Running from %u\n", COLD);
-    I = abs(COLD);
+    I = COLD;
     goto start;
 }
 
 abort:
-    I = abs(WARM);
+    I = WARM;
 start:
     STATE = 0;
     M[CONTEXT] = 1;
@@ -44,12 +44,12 @@ start:
     R = R0;
 next:
     if (verbose > 2) {
-        printf("I=%X op=%02X ", rel(I), *I);
-        printf("R=%X %X %X (%d) ", R[0], R[1], R[2], R0-R);
-        printf("S=[%d] %X %X %X %X ", S0-S, S[2], S[1], S[0], top);
+        printf("I=%X op=%02X ", I, m[I]);
+        printf("R=%X %X %X (%td) ", R[0], R[1], R[2], R0-R);
+        printf("S=[%td] %X %X %X %X ", S0-S, S[2], S[1], S[0], top);
         printf("H=%X\n", HERE);
     }
-    switch (w = *I++) {
+    switch (w = m[I++]) {
 
 #define push *--S = top, top =
 #define pop top = *S++
@@ -58,22 +58,22 @@ next:
 #define LOGICAL ? -1 : 0
 
 #define NEXT        goto next;
-#define LIT         *(cell*)I
-#define OFFSET      *(signed char*)I
+#define LIT         *(cell*)(m + I)
+#define OFFSET      *(signed char*)(m + I)
 #define BRANCH      I += OFFSET
 #define NOBRANCH    I += 1
-#define EXIT        I = m + *R++; NEXT
+#define EXIT        I = *R++; NEXT
 ``
 
 0 OP! ( special functions )
 
 OP: EXIT        EXIT
-OP: CALL        w = *(uint16_t *)I; *--R = I + 2 - m; I = m + w; NEXT
-OP: CALL32      w = LIT; *--R = I + CELL - m; I = m + w; NEXT
+OP: CALL        w = *(uint16_t *)(m + I); *--R = I + 2; I = w; NEXT
+OP: CALL32      w = LIT; *--R = I + CELL; I = w; NEXT
 OP: BRANCH      BRANCH; NEXT
-OP: DO          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
+OP: DO          *--R = I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
 OP: ?DO         if (top == *S) BRANCH;
-                ` else *--R = (cell)I + OFFSET,
+                ` else *--R = I + OFFSET,
                 `      *--R = *S, *--R = top - *S, NOBRANCH;
                 ` S++, pop; NEXT
 OP: LOOP        if ((++ *R) == 0) NOBRANCH, R += 3; else BRANCH; NEXT
@@ -83,10 +83,10 @@ OP: +LOOP       w = *R, *R += top;
 
 OP: LIT         push LIT; I += CELL; NEXT
 OP: NOP         NEXT
-OP: S"          push rel(I) + 1; push *I; I = litq(I); NEXT
+OP: S"          push I + 1; push m[I]; I = litq(I); NEXT
 OP: ."          I = dotq(I); NEXT
 OP: ABORT"      if (!top) { I = litq(I); pop; NEXT }
-                ` show_error((char*)I, abs(HERE), abs(SOURCE));
+                ` show_error((char*)(m + I), abs(HERE), abs(SOURCE));
                 ` goto abort;
 OP: ---
 OP: ---
@@ -94,10 +94,10 @@ OP: ---
 
 10 OP! ( runtime for defining words )
 
-OP: DOCON       push *(cell*)aligned(I); EXIT
-OP: DOVAR       push rel(aligned(I)); EXIT
-OP: DOCREATE    push rel(aligned(I)); w = *(cell*)(I - 1) >> 8;
-                ` if (w) I = abs(w); else EXIT
+OP: DOCON       push *(cell*)(m + aligned(I)); EXIT
+OP: DOVAR       push aligned(I); EXIT
+OP: DOCREATE    push aligned(I); w = *(cell*)(m + I - 1) >> 8;
+                ` if (w) I = w; else EXIT
 
 20 OP! ( lit op )
 
@@ -241,7 +241,7 @@ CODE PICK       top = S[top]; NEXT
 
 CODE I          push R[0] + R[1]; NEXT
 CODE J          push R[3] + R[4]; NEXT
-CODE LEAVE      I = (byte*)R[2];
+CODE LEAVE      I = R[2];
 CODE UNLOOP     R += 3; NEXT
 
 : 2DUP      OVER OVER ;
@@ -387,6 +387,7 @@ CODE WRITE-LINE ( a u fid -- ior )
 100 BUFFER SOURCE-STACK
 
 : >IN           'IN @ ;
+
 : FILE          >IN $ 3 CELLS + ;
 : 'TIB          >IN $ 4 CELLS + ;
 : SOURCE-NAME   >IN $ 5 CELLS + ;
@@ -506,7 +507,7 @@ FORTH
 
 ( ********** Interpreter ********** )
 
-CODE EXECUTE  *--R = I - m, I = m + top, pop; NEXT
+CODE EXECUTE  *--R = I, I = top, pop; NEXT
 
 : INTERPRET  ( -- )
     BEGIN  STATE @

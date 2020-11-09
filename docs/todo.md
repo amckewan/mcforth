@@ -34,6 +34,7 @@ In current meta:
 * multi-op inline (e.g. 2dup )
 * specials (e.g. dup if )
 * lit+pick
+* lit lit within
 
 ## Do later (or never)
 

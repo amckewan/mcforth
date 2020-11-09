@@ -3,7 +3,10 @@
 all: test
 
 CC = clang
-CFLAGS = -m32 -Wall -Werror -Ofast
+ARCH = 32
+OPT = -Ofast
+
+CFLAGS = -m$(ARCH) -DARCH=$(ARCH) $(OPT) -Wall -Werror
 
 SOURCES = src/fo.c src/misc.c src/parse.c src/file.c
 HEADERS = src/fo.h
@@ -42,6 +45,9 @@ asm: $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) -S
 
 
+main64: main64.c
+	$(CC) main64.c -o $@
+	./$@
 
 run: forth
 	@./forth

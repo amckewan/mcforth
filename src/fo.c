@@ -110,16 +110,16 @@ void type(cell addr, cell len) {
     while (len--) putchar(m[addr++]);
 }
 
-void *litq(void *I) {
-    uchar *p = (uchar *)I;
-    return (cell *)(p + *p + 1);
+cell litq(cell I) {
+    byte *p = m + I;
+    return p + *p + 1 - m;
 }
 
-void *dotq(void *I) {
-    char *p = (char *)I;
+cell dotq(cell I) {
+    byte *p = m + I;
     int n = *p++;
-    while (n--) putchar(*p++);
-    return (cell *)(p);
+    while (n--) putchar((char)*p++);
+    return p - m;
 }
 
 void dotid(cell nfa) {
@@ -169,18 +169,25 @@ void load_image(const char *filename) {
 int main(int argc, char *argv[]) {
     memcpy(m, dict, sizeof dict);
 
+    // for 64-bit compile, allocate new argv array
+    // only add what C doesn't consume
+    int fargc = 1;
+    char **fargv = calloc(argc, sizeof argv[0]);
+    fargv[0] = strdup(argv[0]);
+
     for (int i = 1; i < argc; i++) {
         char *arg = argv[i];
         if (*arg++ == '-') {
             switch (*arg) {
                 case 'v':
                     verbose = strlen(arg);
-                    break;
+                    continue;
                 case 'i':
                     if (++i < argc) load_image(argv[i]);
-                    break;
+                    continue;
             }
         }
+        fargv[fargc++] = strdup(argv[i]);
     }
 
     if (verbose > 1) {
@@ -188,7 +195,8 @@ int main(int argc, char *argv[]) {
         printf("m = %p, argv = %p, diff = %td\n", m, argv, (byte*)argv-m);
         byte *temp = malloc(100);
         printf("m = %p, malloc = %p, diff = %td\n", m, temp, temp-m);
+        free(temp);
     }
 
-    return run(argc, argv);
+    return run(fargc, fargv);
 }

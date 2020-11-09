@@ -9,7 +9,7 @@
 #define STATIC_ASSERT(cond, msg) \
     typedef char static_assert_##msg[(cond)?1:-1]
 
-STATIC_ASSERT(sizeof(void*) == sizeof(int32_t), cell_is_32_bits);
+//STATIC_ASSERT(sizeof(void*) == sizeof(int32_t), cell_is_32_bits);
 
 typedef int32_t cell;
 typedef uint32_t ucell;
@@ -37,7 +37,7 @@ struct source {
     cell in;            // current parsing offset (>IN)
     cell len;           // length of input buffer
     cell addr;          // input buffer address
-    FILE *file;         // SOURCE-ID: 0=console, -1=evaluate, else file id
+    FILE *file;          // SOURCE-ID: 0=console, -1=evaluate, else file id
 
     cell buf;           // input buffer for file (malloc)
     cell filename;      // file name, null terminated (malloc)
