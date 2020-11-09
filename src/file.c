@@ -8,13 +8,13 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-FILE *open_file(const char *str, int len, const char *mode) {
+cell open_file(const char *str, int len, const char *mode) {
     char *filename = malloc(len  + 1);
     memcpy(filename, str, len);
     filename[len] = 0;
     FILE *file = fopen(filename, mode);
     free(filename);
-    return file;
+    return file ? rel(file) : 0;
 }
 
 cell accept(cell addr_va, cell max) {
@@ -44,7 +44,7 @@ static int refill_tib(struct source *source) {
 static int refill_file(struct source *source) {
     if (verbose) printf("refill %s line %d\n", abs(source->filename), source->line+1);
     char *buf = abs(source->buf);
-    if (!fgets(buf, MAXLINE, source->file)) {
+    if (!fgets(buf, MAXLINE, (FILE*)abs(source->file))) {
         source->len = 0;
         source->in = 0;
         return FALSE;

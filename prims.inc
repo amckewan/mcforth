@@ -244,33 +244,34 @@ if (w) I = w; else EXIT
 /* ACCEPT */ case 0xB1:   top = accept(*S++, top);
 /* ARGC */ case 0xB2:  push argc; NEXT
 /* ARGV */ case 0xB3:  *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEXT
+#define tofile(fid) (FILE *)(m + fid)
 /* CREATE-FILE */ case 0xB4: 
-top = (cell)open_file(abs(S[1]), *S, abs(top));
+top = open_file(abs(S[1]), *S, abs(top));
 *++S = top, top = top ? 0 : -1; NEXT
 /* OPEN-FILE */ case 0xB5: 
-top = (cell)open_file(abs(S[1]), *S, abs(top));
+top = open_file(abs(S[1]), *S, abs(top));
 *++S = top, top = top ? 0 : -1; NEXT
 /* CLOSE-FILE */ case 0xB6: 
-top = fclose((FILE*)top); NEXT
+top = fclose(tofile(top)); NEXT
 /* READ-FILE */ case 0xB7: 
-w = fread(abs(S[1]), 1, *S, (FILE*)top);
-top = w == *S ? 0 : ferror((FILE*)top); *++S = w; NEXT
+w = fread(abs(S[1]), 1, *S, tofile(top));
+top = w == *S ? 0 : ferror(tofile(top)); *++S = w; NEXT
 /* READ-LINE */ case 0xB8: 
-w = (cell)fgets(abs(S[1]), *S + 1, (FILE*)top);
+w = (cell)fgets(abs(S[1]), *S + 1, tofile(top));
 if (!w) {
-  top = feof((FILE*)top) ? 0 : ferror((FILE*)top);
+  top = feof(tofile(top)) ? 0 : ferror(tofile(top));
   *S = S[1] = 0; NEXT
 }
 top = strlen((char*)w);
 if (top > 0 && ((char*)w)[top-1] == '\n') --top;
 S[1] = top, *S = TRUE, top = 0; NEXT
 /* WRITE-FILE */ case 0xB9: 
-w = fwrite(abs(S[1]), 1, *S, (FILE*)top);
-top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
+w = fwrite(abs(S[1]), 1, *S, tofile(top));
+top = w == *S ? 0 : ferror(tofile(top)); S += 2; NEXT
 /* WRITE-LINE */ case 0xBA: 
-w = fwrite(abs(S[1]), 1, *S, (FILE*)top);
-if (w == *S) *S = 1, w = fwrite("\n", 1, 1, (FILE*)top);
-top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
+w = fwrite(abs(S[1]), 1, *S, tofile(top));
+if (w == *S) *S = 1, w = fwrite("\n", 1, 1, tofile(top));
+top = w == *S ? 0 : ferror(tofile(top)); S += 2; NEXT
 /* ALLOCATE */ case 0xBB:   *--S = rel(malloc(top)), top = *S ? 0 : -1; NEXT
 /* RESIZE */ case 0xBC:     *S = rel(realloc(abs(*S), top)), top = *S ? 0 : -1; NEXT
 /* FREE */ case 0xBD:       if (top) free(abs(top)); top = 0; NEXT

@@ -346,25 +346,27 @@ C" r"  CONSTANT R/O
 C" w"  CONSTANT W/O
 C" w+" CONSTANT R/W
 
+` #define tofile(fid) (FILE *)(m + fid)
+
 CODE CREATE-FILE ( c-addr u fam -- fileid ior )
-    ` top = (cell)open_file(abs(S[1]), *S, abs(top));
+    ` top = open_file(abs(S[1]), *S, abs(top));
     ` *++S = top, top = top ? 0 : -1; NEXT
 
 CODE OPEN-FILE ( c-addr u fam -- fileid ior )
-    ` top = (cell)open_file(abs(S[1]), *S, abs(top));
+    ` top = open_file(abs(S[1]), *S, abs(top));
     ` *++S = top, top = top ? 0 : -1; NEXT
 
 CODE CLOSE-FILE ( fileid -- ior )
-    ` top = fclose((FILE*)top); NEXT
+    ` top = fclose(tofile(top)); NEXT
 
 CODE READ-FILE ( a u fid -- u' ior )
-    ` w = fread(abs(S[1]), 1, *S, (FILE*)top);
-    ` top = w == *S ? 0 : ferror((FILE*)top); *++S = w; NEXT
+    ` w = fread(abs(S[1]), 1, *S, tofile(top));
+    ` top = w == *S ? 0 : ferror(tofile(top)); *++S = w; NEXT
 
 CODE READ-LINE ( a u fid -- u' flag ior )
-    ` w = (cell)fgets(abs(S[1]), *S + 1, (FILE*)top);
+    ` w = (cell)fgets(abs(S[1]), *S + 1, tofile(top));
     ` if (!w) {
-    `   top = feof((FILE*)top) ? 0 : ferror((FILE*)top);
+    `   top = feof(tofile(top)) ? 0 : ferror(tofile(top));
     `   *S = S[1] = 0; NEXT
     ` }
     ` top = strlen((char*)w);
@@ -372,13 +374,13 @@ CODE READ-LINE ( a u fid -- u' flag ior )
     ` S[1] = top, *S = TRUE, top = 0; NEXT
 
 CODE WRITE-FILE ( a u fid -- ior )
-    ` w = fwrite(abs(S[1]), 1, *S, (FILE*)top);
-    ` top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
+    ` w = fwrite(abs(S[1]), 1, *S, tofile(top));
+    ` top = w == *S ? 0 : ferror(tofile(top)); S += 2; NEXT
 
 CODE WRITE-LINE ( a u fid -- ior )
-    ` w = fwrite(abs(S[1]), 1, *S, (FILE*)top);
-    ` if (w == *S) *S = 1, w = fwrite("\n", 1, 1, (FILE*)top);
-    ` top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
+    ` w = fwrite(abs(S[1]), 1, *S, tofile(top));
+    ` if (w == *S) *S = 1, w = fwrite("\n", 1, 1, tofile(top));
+    ` top = w == *S ? 0 : ferror(tofile(top)); S += 2; NEXT
 
 
 ( ********** Input source processig ********** )

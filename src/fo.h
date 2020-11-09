@@ -30,14 +30,14 @@ extern int verbose;
 
 #define MAXLINE 128
 
-#define SOURCE_CONSOLE      ((FILE*) 0)
-#define SOURCE_EVALUATE     ((FILE*)-1)
+#define SOURCE_CONSOLE      0
+#define SOURCE_EVALUATE    -1
 
 struct source {
     cell in;            // current parsing offset (>IN)
     cell len;           // length of input buffer
     cell addr;          // input buffer address
-    FILE *file;          // SOURCE-ID: 0=console, -1=evaluate, else file id
+    cell file;          // SOURCE-ID: 0=console, -1=evaluate, else file id
 
     cell buf;           // input buffer for file (malloc)
     cell filename;      // file name, null terminated (malloc)
@@ -66,7 +66,7 @@ cell parse_name(cell source_va, cell *start_addr);
 cell word(cell source_va, char c, cell here_va);
 
 // file.c
-FILE *open_file(const char *str, int len, const char *mode);
+cell open_file(const char *str, int len, const char *mode);
 cell accept(cell addr_va, cell max);
 cell refill(cell source_va);
 void type(cell addr, cell len);
