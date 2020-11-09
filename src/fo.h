@@ -42,7 +42,7 @@ struct source {
     cell buf;           // input buffer for file (malloc)
     cell filename;      // file name, null terminated (malloc)
     cell line;          // line #
-    long offset;        // file offset for save/restore
+    cell offset;        // file offset for save/restore
 };
 
 // This is assumed for the memory layout in fo.c

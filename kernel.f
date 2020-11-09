@@ -364,13 +364,12 @@ CODE READ-FILE ( a u fid -- u' ior )
     ` top = w == *S ? 0 : ferror(tofile(top)); *++S = w; NEXT
 
 CODE READ-LINE ( a u fid -- u' flag ior )
-    ` w = (cell)fgets(abs(S[1]), *S + 1, tofile(top));
-    ` if (!w) {
+    ` if (!fgets(abs(S[1]), *S + 1, tofile(top))) {
     `   top = feof(tofile(top)) ? 0 : ferror(tofile(top));
     `   *S = S[1] = 0; NEXT
     ` }
-    ` top = strlen((char*)w);
-    ` if (top > 0 && ((char*)w)[top-1] == '\n') --top;
+    ` top = strlen((char*)abs(S[1]));
+    ` if (top > 0 && ((char*)abs(S[1]))[top-1] == '\n') --top;
     ` S[1] = top, *S = TRUE, top = 0; NEXT
 
 CODE WRITE-FILE ( a u fid -- ior )

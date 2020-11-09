@@ -257,13 +257,12 @@ top = fclose(tofile(top)); NEXT
 w = fread(abs(S[1]), 1, *S, tofile(top));
 top = w == *S ? 0 : ferror(tofile(top)); *++S = w; NEXT
 /* READ-LINE */ case 0xB8: 
-w = (cell)fgets(abs(S[1]), *S + 1, tofile(top));
-if (!w) {
+if (!fgets(abs(S[1]), *S + 1, tofile(top))) {
   top = feof(tofile(top)) ? 0 : ferror(tofile(top));
   *S = S[1] = 0; NEXT
 }
-top = strlen((char*)w);
-if (top > 0 && ((char*)w)[top-1] == '\n') --top;
+top = strlen((char*)abs(S[1]));
+if (top > 0 && ((char*)abs(S[1]))[top-1] == '\n') --top;
 S[1] = top, *S = TRUE, top = 0; NEXT
 /* WRITE-FILE */ case 0xB9: 
 w = fwrite(abs(S[1]), 1, *S, tofile(top));

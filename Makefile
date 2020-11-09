@@ -3,7 +3,7 @@
 all: test
 
 CC = clang
-ARCH = 32
+ARCH = 64
 OPT = -Ofast
 
 CFLAGS = -m$(ARCH) -DARCH=$(ARCH) $(OPT) -Wall -Werror
