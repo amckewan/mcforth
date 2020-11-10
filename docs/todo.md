@@ -1,9 +1,8 @@
 # To-do list
 
-* check for redefined words
-* move stuff from kernel to extend
 * add value
 * add defer
+* move stuff from kernel to extend
 * remove non-essential code words (keep opcodes trim)
 * fm/mod from f83
 

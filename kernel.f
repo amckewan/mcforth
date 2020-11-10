@@ -320,8 +320,7 @@ CODE W!     W(top) = *S++, pop; NEXT
 CODE FILL  ( a u c -- )       memset(abs(S[1]), top, *S);       pop3; NEXT
 CODE MOVE  ( src dest u -- )  memmove(abs(*S), abs(S[1]), top); pop3; NEXT
 
-CODE >ABS  top += (cell)m; NEXT   // convert to absolute address
-CODE >REL  top -= (cell)m; NEXT   // convert to relative address
+CODE M  push (cell)m; NEXT
 
 CODE KEY   ( -- char )  push getchar(); NEXT
 CODE EMIT  ( char -- )  putchar(top); pop; NEXT
@@ -335,7 +334,7 @@ CODE SEARCH   top = search(S++, top); NEXT
 
 CODE BYE  return 0;
 
-CODE ACCEPT ( a n -- n )  top = accept(*S++, top);
+CODE ACCEPT ( a n -- n )  top = accept(*S++, top); NEXT
 
 CODE ARGC ( -- n ) push argc; NEXT
 CODE ARGV ( n -- a n ) *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEXT
@@ -388,13 +387,13 @@ CODE WRITE-LINE ( a u fid -- ior )
 100 BUFFER SOURCE-STACK
 
 : >IN           'IN @ ;
-: FILE          >IN $ 3 CELLS + ;
-: 'TIB          >IN $ 4 CELLS + ;
-: SOURCE-NAME   >IN $ 5 CELLS + ;
-: SOURCE-LINE   >IN $ 6 CELLS + ;
+: SOURCE-BUF    >IN $ 2 CELLS + ;
+: SOURCE-FILE   >IN $ 3 CELLS + ;
+: SOURCE-NAME   >IN $ 4 CELLS + ;
+: SOURCE-LINE   >IN $ 5 CELLS + ;
 
 : SOURCE        >IN CELL+ 2@ ;
-: SOURCE-ID     FILE @ ;
+: SOURCE-ID     SOURCE-FILE @ ;
 
 : SOURCE-DEPTH  >IN SOURCE-STACK -  $ 5 RSHIFT ( 32 /) ;
 
@@ -409,15 +408,15 @@ CODE NEW-STRING top = new_string(*S++, top); NEXT
 : >SOURCE ( filename len fileid | -1 -- ) \ CR ." Including " DROP TYPE SPACE ;
     SOURCE-DEPTH $ 7 U> ABORT" nested too deep"
     $ 20 'IN +!
-    DUP FILE !
-    FILE? IF  $ 80 ALLOCATE DROP 'TIB !  NEW-STRING SOURCE-NAME !  THEN
+    DUP SOURCE-FILE !
+    FILE? IF  $ 80 ALLOCATE DROP SOURCE-BUF !  NEW-STRING SOURCE-NAME !  THEN
     $ 0 SOURCE-LINE ! ;
 
 : SOURCE> ( -- )
     SOURCE-DEPTH $ 1 < ABORT" trying to pop empty source"
     SOURCE-ID FILE? IF
         SOURCE-ID CLOSE-FILE DROP
-        'TIB @ FREE DROP
+        SOURCE-BUF @ FREE DROP
         SOURCE-NAME @ FREE DROP
     THEN
     $ -20 'IN +! ;
@@ -425,7 +424,7 @@ CODE NEW-STRING top = new_string(*S++, top); NEXT
 CODE REFILL ( -- f )  push refill(SOURCE); NEXT
 
 80 BUFFER TIB
-: QUERY  ( -- )  $ 0 FILE !  TIB 'TIB !  REFILL 0= IF BYE THEN ;
+: QUERY  $ 0 SOURCE-FILE !  TIB SOURCE-BUF !  REFILL 0= IF BYE THEN ;
 
 \ ********** Numbers **********
 
@@ -573,7 +572,7 @@ VARIABLE LAST ( link )
 
 \ | opc | I for does | data
 : CREATE  HEADER $ 12 , ;
-: DOES>   R> >REL  dA @ -  $ 8 LSHIFT $ 12 OR
+: DOES>   R> M -  dA @ -  $ 8 LSHIFT $ 12 OR
           PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) ! ;
 : >BODY   CELL+ ;
 

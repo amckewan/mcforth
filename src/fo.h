@@ -39,10 +39,10 @@ struct source {
     cell addr;          // input buffer address
     FILE *file;         // SOURCE-ID: 0=console, -1=evaluate, else file id
 
-    cell buf;           // input buffer for file (malloc)
     cell filename;      // file name, null terminated (malloc)
     cell line;          // line #
     long offset;        // file offset for save/restore
+    cell unused;
 };
 
 // This is assumed for the memory layout in fo.c

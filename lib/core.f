@@ -4,7 +4,6 @@ DECIMAL
 
 : ,"        '"' PARSE  DUP C, S,  -OPT ;
 COMPILER
-: "         $A C, ," ;
 : S"        $A C, ," ;
 : ."        $B C, ," ;
 : ABORT"    $C C, ," ;
@@ -27,8 +26,6 @@ FORTH
 \ : 2R>       R> R> SWAP ;
 
 : ENVIRONMENT?  2DROP FALSE ;
-\ : ABORT  -1 THROW ;
-\ : QUIT  -56 THROW ;
 
 : NOT  0= ;
 : 0<>  0= NOT ;
@@ -73,9 +70,7 @@ VARIABLE #SBUF
     DUP #SBUF @ + 300 > IF  #SBUF OFF ( wrap ) THEN
     #SBUF @  OVER #SBUF +!  SBUF + SWAP  ( a a' n )
     DUP >R OVER >R  MOVE  R> R> ;
-:  "  [CHAR] " PARSE STASH ;
 : S"  [CHAR] " PARSE STASH ;
-
 
 ( *** Pictured numeric output *** )
 

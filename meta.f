@@ -1,6 +1,6 @@
 ( metacompiler )
 
-: TAG " Hello" ;
+: TAG S" Hello" ;
 
 VARIABLE H'  HEX 8000 ,
 
@@ -18,7 +18,7 @@ CREATE EOL 1 C, 0A C,
 
 : `   1 PARSE WRITE  NEWLINE ;
 : ``  BEGIN  REFILL 0= ABORT" missing ``"
-        PARSE-NAME " ``" COMPARE WHILE
+        PARSE-NAME S" ``" COMPARE WHILE
         SOURCE WRITE  NEWLINE
       REPEAT ;
 
@@ -29,7 +29,7 @@ VARIABLE SEER
 : WRITE-INFO  SEER @ WRITE-FILE ?ERR ;
 
 : INFO ( opc -- )
-    0 <# # # #> WRITE-INFO  "  OP " WRITE-INFO
+    0 <# # # #> WRITE-INFO  S"  OP " WRITE-INFO
     >IN @  PARSE-NAME WRITE-INFO  EOL COUNT WRITE-INFO  >IN ! ;
 
 ( save dictionary image )
@@ -39,35 +39,35 @@ VARIABLE SEER
     H' @ 10 ERASE ( for diff )
     OPEN  BASE @ DECIMAL
     H' 2@ SWAP DO
-        I  10 0 DO  COUNT 0 <# #S #> WRITE  " ," WRITE  LOOP DROP
+        I  10 0 DO  COUNT 0 <# #S #> WRITE  S" ," WRITE  LOOP DROP
         NEWLINE
     10 +LOOP  CLOSE  BASE ! ;
 
 : SAVE  ( -- )
     CLOSE  CLOSE-INFO
     CR ." Saving " BASE @ DECIMAL H' 2@ SWAP - . BASE ! ." bytes..."
-    " kernel.img" SAVE-IMAGE
-    " kernel.inc" SAVE-DICT
+    S" kernel.img" SAVE-IMAGE
+    S" kernel.inc" SAVE-DICT
     ." done " ;
 
-" prims.inc" OPEN
-" see.info"  OPEN-INFO
+S" prims.inc" OPEN
+S" see.info"  OPEN-INFO
 
 
 \ ========== Generate Primatives ==========
 
 : ?COMMENT  ( allow Forth comment after OP: or CODE )
-    >IN @  PARSE-NAME " (" COMPARE
+    >IN @  PARSE-NAME S" (" COMPARE
     IF  >IN !  ELSE  DROP  POSTPONE (  THEN ;
 
-: C-COMMENT  " /* " WRITE  PARSE-NAME WRITE  "  */ " WRITE ;
+: C-COMMENT  S" /* " WRITE  PARSE-NAME WRITE  S"  */ " WRITE ;
 
 VARIABLE OP  ( next opcode )
 : OP!  OP ! ;
 : OP:  ( output opcode case statement )
     OP @ FF > ABORT" opcodes exhausted"
     OP @ info
-    C-COMMENT  " case 0x" WRITE  OP @ 0 <# # # #> WRITE  " : " WRITE
+    C-COMMENT  S" case 0x" WRITE  OP @ 0 <# # # #> WRITE  S" : " WRITE
     ?COMMENT ` ( copy rest of line )  1 OP +! ;
 
 : CODE  >IN @ HEADER >IN !  OP @ OP,  \\ EXIT  OP: ;
