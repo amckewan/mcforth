@@ -83,11 +83,9 @@ OP: +LOOP       w = *R, *R += top;
 
 OP: LIT         push LIT; I += CELL; NEXT
 OP: NOP         NEXT
-\ OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
-OP: S"          push rel(I) + 1; push *I; I = litq(I); NEXT
+OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
-\ OP: ABORT"      if (!top) { I += *I++; pop; NEXT }
-OP: ABORT"      if (!top) { I = litq(I); pop; NEXT }
+OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT }
                 ` show_error((char*)I, abs(HERE), abs(SOURCE));
                 ` goto abort;
 OP: ---
@@ -441,6 +439,9 @@ CODE >NUMBER  top = to_number(S, top, BASE); NEXT
 
 20 CONSTANT BL
 
+CODE PARSE    ( c -- a n )  top = parse(SOURCE, top, --S); NEXT
+CODE PARSE-NAME ( -- a n )  push parse_name(SOURCE, --S); NEXT
+
 CODE WORD  ( char -- addr )
 `   top = word(SOURCE, top, HERE); NEXT
 
@@ -535,7 +536,7 @@ CODE R0!  R = R0; NEXT
     2DUP R/O OPEN-FILE ABORT" file not found"
     >SOURCE  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
 
-: INCLUDE  BL WORD COUNT INCLUDED ;
+: INCLUDE  PARSE-NAME INCLUDED ;
 
 TAG TAG
 
@@ -546,9 +547,6 @@ TAG TAG
 0 HAS BOOT
 
 ( ********** More compiler ********** )
-
-CODE PARSE    ( c -- a n )  top = parse(SOURCE, top, --S); NEXT
-CODE PARSE-NAME ( -- a n )  push parse_name(SOURCE, --S); NEXT
 
 : S,  ( a n -- )  BEGIN DUP WHILE >R COUNT C, R> 1- REPEAT 2DROP ;
 

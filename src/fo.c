@@ -110,11 +110,6 @@ void type(cell addr, cell len) {
     while (len--) putchar(m[addr++]);
 }
 
-void *litq(void *I) {
-    uchar *p = (uchar *)I;
-    return (cell *)(p + *p + 1);
-}
-
 void *dotq(void *I) {
     char *p = (char *)I;
     int n = *p++;

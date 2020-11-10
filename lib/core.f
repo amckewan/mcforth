@@ -16,34 +16,23 @@ FORTH
 : ON        TRUE  SWAP ! ;
 : OFF       FALSE SWAP ! ;
 
-: NIP       SWAP DROP ;
 : TUCK      SWAP OVER ;
 : -ROT      ROT ROT ;
 
-: 2DUP      OVER OVER ;
-: 2DROP     DROP DROP ;
 : 2OVER     3 PICK 3 PICK ;
 : 2SWAP     ROT >R ROT R> ;
-: 2>R       SWAP >R >R ;
-: 2R>       R> R> SWAP ;
+\ only with multi-op inlining
+\ or just add to compiler
+\ : 2>R       SWAP >R >R ;
+\ : 2R>       R> R> SWAP ;
 
 : ENVIRONMENT?  2DROP FALSE ;
 \ : ABORT  -1 THROW ;
 \ : QUIT  -56 THROW ;
 
-32 CONSTANT BL
-: SPACE  BL EMIT ;
-: CR  10 EMIT ;
-
-: 1+  1 + ;
-: 1-  1 - ;
-
 : NOT  0= ;
 : 0<>  0= NOT ;
 : <>   = NOT ;
-
-: CELL+  1 CELLS + ;
-: COUNT  DUP 1 +  SWAP C@ ;
 
 : CHAR  BL WORD 1+ C@ ;
 COMPILER
@@ -62,7 +51,6 @@ FORTH
       AGAIN ; IMMEDIATE
 
 ( *** more stuff *** )
-: ?DUP      DUP IF DUP THEN ;
 : ABS       DUP 0< IF NEGATE THEN ;
 : MIN       2DUP > IF SWAP THEN DROP ;
 : MAX       2DUP < IF SWAP THEN DROP ;
@@ -146,8 +134,8 @@ FORTH
 : EVALUATE ( a n -- )
     -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;
 
-: s=  compare 0= ;
-: /string  rot over +  rot rot - ;
+: S=  COMPARE 0= ;
+: /STRING  ROT OVER +  ROT ROT - ;
 
 : MARKER  ALIGN HERE  CONTEXT CELL+ 2@ , ,  CREATE ,
     DOES> @  DUP H !  2@ CONTEXT CELL+ 2!  FORTH ;
