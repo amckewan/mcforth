@@ -49,7 +49,8 @@ struct source {
 STATIC_ASSERT(sizeof(struct source) == 32, source_size);
 
 // lib.c
-cell new_string(cell str_va, int len);
+char *new_string(const char *str, int len);
+//cell new_string(cell str_va, int len);
 void fatal(const char *msg);
 void dump(int a, int n, int base);
 
@@ -67,6 +68,7 @@ cell word(cell source_va, char c, cell here_va);
 
 // file.c
 FILE *open_file(const char *str, int len, const char *mode);
+FILE *open_on_path(char **filename, cell len);
 cell accept(cell addr_va, cell max);
 cell refill(cell source_va);
 void type(cell addr, cell len);

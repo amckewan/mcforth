@@ -401,15 +401,15 @@ CODE ALLOCATE   *--S = rel(malloc(top)), top = *S ? 0 : -1; NEXT
 CODE RESIZE     *S = rel(realloc(abs(*S), top)), top = *S ? 0 : -1; NEXT
 CODE FREE       if (top) free(abs(top)); top = 0; NEXT
 
-CODE NEW-STRING top = new_string(*S++, top); NEXT
+CODE NEW-STRING top = rel(new_string(abs(*S++), top)); NEXT
 
 : FILE?  1+ $ 2 U< NOT ;
 
-: >SOURCE ( filename len fileid | -1 -- ) \ CR ." Including " DROP TYPE SPACE ;
+: >SOURCE ( filename fileid | -1 -- ) \ CR ." Including " DROP TYPE SPACE ;
     SOURCE-DEPTH $ 7 U> ABORT" nested too deep"
     $ 20 'IN +!
     DUP SOURCE-FILE !
-    FILE? IF  $ 80 ALLOCATE DROP SOURCE-BUF !  NEW-STRING SOURCE-NAME !  THEN
+    FILE? IF  $ 80 ALLOCATE DROP SOURCE-BUF !  SOURCE-NAME !  THEN
     $ 0 SOURCE-LINE ! ;
 
 : SOURCE> ( -- )
@@ -531,8 +531,19 @@ CODE R0!  R = R0; NEXT
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
 4 HAS QUIT
 
+
+: OPEN-ON-PATH  ( str len -- filename fid ior )
+    2DUP R/O OPEN-FILE DUP >R SWAP >R ( str len ior ) IF DROP ELSE
+        NEW-STRING
+    THEN R> R> ;
+
+\ FILE *open_on_path(char **filename, cell len);
+CODE xOPEN-ON-PATH  ( str len -- filename fid ior )
+    ` top = (cell)open_on_path((char **)S, top);
+    ` *--S = top, top = top ? 0 : -1; NEXT
+
 : INCLUDED  ( str len -- )
-    2DUP R/O OPEN-FILE ABORT" file not found"
+    OPEN-ON-PATH ABORT" file not found"
     >SOURCE  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
 
 : INCLUDE  PARSE-NAME INCLUDED ;

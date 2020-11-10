@@ -9,11 +9,17 @@
 #include <readline/history.h>
 
 FILE *open_file(const char *str, int len, const char *mode) {
-    char *filename = malloc(len  + 1);
-    memcpy(filename, str, len);
-    filename[len] = 0;
+    char *filename = new_string(str, len);
     FILE *file = fopen(filename, mode);
     free(filename);
+    return file;
+}
+
+FILE *open_on_path(char **name, cell len) {
+    // simple first
+    char *filename = new_string(*name, len);
+    FILE *file = fopen(filename, "r");
+    *name = filename;
     return file;
 }
 

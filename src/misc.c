@@ -6,14 +6,14 @@
  * Utilities
  */
 
-char *new_string1(const char *str, int len) {
+char *new_string(const char *str, int len) {
     char *cstr = malloc(len + 1);
     memcpy(cstr, str, len);
     cstr[len] = 0;
     return cstr;
 }
 
-cell new_string(cell str_va, int len) {
+cell xnew_string(cell str_va, int len) {
     char *cstr = malloc(len + 1);
     memcpy(cstr, abs(str_va), len);
     cstr[len] = 0;
