@@ -1,6 +1,6 @@
 # mcforth makefile
 
-all: test
+all: bootstrap
 
 CC = clang
 CFLAGS = -m32 -Wall -Werror -Ofast

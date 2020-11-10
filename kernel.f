@@ -43,12 +43,12 @@ start:
     S = S0;
     R = R0;
 next:
-    if (verbose > 2) {
-        printf("I=%X op=%02X ", rel(I), *I);
-        printf("R=%X %X %X (%d) ", R[0], R[1], R[2], R0-R);
-        printf("S=[%d] %X %X %X %X ", S0-S, S[2], S[1], S[0], top);
-        printf("H=%X\n", HERE);
-    }
+//    if (verbose > 2) {
+//        printf("I=%X op=%02X ", rel(I), *I);
+//        printf("R=%X %X %X (%d) ", R[0], R[1], R[2], R0-R);
+//        printf("S=[%d] %X %X %X %X ", S0-S, S[2], S[1], S[0], top);
+//        printf("H=%X\n", HERE);
+//    }
     switch (w = *I++) {
 
 #define push *--S = top, top =
@@ -59,17 +59,17 @@ next:
 
 #define NEXT        goto next;
 #define LIT         *(cell*)I
-#define OFFSET      *(signed char*)I
+#define OFFSET      *(int8_t *)I
 #define BRANCH      I += OFFSET
 #define NOBRANCH    I += 1
-#define EXIT        I = m + *R++; NEXT
+#define EXIT        I = (byte *)*R++; NEXT
 ``
 
 0 OP! ( special functions )
 
 OP: EXIT        EXIT
-OP: CALL        w = *(uint16_t *)I; *--R = I + 2 - m; I = m + w; NEXT
-OP: CALL32      w = LIT; *--R = I + CELL - m; I = m + w; NEXT
+OP: CALL        w = *(uint16_t *)I; *--R = (cell)I + 2; I = m + w; NEXT
+OP: CALL32      w = LIT; *--R = (cell)I + CELL; I = m + w; NEXT
 OP: BRANCH      BRANCH; NEXT
 OP: DO          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
 OP: ?DO         if (top == *S) BRANCH;
@@ -83,8 +83,10 @@ OP: +LOOP       w = *R, *R += top;
 
 OP: LIT         push LIT; I += CELL; NEXT
 OP: NOP         NEXT
+\ OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: S"          push rel(I) + 1; push *I; I = litq(I); NEXT
 OP: ."          I = dotq(I); NEXT
+\ OP: ABORT"      if (!top) { I += *I++; pop; NEXT }
 OP: ABORT"      if (!top) { I = litq(I); pop; NEXT }
                 ` show_error((char*)I, abs(HERE), abs(SOURCE));
                 ` goto abort;
@@ -100,8 +102,9 @@ OP: DOCREATE    push rel(aligned(I)); w = *(cell*)(I - 1) >> 8;
                 ` if (w) I = abs(w); else EXIT
 
 20 OP! ( lit op )
+` #define LITOP(op) top op LIT, I += CELL; NEXT
 
-OP: LIT+        top += LIT, I += CELL; NEXT
+OP: LIT+        LITOP(+=)
 OP: LIT-        top -= LIT, I += CELL; NEXT
 OP: LIT*        top *= LIT, I += CELL; NEXT
 OP: LIT/        top /= LIT, I += CELL; NEXT
@@ -506,7 +509,7 @@ FORTH
 
 ( ********** Interpreter ********** )
 
-CODE EXECUTE  *--R = I - m, I = m + top, pop; NEXT
+CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
 : INTERPRET  ( -- )
     BEGIN  STATE @
@@ -572,7 +575,8 @@ VARIABLE LAST ( link )
 
 \ | opc | I for does | data
 : CREATE  HEADER $ 12 , ;
-: DOES>   R> $ 8 LSHIFT $ 12 OR  PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) ! ;
+: DOES>   R> >REL  dA @ -  $ 8 LSHIFT $ 12 OR
+          PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) ! ;
 : >BODY   CELL+ ;
 
 \ Be careful from here on...
