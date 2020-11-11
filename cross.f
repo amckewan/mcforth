@@ -1,38 +1,41 @@
 \ Cross compiler
 
+warnings off
+
 : TAG S" cross forth" ;
 
 HEX
-\ Support 64-bit gforth host
-4 CONSTANT CELL-T
-: CELL+-T CELL-T + ;
-: CELLS-T CELL-T * ;
-: CELL@ UL@ ; \ gforth
-: CELL! L! ; \ gforth
-\ : CELL, HERE CELL-T ALLOT CELL! ;
-warnings off
 
+CREATE EOL 1 C, 0A C,
+: H, , ;
 
 \ Memory Access Words
-CREATE TARGET-IMAGE 2000 ALLOT   TARGET-IMAGE 2000 ERASE
-VARIABLE DP-T
-: THERE   ( taddr -- addr )   TARGET-IMAGE + ;
-: C@-T    ( taddr -- char )   THERE C@ ;
-: @-T     ( taddr -- n )      THERE CELL@ ;
-: C!-T    ( char taddr -- )   THERE C! ;
-: W!-T    ( w taddr -- )      THERE OVER 8 RSHIFT OVER 1+ C! C! ; ( le )
-: !-T     ( n taddr -- )      THERE CELL! ;
-: HERE-T  ( -- taddr )   DP-T @ ;
-: ALLOT-T ( n -- )       HERE-T THERE OVER ERASE   DP-T +! ;
-: C,-T    ( char -- )   HERE-T C!-T   1 DP-T +! ;
-: W,-T    ( w -- )      HERE-T W!-T   2 DP-T +! ;
-: ,-T     ( n -- )      HERE-T  !-T   CELL-T DP-T +! ;
-: S,-T    ( addr len -- )
-   0 ?DO   COUNT C,-T   LOOP   DROP ;
+CREATE IMAGE 2000 ALLOT   IMAGE 2000 ERASE
+: THERE  ( taddr -- addr )   IMAGE + ;
+: TC@    ( taddr -- char )   THERE C@ ;
+: TC!    ( char taddr -- )   THERE C! ;
 
-: ALIGN  BEGIN HERE-T CELL-T 1 - AND WHILE 0 C,-T REPEAT ;
+\ Support 64-bit gforth and 32-bit target
+\ CELL is 4 or 8 defined on command line
+CELL 1 CELLS = [IF]
+: T@     ( taddr -- n )      THERE @ ;
+: T!     ( n taddr -- )      THERE ! ;
+[ELSE]
+: T@     ( taddr -- n )      THERE UL@ ;
+: T!     ( n taddr -- )      THERE L! ;
+[THEN]
 
-: tdump  target-image here-t dump ;
+VARIABLE H
+: HERE  ( -- taddr )   H @ ;
+: ALLOT ( n -- )       HERE THERE OVER ERASE   H +! ;
+: C,    ( char -- )   HERE TC!   1 H +! ;
+: ,     ( n -- )      HERE  T!   CELL H +! ;
+: S,    ( addr len -- )
+   0 ?DO   COUNT C,   LOOP   DROP ;
+
+: ALIGN  BEGIN HERE CELL 1 - AND WHILE 0 C, REPEAT ;
+
+: TDUMP  IMAGE H @ DUMP ;
 
 \ Output to prims.inc
 : ?ERR  ABORT" file I/O error" ;
@@ -40,8 +43,6 @@ VARIABLE DP-T
 VARIABLE OUT
 : OPEN   R/W CREATE-FILE ?ERR OUT ! ;
 : WRITE  ( adr len -- )  OUT @ WRITE-FILE ?ERR ;
-
-CREATE EOL 1 C, 0A C,
 : NEWLINE   EOL COUNT WRITE ;
 
 : `   1 PARSE WRITE  NEWLINE ;
@@ -64,12 +65,12 @@ variable seer
 
 : SAVE-IMG
     R/W CREATE-FILE ?ERR
-    DUP TARGET-IMAGE HERE-T ROT WRITE-FILE ?ERR
+    DUP IMAGE HERE ROT WRITE-FILE ?ERR
     CLOSE-FILE ?ERR ;
 
 : SAVE-INC
     OPEN  BASE @ DECIMAL
-    HERE-T 0 DO
+    HERE 0 DO
         I THERE 10 0 DO
             COUNT 0 <# #S #> WRITE  S" ," WRITE
         LOOP DROP
@@ -78,7 +79,7 @@ variable seer
 
 : SAVE  ( -- )
     CLOSE  close-info
-    CR ." Saving " BASE @ DECIMAL HERE-T . BASE ! ." bytes..."
+    CR ." Saving " BASE @ DECIMAL HERE . BASE ! ." bytes..."
     S" kernel.img" SAVE-IMG
     S" kernel.inc" SAVE-INC
     ." done" ;
@@ -92,34 +93,30 @@ S" see.info" open-info
 \ Compiler
 
 VARIABLE ?CODE
-: LATEST ( -- n )  ?CODE @ DUP IF C@-T ELSE INVERT THEN ;
-: PATCH  ( n -- )  ?CODE @ DUP 0= ABORT" patch?" C!-T ;
-: OP,  ( opcode -- )  HERE-T ?CODE !  C,-T ;
+: LATEST ( -- n )  ?CODE @ DUP IF TC@ ELSE INVERT THEN ;
+: PATCH  ( n -- )  ?CODE @ DUP 0= ABORT" patch?" TC! ;
+: OP,  ( opcode -- )  HERE ?CODE !  C, ;
 
 : COMPILE,  ( addr -- )
-    DUP C@-T 5F >  OVER 1+ C@-T 0= AND IF  C@-T OP, EXIT  THEN
-    1 OP, W,-T ;
+    DUP TC@ 5F >  OVER 1+ TC@ 0= AND IF  TC@ OP, EXIT  THEN
+    1 OP, DUP C, 8 RSHIFT C, ( le) ;
 
 : EXIT  0 OP, ;
 
 \ Create Headers in Target Image
 VARIABLE LAST
-CREATE CONTEXT  1 , 24 , ( FORTH ) 24 , ( COMPILER )
+CREATE CONTEXT  1 H, 24 H, ( FORTH ) 24 H, ( COMPILER )
 : FORTH     1 CONTEXT ! ; FORTH
 : COMPILER  2 CONTEXT ! ;
 
-: EMPLACE  ( targ-h targ-context -- )
-    CELL+-T >R  CONTEXT CELL+ 2@  R@ !-T  R> CELL+-T !-T
-    HERE-T SWAP !-T ;
-
 : PRUNE  ( store here and context for target )
-    HERE-T 8 !-T  CONTEXT CELL+ 2@  1C !-T  20 !-T ;
+    HERE 8 T!  CONTEXT CELL+ 2@  1C T!  20 T! ;
 
 : HASH   ( voc -- thread )  CELLS CONTEXT + ;
 
 : HEADER   ( -- )
-    ALIGN  HERE-T  CONTEXT @ HASH  DUP @ ,-T  !
-    HERE-T LAST !  BL WORD COUNT DUP ( 80 OR)  C,-T S,-T  ALIGN ;
+    ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
+    HERE LAST !  BL WORD COUNT DUP ( 80 OR)  C, S,  ALIGN ;
 
 VARIABLE STATE-T
 : ?EXEC  STATE-T @ 0= ABORT" cannot execute target word!" ;
@@ -129,12 +126,12 @@ VARIABLE CSP
 : ?CSP  DEPTH CSP @ - ABORT" definition not finished" ;
 
 : TARGET-CREATE   ( -- )
-   >IN @ HEADER >IN !  CREATE  HERE-T ,
+   >IN @ HEADER >IN !  CREATE  HERE H,
    DOES>  ?EXEC  @ COMPILE, ;
 
 : H. . ;
 : '-T  ' >BODY @ ;
-: HAS ( a -- )  '-T  SWAP !-T ;
+: HAS ( a -- )  '-T  SWAP T! ;
 
 \ Generate primatives
 : ?COMMENT  ( allow Forth comment after OP: etc. )
@@ -155,21 +152,19 @@ VARIABLE OP  ( next opcode )
 : CODE   >IN @ TARGET-CREATE >IN ! (PRIM) ;  ( in host and target)
 
 : BINARY  ( op -- )
-    CREATE ,  DOES> ?EXEC @ OP, ;
-\    CREATE ,  DOES> @  LATEST <LIT> =
-\        IF  10 + PATCH  ELSE  OP,  THEN ;
+    CREATE H,  DOES> ?EXEC @ OP, ;
 
 \ Target Literals
-: LITERAL  ( n -- )  ?EXEC  8 OP,  ,-T ;
+: LITERAL  ( n -- )  ?EXEC  8 OP,  , ;
 : $   BL WORD NUMBER DROP LITERAL ;
 
 \ Define Meta Branching Constructs
 : ?CONDITION  INVERT ABORT" unbalanced" ;
-: MARK      ( -- here )     ?EXEC  HERE-T  0 ?CODE ! ;
-: >MARK     ( -- f addr )   TRUE  MARK   0 C,-T ;
-: >RESOLVE  ( f addr -- )   MARK  OVER -  SWAP C!-T   ?CONDITION ;
+: MARK      ( -- here )     ?EXEC  HERE  0 ?CODE ! ;
+: >MARK     ( -- f addr )   TRUE  MARK   0 C, ;
+: >RESOLVE  ( f addr -- )   MARK  OVER -  SWAP TC!   ?CONDITION ;
 : <MARK     ( -- f addr )   TRUE  MARK ;
-: <RESOLVE  ( f addr -- )   MARK  - C,-T   ?CONDITION ;
+: <RESOLVE  ( f addr -- )   MARK  - C,   ?CONDITION ;
 
 : CONDITION  ( todo optimizer )
     58 OP, ;
@@ -193,26 +188,26 @@ VARIABLE OP  ( next opcode )
 : +LOOP     7 OP,  <RESOLVE  >RESOLVE ;
 
 \ Compile Strings into the Target
-: C"  HERE-T  [CHAR] " PARSE S,-T  0 C,-T ; \ c-style string
-: ,"  ?EXEC  [CHAR] " PARSE  DUP C,-T  S,-T  0 ?CODE ! ;
+: C"  HERE  [CHAR] " PARSE S,  0 C, ; \ c-style string
+: ,"  ?EXEC  [CHAR] " PARSE  DUP C,  S,  0 ?CODE ! ;
 
 : S"      0A OP,  ," ;
 : ."      0B OP,  ," ;
 : ABORT"  0C OP,  ," ;
 
-: ,    ,-T ;
-: C,   C,-T ;
 : \\ ;
 : { ;
 : } ;
 : forget ;
+\ : CELL+ CELL + ;
+\ : CELLS CELL * ;
 
 \ Defining Words
-: CONSTANT  TARGET-CREATE  10 OP, ALIGN   ,-T ;
-: VARIABLE  TARGET-CREATE  11 OP, ALIGN 0 ,-T ;
+: CONSTANT  TARGET-CREATE  10 OP, ALIGN   , ;
+: VARIABLE  TARGET-CREATE  11 OP, ALIGN 0 , ;
 
-: BUFFER ( n <name> -- )  ALIGN  HERE-T  SWAP ALLOT-T  CONSTANT ;
-: TAG  HERE-T  TAG DUP C,-T S,-T  CONSTANT ;
+: BUFFER ( n <name> -- )  ALIGN  HERE  SWAP ALLOT  CONSTANT ;
+: TAG  HERE  TAG DUP C, S,  CONSTANT ;
 
 : [   0 STATE-T ! ;
 : ]  -1 STATE-T ! ;

@@ -1,9 +1,12 @@
 # mcforth makefile
 
+ARCH = 32
+CELL = 4
+
 all: bootstrap
 
 CC = clang
-CFLAGS = -m32 -Wall -Werror -Ofast
+CFLAGS = -m$(ARCH) -Wall -Werror -Ofast
 
 SOURCES = src/fo.c src/misc.c src/parse.c src/file.c
 HEADERS = src/fo.h
@@ -28,7 +31,7 @@ kernel.inc: meta.f kernel.f
 	hexdump -C kernel.img > kernel.hex
 
 bootstrap:
-	gforth cross.f kernel.f -e ciao
+	gforth -e "$(CELL) CONSTANT CELL" cross.f kernel.f -e ciao
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
 	./fo extend
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
