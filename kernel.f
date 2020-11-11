@@ -537,9 +537,8 @@ CODE R0!  R = R0; NEXT
         NEW-STRING
     THEN R> R> ;
 
-\ FILE *open_on_path(char **filename, cell len);
-CODE xOPEN-ON-PATH  ( str len -- filename fid ior )
-    ` top = (cell)open_on_path((char **)S, top);
+CODE OPEN-ON-PATH  ( str len -- filename fid ior )
+    ` top = open_on_path(S, top, SOURCE);
     ` *--S = top, top = top ? 0 : -1; NEXT
 
 : INCLUDED  ( str len -- )

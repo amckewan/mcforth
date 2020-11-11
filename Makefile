@@ -36,8 +36,7 @@ bootstrap:
 	$(MAKE) test
 
 asm: $(SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) -S
-
+	$(CC) $(CFLAGS) $(INCLUDES) src/fo.c -S
 
 
 run: forth
@@ -51,6 +50,9 @@ testv: fo
 
 bench: forth
 	make -C bench
+
+checkans: forth
+	./forth /usr/share/gforth/0.7.3/test/checkans.fs -e bye
 
 clean:
 	@rm -f fo forth *.inc *.img *.hex *.s

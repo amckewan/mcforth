@@ -33,6 +33,8 @@ extern int verbose;
 #define SOURCE_CONSOLE      ((FILE*) 0)
 #define SOURCE_EVALUATE     ((FILE*)-1)
 
+#define isfile(fid)     ((ucell)(fid) + 1 >= 1u)
+
 struct source {
     cell in;            // current parsing offset (>IN)
     cell len;           // length of input buffer
@@ -68,7 +70,7 @@ cell word(cell source_va, char c, cell here_va);
 
 // file.c
 FILE *open_file(const char *str, int len, const char *mode);
-FILE *open_on_path(char **filename, cell len);
+cell open_on_path(cell *S, cell len, cell source_va);
 cell accept(cell addr_va, cell max);
 cell refill(cell source_va);
 void type(cell addr, cell len);
