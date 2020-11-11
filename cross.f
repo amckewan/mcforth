@@ -17,6 +17,7 @@ CREATE IMAGE 2000 ALLOT   IMAGE 2000 ERASE
 
 \ Support 64-bit gforth and 32-bit target
 \ CELL is 4 or 8 defined on command line
+
 CELL 1 CELLS = [IF]
 : T@     ( taddr -- n )      THERE @ ;
 : T!     ( n taddr -- )      THERE ! ;
@@ -27,9 +28,9 @@ CELL 1 CELLS = [IF]
 
 VARIABLE H
 : HERE  ( -- taddr )   H @ ;
-: ALLOT ( n -- )       HERE THERE OVER ERASE   H +! ;
-: C,    ( char -- )   HERE TC!   1 H +! ;
-: ,     ( n -- )      HERE  T!   CELL H +! ;
+: ALLOT ( n -- )       H +! ;
+: C,    ( char -- )    HERE TC!      1 H +! ;
+: ,     ( n -- )       HERE  T!   CELL H +! ;
 : S,    ( addr len -- )
    0 ?DO   COUNT C,   LOOP   DROP ;
 
@@ -63,6 +64,7 @@ variable seer
 
 : CLOSE  OUT @ CLOSE-FILE ?ERR ;
 
+\ save image
 : SAVE-IMG
     R/W CREATE-FILE ?ERR
     DUP IMAGE HERE ROT WRITE-FILE ?ERR
@@ -109,8 +111,10 @@ CREATE CONTEXT  1 H, 24 H, ( FORTH ) 24 H, ( COMPILER )
 : FORTH     1 CONTEXT ! ; FORTH
 : COMPILER  2 CONTEXT ! ;
 
+: +ORIGIN  ( n -- ta )  CELL * ;
+
 : PRUNE  ( store here and context for target )
-    HERE 8 T!  CONTEXT CELL+ 2@  1C T!  20 T! ;
+    HERE 2 +ORIGIN T!  CONTEXT CELL+ 2@  7 +ORIGIN T!  8 +ORIGIN T! ;
 
 : HASH   ( voc -- thread )  CELLS CONTEXT + ;
 
@@ -131,7 +135,7 @@ VARIABLE CSP
 
 : H. . ;
 : '-T  ' >BODY @ ;
-: HAS ( a -- )  '-T  SWAP T! ;
+: HAS ( n -- )  '-T  SWAP +ORIGIN T! ;
 
 \ Generate primatives
 : ?COMMENT  ( allow Forth comment after OP: etc. )

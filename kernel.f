@@ -7,11 +7,11 @@
 0 , 0 , 0 , 0 ,
 
 \ Variables shared with C code at fixed offsets
-08 CONSTANT H
-0C CONSTANT BASE
-10 CONSTANT STATE
-14 CONSTANT 'IN
-18 CONSTANT CONTEXT
+2 +ORIGIN CONSTANT H
+3 +ORIGIN CONSTANT BASE
+4 +ORIGIN CONSTANT STATE
+5 +ORIGIN CONSTANT 'IN
+6 +ORIGIN CONSTANT CONTEXT
 
 ``
 #define COLD M[0]
@@ -49,6 +49,7 @@ next:
 //        printf("S=[%d] %X %X %X %X ", S0-S, S[2], S[1], S[0], top);
 //        printf("H=%X\n", HERE);
 //    }
+
     switch (w = *I++) {
 
 #define push *--S = top, top =
@@ -255,7 +256,7 @@ CODE RSHIFT  top = ((ucell)*S++) >> top; NEXT
 
 CODE MOD  top = *S++ % top;  NEXT
 
-` #define LOWER(u1,u2)  ((uint32_t)(u1) < (uint32_t)(u2))
+` #define LOWER(u1,u2)  ((ucell)(u1) < (ucell)(u2))
 
 CODE WITHIN
 `   w = *S++,
@@ -270,24 +271,24 @@ CODE M*  ( n1 n2 -- d ) {
 `   NEXT }
 
 CODE UM* ( u1 u2 -- ud ) {
-`   uint64_t u1 = (uint32_t)*S;
-`   uint64_t u2 = (uint32_t)top;
+`   uint64_t u1 = (ucell)*S;
+`   uint64_t u2 = (ucell)top;
 `   uint64_t ud = u1 * u2;
 `   *S = ud ;
 `   top = ud >> 32;
 `   NEXT }
 
 CODE UM/MOD  ( ud u1 -- rem quot ) {
-`   uint64_t ud = ((uint64_t)*S << 32) | (uint32_t)S[1];
-`   uint64_t u = (uint32_t)top;
-`   uint32_t quot = ud / u;
-`   uint32_t rem = ud % u;
+`   uint64_t ud = ((uint64_t)*S << 32) | (ucell)S[1];
+`   uint64_t u = (ucell)top;
+`   ucell quot = ud / u;
+`   ucell rem = ud % u;
 `   *++S = rem;
 `   top = quot;
 `   NEXT }
 
 CODE SM/REM  ( d n -- rem quot ) {
-`   int64_t d = (((uint64_t)*S) << 32) | ((uint32_t) S[1]);
+`   int64_t d = (((uint64_t)*S) << 32) | ((ucell) S[1]);
 `   int32_t quot = d / top;
 `   int32_t rem = d % top;
 `   *++S = rem;
@@ -299,8 +300,7 @@ CODE 1-     top -= 1; NEXT
 CODE 2*     top <<= 1; NEXT
 CODE 2/     top >>= 1; NEXT
 
-CODE CELLS      top *= CELL; NEXT
-4 CONSTANT CELL
+CELL CONSTANT CELL
 : CELL+  CELL + ;
 
 CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
@@ -383,8 +383,10 @@ CODE WRITE-LINE ( a u fid -- ior )
 
 ( ********** Input source processig ********** )
 
-\ 8 entries * 32 bytes per entry
-100 BUFFER SOURCE-STACK
+\ 8 entries * 8 cells per entry
+40 CELLS BUFFER SOURCE-STACK
+
+CODE CELLS      top *= CELL; NEXT
 
 : >IN           'IN @ ;
 : SOURCE-BUF    >IN $ 2 CELLS + ;
@@ -407,7 +409,7 @@ CODE NEW-STRING top = rel(new_string(abs(*S++), top)); NEXT
 
 : >SOURCE ( filename fileid | -1 -- ) \ CR ." Including " DROP TYPE SPACE ;
     SOURCE-DEPTH $ 7 U> ABORT" nested too deep"
-    $ 20 'IN +!
+    $ 8 CELLS 'IN +!
     DUP SOURCE-FILE !
     FILE? IF  $ 80 ALLOCATE DROP SOURCE-BUF !  SOURCE-NAME !  THEN
     $ 0 SOURCE-LINE ! ;
@@ -419,7 +421,7 @@ CODE NEW-STRING top = rel(new_string(abs(*S++), top)); NEXT
         SOURCE-BUF @ FREE DROP
         SOURCE-NAME @ FREE DROP
     THEN
-    $ -20 'IN +! ;
+    $ -8 CELLS 'IN +! ;
 
 CODE REFILL ( -- f )  push refill(SOURCE); NEXT
 
@@ -428,7 +430,7 @@ CODE REFILL ( -- f )  push refill(SOURCE); NEXT
 
 \ ********** Numbers **********
 
-CODE .  ( n -- )  printf("%d ", top); pop; NEXT
+CODE .  ( n -- )  printf("%td ", top); pop; NEXT
 
 CODE -NUMBER  ( a -- a t, n f ) w = number(abs(top), --S, BASE);
 `   if (w) top = 0; else *S = top, top = -1; NEXT
@@ -464,9 +466,9 @@ CODE NAME> ( nfa -- xt )  top = name_to_xt(top); NEXT
 CODE DEPTH ( -- n )  w = S0 - S; push w; NEXT
 CODE .S ( -- )
 `       w = S0 - S;  S[-1] = top;
-`       printf("[%d] ", w);
+`       printf("[%td] ", w);
 `       for (int i = w - 2; i >= -1; i--)
-`           printf("%d (0x%x) ", S[i], S[i]);
+`           printf("%td (0x%tx) ", S[i], S[i]);
 `       NEXT
 
 CODE WORDS  ( -- )  words(M[CONTEXT + M[CONTEXT]]); NEXT
@@ -501,8 +503,8 @@ FORTH
 \ TODO: multi-op inlining
     DUP C@ $ 5F > OVER 1+ C@ 0= AND IF  C@ OP,  EXIT THEN
 
-     DUP C@ $ 10 = IF ( constant ) CELL+ @      \\ LITERAL  EXIT THEN
-     DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
+    DUP C@ $ 10 = IF ( constant ) CELL+ @      \\ LITERAL  EXIT THEN
+    DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
 
     DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN
     $ 8 OP, dA @ - , ;
@@ -529,7 +531,7 @@ CODE R0!  R = R0; NEXT
 : QUIT  R0!
     BEGIN  SOURCE-DEPTH 0> WHILE  SOURCE>  REPEAT
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
-4 HAS QUIT
+1 HAS QUIT
 
 
 : OPEN-ON-PATH  ( str len -- filename fid ior )

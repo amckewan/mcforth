@@ -136,7 +136,7 @@ int run(int argc, char *argv[]) {
 #include "prims.inc"
 
     default:
-        printf("Invalid opcode 0x%02X\n", w);
+        printf("Invalid opcode 0x%02tX\n", w);
         goto abort;
     }
 }
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (verbose > 1) {
-        printf("sizeof(source) = %u\n", sizeof(struct source));
+        printf("sizeof(source) = %tu\n", sizeof(struct source));
         printf("m = %p, argv = %p, diff = %td\n", m, argv, (byte*)argv-m);
         byte *temp = malloc(100);
         printf("m = %p, malloc = %p, diff = %td\n", m, temp, temp-m);

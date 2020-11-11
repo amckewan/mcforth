@@ -4,6 +4,8 @@
 
 VARIABLE H'  HEX 8000 ,
 
+: +ORIGIN  ( n -- ta )  CELL * ;
+
 \ ========== Save target ==========
 
 : ?ERR  ABORT" file I/O error" ;
@@ -80,7 +82,7 @@ VARIABLE OP  ( next opcode )
 
 : TAG  HERE dA @ -  TAG DUP C, S,  CONSTANT ;
 
-: HAS ( a -- )  ' dA @ -  SWAP dA @ +  ! ;
+: HAS ( a -- )  ' dA @ -  SWAP +ORIGIN dA @ +  ! ;
 
 \ ========== Target Compiler ==========
 

@@ -45,7 +45,7 @@ void show_error(const char *msg, const char *here, const struct source *source) 
     if (col == source->len) col++;
     putchar('\n');
     if (source->file != SOURCE_CONSOLE && source->file != SOURCE_EVALUATE)
-        printf("%s:%d:%d: ", abs(source->filename), source->line, col);
+        printf("%s:%td:%d: ", abs(source->filename), source->line, col);
     int n = *here++ & 31;
     while (n--) putchar(*here++);
     putchar(' ');

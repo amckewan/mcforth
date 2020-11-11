@@ -9,13 +9,11 @@
 #define STATIC_ASSERT(cond, msg) \
     typedef char static_assert_##msg[(cond)?1:-1]
 
-STATIC_ASSERT(sizeof(void*) == sizeof(int32_t), cell_is_32_bits);
+//STATIC_ASSERT(sizeof(void*) == sizeof(int32_t), cell_is_32_bits);
 
-typedef int32_t cell;
-typedef uint32_t ucell;
-typedef unsigned char uchar;
+typedef intptr_t cell;
+typedef uintptr_t ucell;
 typedef uint8_t byte;
-typedef uint8_t opcode;
 
 extern byte *const m; // forth memory
 extern int verbose;
@@ -48,7 +46,7 @@ struct source {
 };
 
 // This is assumed for the memory layout in fo.c
-STATIC_ASSERT(sizeof(struct source) == 32, source_size);
+STATIC_ASSERT(sizeof(struct source) == 8*sizeof(cell), source_size);
 
 // lib.c
 char *new_string(const char *str, int len);
