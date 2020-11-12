@@ -44,6 +44,7 @@ cell find(cell name, cell link) {
     // return xt if found, else zero
     int len = m[name];
     while (link) {
+        //printf("find len=%d link=%tX\n", len, link);
         if ((m[link + CELL] & 63) == len
               && match((char*)m + name + 1, (char*)m + link + CELL + 1, len)) {
             cell xt = aligned(link + CELL + 1 + len);
@@ -51,11 +52,13 @@ cell find(cell name, cell link) {
                 xt = *(cell *)(m + xt);
             if (m[link + CELL] & 0x40) // immediate
                 xt = -xt;
+            //printf("found xt=%tX\n", xt);
             return xt;
         }
 
         link = *(cell *)(m + link);
     }
+    //printf("not found\n");
     return 0;
 }
 

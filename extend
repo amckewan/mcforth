@@ -1,9 +1,4 @@
-0 warning !
-include lib/preamble.f
-include lib/compiler.f
-include lib/core.f
-include lib/tools.f
-include lib/see.f
+include rth
 
 \ Process command-line arguments
 \ Ignore -v and -i which are handled in C code

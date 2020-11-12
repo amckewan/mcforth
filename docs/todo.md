@@ -8,10 +8,11 @@
 
 ## Optimizing compiler
 
+* lit cond if (not working)
 * inline 1+ etc. (single lit op then exit)
 * multi-op inline (e.g. 2dup )
 * specials (e.g. dup if )
-* lit+pick
+* lit pick
 * lit lit within
 
 ## Do later (or never)

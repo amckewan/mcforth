@@ -17,7 +17,6 @@ CREATE IMAGE 2000 ALLOT   IMAGE 2000 ERASE
 
 \ Support 64-bit gforth and 32-bit target
 \ CELL is 4 or 8 defined on command line
-
 CELL 1 CELLS = [IF]
 : T@     ( taddr -- n )      THERE @ ;
 : T!     ( n taddr -- )      THERE ! ;
@@ -94,6 +93,8 @@ S" see.info" open-info
 \ **********************************************************************
 \ Compiler
 
+: +ORIGIN  ( n -- ta )  CELL * ;
+
 VARIABLE ?CODE
 : LATEST ( -- n )  ?CODE @ DUP IF TC@ ELSE INVERT THEN ;
 : PATCH  ( n -- )  ?CODE @ DUP 0= ABORT" patch?" TC! ;
@@ -107,11 +108,9 @@ VARIABLE ?CODE
 
 \ Create Headers in Target Image
 VARIABLE LAST
-CREATE CONTEXT  1 H, 24 H, ( FORTH ) 24 H, ( COMPILER )
+CREATE CONTEXT  1 H, 9 +ORIGIN ( NULL) DUP H, ( FORTH ) H, ( COMPILER )
 : FORTH     1 CONTEXT ! ; FORTH
 : COMPILER  2 CONTEXT ! ;
-
-: +ORIGIN  ( n -- ta )  CELL * ;
 
 : PRUNE  ( store here and context for target )
     HERE 2 +ORIGIN T!  CONTEXT CELL+ 2@  7 +ORIGIN T!  8 +ORIGIN T! ;

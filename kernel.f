@@ -43,12 +43,14 @@ start:
     S = S0;
     R = R0;
 next:
-//    if (verbose > 2) {
-//        printf("I=%X op=%02X ", rel(I), *I);
-//        printf("R=%X %X %X (%d) ", R[0], R[1], R[2], R0-R);
-//        printf("S=[%d] %X %X %X %X ", S0-S, S[2], S[1], S[0], top);
-//        printf("H=%X\n", HERE);
-//    }
+#if 0
+    if (verbose > -1) {
+        printf("I=%tX op=%02X ", rel(I), *I);
+        printf("R=%tX %tX %tX (%td) ", R[0], R[1], R[2], R0-R);
+        printf("S=[%td] %tX %tX %tX %tX ", S0-S, S[2], S[1], S[0], top);
+        printf("H=%tX\n", HERE);
+    }
+#endif
 
     switch (w = *I++) {
 
