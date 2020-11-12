@@ -16,10 +16,10 @@ COMPILER
 68 BINARY @     69 BINARY !
 
 \ 70-72, 78-7A not used for lit+op
-\ 73 BINARY =  \   74 BINARY <     75 BINARY >     76 BINARY U<      77 BINARY U>
+73 BINARY =     74 BINARY <     75 BINARY >     76 BINARY U<      77 BINARY U>
 
 \ do we want any of these? or just use NOT
-\ 7B BINARY <>    7C BINARY >=    7D BINARY <=   \ 7E BINARY U>=     7F BINARY U<=
+7B BINARY <>    7C BINARY >=    7D BINARY <=   \ 7E BINARY U>=     7F BINARY U<=
 
 \ 5 < if
 : NOT  ( invert last conditional op )

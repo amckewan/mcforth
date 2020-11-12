@@ -1,8 +1,4 @@
-# Source Code Organization
-
-# Implementation Internals
-
-## Memory
+# Memory
 
 A cell is 4 bytes. Becuase we need to reference addresses in a cell we must use a 32-bit compiler. TODO remove this restriction through some cleverness.
 
@@ -30,7 +26,7 @@ The first X byte of memory are used for variables at fixed offsets that are shar
 | 24        |           | NULL word to end each vocabulary
 | 30        |           | next available slot
 
-## Forth registers
+# Forth registers
 
 Register | Description
 --- | ---
@@ -40,7 +36,7 @@ R | Return-stack pointer
 top | Top of stack
 w | Current opcode, scratch register
 
-## Opcodes
+# Opcodes
 
 The opcodes are organized into 16 pages of 16 opcodes each.
 
