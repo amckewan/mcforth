@@ -39,10 +39,10 @@ asm: $(SOURCES) $(HEADERS)
 
 forth64:
 	gforth -e "8 CONSTANT CELL" cross.f kernel.f -e ciao
-	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo64x
-	./fo64x extend
-	$(CC64) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth64x
-	./forth64x meta.f kernel.f -e ciao
+	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo64
+	./fo64 extend
+	$(CC64) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth64
+	./forth64 meta.f kernel.f -e ciao
 	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo64
 	./fo64 extend
 	hexdump -C kernel.img > kernel64.hex

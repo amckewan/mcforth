@@ -502,8 +502,8 @@ COMPILER
 FORTH
 
 : INLINE?  ( xt -- n t | f ) \ count inlineable ops
-    0 SWAP BEGIN  COUNT DUP WHILE
-        $ 60 < IF  2DROP 0 EXIT  THEN
+    $ 0 SWAP BEGIN  COUNT DUP WHILE
+        $ 60 < IF  2DROP $ 0 EXIT  THEN
         SWAP 1+ SWAP
     REPEAT DROP ;
 
@@ -517,7 +517,7 @@ FORTH
     DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
 
     \ inline lit op exit (e.g. : 1+ 1 + ;)
-    DUP COUNT $ 20 $30 WITHIN SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
+    DUP COUNT $ 20 $ 30 WITHIN SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
 
     DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN
     $ 8 OP, dA @ - , ;
