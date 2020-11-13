@@ -10,3 +10,6 @@
 \ BX  POP    AX  POP    CWD    BX CX MOV    DX CX  XOR
 \ 0>=  IF    BX  IDIV    2PUSH    THEN
 \ BX  IDIV   BX DX  ADD    AX  DEC    2PUSH   END-CODE
+
+: DEFER@  >BODY @ ;
+: DEFER!  >BODY ! ;

@@ -107,7 +107,6 @@ VARIABLE ?CODE
 : EXIT  0 OP, ;
 
 \ Create Headers in Target Image
-VARIABLE LAST
 CREATE CONTEXT  1 H, 9 +ORIGIN ( NULL) DUP H, ( FORTH ) H, ( COMPILER )
 : FORTH     1 CONTEXT ! ; FORTH
 : COMPILER  2 CONTEXT ! ;
@@ -119,7 +118,7 @@ CREATE CONTEXT  1 H, 9 +ORIGIN ( NULL) DUP H, ( FORTH ) H, ( COMPILER )
 
 : HEADER   ( -- )
     ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
-    HERE LAST !  BL WORD COUNT DUP ( 80 OR)  C, S,  ALIGN ;
+    BL WORD COUNT DUP ( 80 OR)  C, S,  ALIGN ;
 
 VARIABLE STATE-T
 : ?EXEC  STATE-T @ 0= ABORT" cannot execute target word!" ;

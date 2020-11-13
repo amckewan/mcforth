@@ -101,6 +101,9 @@ OP: DOCON       push *(cell*)aligned(I); EXIT
 OP: DOVAR       push rel(aligned(I)); EXIT
 OP: DOCREATE    push rel(aligned(I)); w = *(cell*)(I - 1) >> 8;
                 ` if (w) I = abs(w); else EXIT
+OP: DOVALUE     push *(cell*)aligned(I); EXIT
+OP: DODEFER     w = *(cell*)aligned(I); I = m + w; NEXT
+
 
 20 OP! ( lit op )
 ` #define LITOP(op) top op LIT, I += CELL; NEXT
@@ -116,6 +119,7 @@ OP: ---
 
 OP: LIT@        push *(cell*)(m + LIT); I += CELL; NEXT
 OP: LIT!        *(cell*)(m + LIT) = top, pop; I += CELL; NEXT
+OP: LIT+!       *(cell*)(m + LIT) += top, pop; I += CELL; NEXT
 
 30 OP! ( lit cond : op | lit )
 \ not needed for 0= 0< etc. so this frees up 6 slots, and be careful!
@@ -188,10 +192,6 @@ OP: U<=IF    IF2((ucell)*S <= (ucell)top)
 
 60 OP! ( binary/memory ops )
 
-\ : + + ;         : - - ;         : * * ;         : / / ;
-\ : AND AND ;     : OR OR ;       : XOR XOR ;
-
-\ temporary use CODE instead of OP:
 CODE +          top += *S++; NEXT
 CODE -          top = *S++ - top; NEXT
 CODE *          top *= *S++; NEXT
@@ -203,6 +203,8 @@ OP: ---
 
 CODE @          top = *(cell *)(m + top); NEXT
 CODE !          *(cell *)(m + top) = *S; pop2; NEXT
+CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
+
 
 
 70 OP! ( conditionals )
@@ -304,8 +306,6 @@ CODE 2/     top >>= 1; NEXT
 
 CELL CONSTANT CELL
 : CELL+  CELL + ;
-
-CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
 
 CODE C@  ( a -- c )  top = m[top]; NEXT
 CODE C!  ( c a -- )  m[top] = *S; pop2; NEXT
@@ -551,7 +551,7 @@ CODE OPEN-ON-PATH  ( str len -- filename fid ior )
     ` *--S = top, top = top ? 0 : -1; NEXT
 
 : INCLUDED  ( str len -- )
-    2DUP OPEN-ON-PATH IF  2DROP CR TYPE  1 ABORT" file not found" THEN
+    2DUP OPEN-ON-PATH IF  2DROP CR TYPE  $ -1 ABORT" file not found" THEN
     >SOURCE 2DROP  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
 
 : INCLUDE  PARSE-NAME INCLUDED ;
@@ -572,27 +572,23 @@ VARIABLE WARNING
 : WARN  WARNING @ IF  >IN @  BL WORD CONTEXT @ -FIND 0= IF
     HERE COUNT TYPE ."  redefined " THEN  DROP >IN !  THEN ;
 
-VARIABLE LAST ( link )
-: CURRENT ( -- a )  CONTEXT @ CELLS CONTEXT + ;
-: REVEAL  LAST @ CURRENT ! ;
+: LAST ( -- link )  CONTEXT @ CELLS  CONTEXT + ;
+: PREVIOUS ( -- nfa count )  LAST @ CELL+  DUP C@ ;
 
-: (HEADER)  ( -- )  WARN  -OPT
-\    ALIGN  HERE  DUP LAST !  CURRENT @ ,  CURRENT !
-    ALIGN  HERE LAST !  CURRENT @ ,
-    BL WORD C@  ( DUP $ 80 OR HERE C!)  1+ ALLOT  ALIGN ;
-: HEADER  (HEADER) REVEAL ;
-
-: PREVIOUS  ( -- nfa count )  CURRENT @  CELL+ DUP C@ ;
-: SMUDGE  LAST @ IF  PREVIOUS  $ 20 XOR  SWAP C!  THEN ;
+: LAST-XT    PREVIOUS  $ 1F AND +  1+ ALIGNED ;
+: SMUDGE     PREVIOUS  $ 20 XOR  SWAP C! ;
 : IMMEDIATE  PREVIOUS  $ 40 XOR  SWAP C! ;
+
+: HEADER  ( -- )  WARN  -OPT
+    ALIGN  HERE  LAST  DUP @ ,  !
+    BL WORD C@  1+ ALLOT  ALIGN ;
 
 : CONSTANT  HEADER  $ 10 , , ;
 : VARIABLE  HEADER  $ 11 , $ 0 , ;
 
 \ | opc | I for does | data
 : CREATE  HEADER $ 12 , ;
-: DOES>   R> M -  dA @ -  $ 8 LSHIFT $ 12 OR
-          PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) ! ;
+: DOES>   R> M -  dA @ -  $ 8 LSHIFT $ 12 OR  LAST-XT ! ;
 : >BODY   CELL+ ;
 
 \ Be careful from here on...
@@ -600,12 +596,12 @@ VARIABLE LAST ( link )
 COMPILER
 : [  $ 0 STATE ! ;
 : EXIT  $ 0 OP, ;
-T: ;  \\ EXIT \\ [ REVEAL ; forget
+T: ;  \\ EXIT \\ [ SMUDGE ; forget
 : \\  $ 2 -' ABORT" ?" COMPILE, ;
 FORTH
 
 : ]  $ -1 STATE ! ;
-T: :  (HEADER) ] ;
+T: :  HEADER SMUDGE ] ;
 
 }
 PRUNE

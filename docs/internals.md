@@ -95,22 +95,40 @@ opcode | function | operands
 10 | docon| op, value
 11 | dovar | op, align, value
 12 | docreate | op, align, I for DOES>, data
-XX | dovalue | op, align, value
-XX | dodefer | op, align, xt
+13 | dovalue | op, align, value
+14 | dodefer | op, align, xt
 
 ## Page 2: Literals
 
-## Page 3: Conditionals
+Binary and memory operations followed by a literal (e.g. `5 +`)
+
+20  | 21  | 22  | 23  | 24  | 25  | 26  | 27  | 28  | 29  | 2A  | 2B  | 2C  | 2D  | 2E  | 2F
+--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
++   | -   | *   | /   | AND | OR  | XOR | --- | @   | !   | +!
+
+
+## Page 3: Literal Conditionals
+
+Conditional operands followed by a literal (e.g. `5 <`)
+
+30  | 31  | 32  | 33  | 34  | 35  | 36  | 37  |     | 38  | 39  | 3A  | 3B  | 3C  | 3D  | 3E  | 3F
+--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+0=  | 0<  | 0>  | =   | <   | >   | U<  | U>  |     | 0<> | 0>= | 0<= | <>  | >=  | <=  | U>= | U<=
 
 ## Page 4: Literal Compare and Branch
 
+Literal conditional branch (e.g. `5 < if`)
+
 ## Page 5: Branching
+
+Conditional branch (e.g. `< if`)
+
 
 ## Page 6: Binary and Memory Operations
 
-60 | 61 | 62 | 63 | 64 | 65 | 66 | 67 | 68 | 69 | 6A | 6B | 6C | 6D | 6E | 6F
+60  | 61  | 62  | 63  | 64  | 65  | 66  | 67  | 68  | 69  | 6A  | 6B  | 6C  | 6D  | 6E  | 6F
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
-+ | - | * | / | AND | OR | XOR | --- | @ | !
++   | -   | *   | /   | AND | OR  | XOR | --- | @   | !
 
 ## Page 7: Conditionals
 
@@ -118,6 +136,6 @@ XX | dodefer | op, align, xt
 73-77 are binary conditionals  
 78-7f are compliments of the first 8  
 
-60 | 61 | 62 | 63 | 64 | 65 | 66 | 67 | | 68 | 69 | 6A | 6B | 6C | 6D | 6E | 6F
+70  | 71  | 72  | 73  | 74  | 75  | 76  | 77  |     | 78  | 79  | 7A  | 7B  | 7C  | 7D  | 7E  | 7F
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
-0= | 0< | 0> | = | < | > | U< | U> | | 0<> | 0>= | 0<= | <> | >= | <= | U>= | U<=
+0=  | 0<  | 0>  | =   | <   | >   | U<  | U>  |     | 0<> | 0>= | 0<= | <>  | >=  | <=  | U>= | U<=

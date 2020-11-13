@@ -9,13 +9,14 @@ include lib/standard.f
 
 include test/tester.f
 \ VERBOSE ON
+include test/value.f
+include test/strings.f
 
 \ fm/mod fails, accept removed
 include ../forth2012-test-suite/src/core.fr
 
 \ missing stuff
 \ include ../forth2012-test-suite/src/stringtest.fth
-include test/strings.f
 
 \ gforth tests
 \ include /usr/share/gforth/0.7.3/test/

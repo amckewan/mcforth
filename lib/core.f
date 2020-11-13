@@ -115,7 +115,6 @@ VARIABLE HLD
     DUP 0 HERE ROT WRITE
     CLOSE-FILE ?IOERR ;
 
-
 ( *** more stuff *** )
 
 COMPILER
@@ -124,7 +123,7 @@ COMPILER
 FORTH
 
 COMPILER
-: RECURSE  LAST @ CELL+  COUNT 31 AND + ALIGNED  COMPILE, ;
+: RECURSE  LAST-XT COMPILE, ;
 FORTH
 : EVALUATE ( a n -- )
     -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;
@@ -136,3 +135,19 @@ FORTH
 
 : MARKER  ALIGN HERE  CONTEXT CELL+ 2@ , ,  CREATE ,
     DOES> @  DUP H !  2@ CONTEXT CELL+ 2!  FORTH ;
+
+( *** Value *** )
+
+: VALUE  HEADER  $13 , , ;
+: TO  ' >BODY ! ;
+COMPILER
+: TO  ' >BODY \\ LITERAL POSTPONE ! ;
+FORTH
+
+( *** Defer *** )
+
+: DEFER  HEADER  $14 , CELL , ( abort ) ;
+: IS  ' >BODY ! ;
+COMPILER
+: IS  \\ TO ;
+FORTH
