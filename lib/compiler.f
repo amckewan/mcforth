@@ -2,29 +2,45 @@
 
 HEX
 
-: LATEST ( -- op/-1 )   ?CODE @ DUP IF C@ ELSE INVERT THEN ;
+: LATEST ( -- op/0 )    ?CODE       @ DUP IF C@ THEN ;
+: PRIOR  ( -- op/0 )    ?CODE CELL+ @ DUP IF C@ THEN ;
 : PATCH  ( op -- )      ?CODE @ C! ;
+: UNDO   ( -- )         0 ?CODE 2@  H !  ?CODE 2! ;
+
+: LIT?  ( -- f )  ?CODE @ DUP IF  C@ 8 =  THEN ;
+: LIT@  ( -- n )  ?CODE @ 1+ @ ;
 
 : BINARY  ( op -- )
-    CREATE C,  DOES> C@  LATEST 8 =
-      IF  40 XOR PATCH  ELSE  OP,  THEN ;
+    CREATE C,  DOES> C@
+    LIT? IF  LIT@ UNDO
+        LIT? IF  LIT@ SWAP ( op n1 n2 )
+            ROT HERE !  HERE EXECUTE  ?CODE @ 1+ !
+        ELSE
+            SWAP 40 XOR OP, ,
+        THEN
+    ELSE  OP,
+    THEN ;
 
 COMPILER
 60 BINARY +     61 BINARY -     62 BINARY *     63 BINARY /
 64 BINARY AND   65 BINARY OR    66 BINARY XOR
 
-68 BINARY @     69 BINARY !
-
 \ 70-72, 78-7A not used for lit+op
 73 BINARY =     74 BINARY <     75 BINARY >     76 BINARY U<      77 BINARY U>
 
 \ do we want any of these? or just use NOT
-7B BINARY <>    7C BINARY >=    7D BINARY <=   \ 7E BINARY U>=     7F BINARY U<=
+7B BINARY <>    \ 7C BINARY >=    7D BINARY <=   \ 7E BINARY U>=     7F BINARY U<=
 
-\ 5 < if
 : NOT  ( invert last conditional op )
     LATEST  DUP 70 80 WITHIN  OVER F7 AND 33 38 WITHIN OR
     IF  8 XOR PATCH  ELSE  DROP 70 OP, ( 0= )  THEN ;
+FORTH
+
+: MEMORY  ( op -- )
+    CREATE C,  DOES> C@  LIT?
+      IF  40 XOR PATCH  ELSE  OP,  THEN ;
+COMPILER
+68 MEMORY @     69 MEMORY !
 FORTH
 
 : CONDITION ( -- )  LATEST

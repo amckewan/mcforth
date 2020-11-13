@@ -8,7 +8,6 @@
 
 ## Optimizing compiler
 
-* multi-op inline (e.g. 2dup )
 * specials (e.g. dup if )
 * lit pick
 * lit lit within
@@ -16,5 +15,4 @@
 ## Do later (or never)
 
 * improve documentation
-* build a 64-bit version
 * view source

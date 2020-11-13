@@ -108,4 +108,16 @@ XX | dodefer | op, align, xt
 
 ## Page 6: Binary and Memory Operations
 
+60 | 61 | 62 | 63 | 64 | 65 | 66 | 67 | 68 | 69 | 6A | 6B | 6C | 6D | 6E | 6F
+--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
++ | - | * | / | AND | OR | XOR | --- | @ | !
+
 ## Page 7: Conditionals
+
+70-72 are unary conditionals  
+73-77 are binary conditionals  
+78-7f are compliments of the first 8  
+
+60 | 61 | 62 | 63 | 64 | 65 | 66 | 67 | | 68 | 69 | 6A | 6B | 6C | 6D | 6E | 6F
+--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+0= | 0< | 0> | = | < | > | U< | U> | | 0<> | 0>= | 0<= | <> | >= | <= | U>= | U<=
