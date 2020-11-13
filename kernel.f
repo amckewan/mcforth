@@ -546,19 +546,13 @@ CODE R0!  R = R0; NEXT
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
 1 HAS QUIT
 
-
-: OPEN-ON-PATH  ( str len -- filename fid ior )
-    2DUP R/O OPEN-FILE DUP >R SWAP >R ( str len ior ) IF DROP ELSE
-        NEW-STRING
-    THEN R> R> ;
-
 CODE OPEN-ON-PATH  ( str len -- filename fid ior )
     ` top = open_on_path(S, top, SOURCE);
     ` *--S = top, top = top ? 0 : -1; NEXT
 
 : INCLUDED  ( str len -- )
-    OPEN-ON-PATH ABORT" file not found"
-    >SOURCE  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
+    2DUP OPEN-ON-PATH IF  2DROP CR TYPE  1 ABORT" file not found" THEN
+    >SOURCE 2DROP  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
 
 : INCLUDE  PARSE-NAME INCLUDED ;
 

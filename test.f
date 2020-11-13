@@ -1,23 +1,26 @@
 .( Hello, shall we test?) CR
 
-: x 10 0 do i . loop ;
-: y 0 10 do i . -1 +loop ;
-: z 10 10 ?do ." oops " loop ;
+\ exit on error
+: BYE CR BYE ; ' BYE 1 CELLS !
 
-: xx 3 0 do  cr 5 0 do j . i . loop loop ;
-: yy 10 0 do i . i 5 = if leave ." oops " then loop ;
-: zz 10 0 do i . i 5 = if unloop exit then loop ." oops " ;
+include lib/standard.f
 
+\ include ../forth2012-test-suite/src/prelimtest.fth
 
 include test/tester.f
 \ VERBOSE ON
-include lib/standard.f
+
+\ fm/mod fails, accept removed
 include ../forth2012-test-suite/src/core.fr
+
+\ missing stuff
+\ include ../forth2012-test-suite/src/stringtest.fth
 include test/strings.f
 
-
-
+\ gforth tests
+\ include /usr/share/gforth/0.7.3/test/
+\ include /usr/share/gforth/0.7.3/test/coretest.fs
+include /usr/share/gforth/0.7.3/test/postpone.fs
 
 decimal
 CR .( Testing finished: ) .TESTS
-
