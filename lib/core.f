@@ -2,6 +2,7 @@
 
 DECIMAL
 
+: S,  ( a n -- )  BEGIN DUP WHILE >R COUNT C, R> 1- REPEAT 2DROP ;
 : ,"        '"' PARSE  DUP C, S,  -OPT ;
 COMPILER
 : S"        $A C, ," ;
@@ -22,8 +23,9 @@ FORTH
 : 2SWAP     ROT >R ROT R> ;
 \ only with multi-op inlining
 \ or just add to compiler
-\ : 2>R       SWAP >R >R ;
-\ : 2R>       R> R> SWAP ;
+: 2>R       SWAP >R >R ;
+: 2R>       R> R> SWAP ;
+: 2R@       R> R> 2DUP >R >R SWAP ;
 
 : ENVIRONMENT?  2DROP FALSE ;
 
@@ -118,15 +120,14 @@ VARIABLE HLD
 
 ( *** more stuff *** )
 
-: :NONAME  ALIGN HERE ] ;
-
+\ : :NONAME  ALIGN HERE ] ;
 COMPILER
 : POSTPONE  2 -' IF  FIND DUP 0= ABORT" ?"
     0< IF  \\ LITERAL  [ FORTH ' COMPILE, COMPILER ] LITERAL  THEN THEN  COMPILE, ;
 FORTH
 
 COMPILER
-: RECURSE  LAST-XT COMPILE, ;
+\ : RECURSE  LAST-XT COMPILE, ;
 FORTH
 : EVALUATE ( a n -- )
     -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;

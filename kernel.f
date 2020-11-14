@@ -1,4 +1,27 @@
-\ Kernel
+\ McForth Kernel
+\
+\ Copyright (c) 2020 Andrew McKewan
+\
+\ Permission is hereby granted, free of charge, to any person obtaining a copy
+\ of this software and associated documentation files (the "Software"), to deal
+\ in the Software without restriction, including without limitation the rights
+\ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+\ copies of the Software, and to permit persons to whom the Software is
+\ furnished to do so, subject to the following conditions:
+\
+\ The above copyright notice and this permission notice shall be included in all
+\ copies or substantial portions of the Software.
+\
+\ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+\ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+\ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+\ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+\ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+\ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+\ SOFTWARE.
+
+
+\ Variables shared with C code at fixed offsets
 
 ( COLD )  0 ,  ( WARM ) 0 ,  ( H ) 0 ,  ( BASE ) #10 ,
 ( STATE ) 0 ,  ( 'IN )  0 ,
@@ -6,7 +29,6 @@
 
 0 , 0 , 0 , 0 ,
 
-\ Variables shared with C code at fixed offsets
 2 +ORIGIN CONSTANT H
 3 +ORIGIN CONSTANT BASE
 4 +ORIGIN CONSTANT STATE
@@ -565,9 +587,8 @@ TAG TAG
     TAG COUNT TYPE  QUIT ;
 0 HAS BOOT
 
-( ********** More compiler ********** )
 
-: S,  ( a n -- )  BEGIN DUP WHILE >R COUNT C, R> 1- REPEAT 2DROP ;
+( ********** Defining Words ********** )
 
 VARIABLE WARNING
 : WARN  WARNING @ IF  >IN @  BL WORD CONTEXT @ -FIND 0= IF
@@ -576,10 +597,11 @@ VARIABLE WARNING
 : LAST ( -- link )  CONTEXT @ CELLS  CONTEXT + ;
 : PREVIOUS ( -- nfa count )  LAST @ CELL+  DUP C@ ;
 
-: LAST-XT    PREVIOUS  $ 1F AND +  1+ ALIGNED ;
 : SMUDGE     PREVIOUS  $ 20 OR   SWAP C! ;
 : REVEAL     PREVIOUS  $ DF AND  SWAP C! ;
 : IMMEDIATE  PREVIOUS  $ 40 OR   SWAP C! ;
+
+VARIABLE 'RECURSE
 
 : HEADER  ( -- )  WARN  -OPT
     ALIGN  HERE  LAST  DUP @ ,  !
@@ -590,7 +612,8 @@ VARIABLE WARNING
 
 \ | opc | I for does | data
 : CREATE  HEADER $ 12 , ;
-: DOES>   R> M -  dA @ -  $ 8 LSHIFT $ 12 OR  LAST-XT ! ;
+: DOES>   R> M -  dA @ -  $ 8 LSHIFT $ 12 OR
+          PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) ! ;
 : >BODY   CELL+ ;
 
 \ Be careful from here on...
@@ -600,11 +623,9 @@ COMPILER
 : EXIT  $ 0 OP, ;
 T: ;  \\ EXIT \\ [ REVEAL ; forget
 : \\  $ 2 -' ABORT" ?" COMPILE, ;
+: RECURSE  'RECURSE @ COMPILE, ;
 FORTH
 
 : ]  $ -1 STATE ! ;
-T: :  HEADER SMUDGE ] ;
-
-}
-PRUNE
-SAVE
+: :NONAME  ALIGN HERE  DUP 'RECURSE !  ] ;
+T: :  HEADER SMUDGE  :NONAME DROP ;

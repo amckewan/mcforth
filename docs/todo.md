@@ -14,6 +14,7 @@
 
 ## Do later (or never)
 
+* locals
 * add require
 * improve documentation
 * view source
