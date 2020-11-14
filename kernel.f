@@ -258,7 +258,8 @@ CODE NEGATE  top = -top; NEXT
 CODE LSHIFT  top = *S++ << top; NEXT
 CODE RSHIFT  top = ((ucell)*S++) >> top; NEXT
 
-CODE MOD  top = *S++ % top;  NEXT
+CODE MOD   top = *S++ % top;  NEXT
+CODE UMOD  top = (ucell)*S++ % (ucell)top;  NEXT
 
 ` #define LOWER(u1,u2)  ((ucell)(u1) < (ucell)(u2))
 
@@ -576,8 +577,9 @@ VARIABLE WARNING
 : PREVIOUS ( -- nfa count )  LAST @ CELL+  DUP C@ ;
 
 : LAST-XT    PREVIOUS  $ 1F AND +  1+ ALIGNED ;
-: SMUDGE     PREVIOUS  $ 20 XOR  SWAP C! ;
-: IMMEDIATE  PREVIOUS  $ 40 XOR  SWAP C! ;
+: SMUDGE     PREVIOUS  $ 20 OR   SWAP C! ;
+: REVEAL     PREVIOUS  $ DF AND  SWAP C! ;
+: IMMEDIATE  PREVIOUS  $ 40 OR   SWAP C! ;
 
 : HEADER  ( -- )  WARN  -OPT
     ALIGN  HERE  LAST  DUP @ ,  !
@@ -596,7 +598,7 @@ VARIABLE WARNING
 COMPILER
 : [  $ 0 STATE ! ;
 : EXIT  $ 0 OP, ;
-T: ;  \\ EXIT \\ [ SMUDGE ; forget
+T: ;  \\ EXIT \\ [ REVEAL ; forget
 : \\  $ 2 -' ABORT" ?" COMPILE, ;
 FORTH
 

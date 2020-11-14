@@ -37,6 +37,7 @@ COMPILER
 : [']     ' \\ LITERAL ;
 FORTH
 
+: BLANK  BL FILL ;
 : ERASE  0 FILL ;
 : PLACE  ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;
 
@@ -116,6 +117,8 @@ VARIABLE HLD
     CLOSE-FILE ?IOERR ;
 
 ( *** more stuff *** )
+
+: :NONAME  ALIGN HERE ] ;
 
 COMPILER
 : POSTPONE  2 -' IF  FIND DUP 0= ABORT" ?"
