@@ -4,6 +4,7 @@ nav:
   - About: about.md
   - Internals: internals.md
   - Compiler: compiler.md
+  - OO: oo.md
   - Benchmarks: bench.md
   - To Do: todo.md
 

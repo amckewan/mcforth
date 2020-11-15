@@ -7,7 +7,7 @@ CC64 = clang -m64
 CFLAGS = -Wall -Werror
 CFLAGS += -Ofast
 
-SOURCES = src/fo.c src/misc.c src/parse.c src/file.c
+SOURCES = src/fo.c src/misc.c src/parse.c src/file.c src/oo.c
 HEADERS = src/fo.h
 INCLUDES = -I.
 LIBS = -lreadline
@@ -35,7 +35,8 @@ bootstrap:
 	$(MAKE) test
 
 asm: $(SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) $(INCLUDES) src/fo.c -S
+	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) src/fo.c -S
+	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) src/oo.c -S
 
 forth64:
 	gforth -e "8 CONSTANT CELL" cross.f -e ciao
@@ -51,7 +52,6 @@ forth64:
 
 asm64:
 	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) src/fo.c -S
-
 
 run: forth
 	@./forth
