@@ -26,9 +26,7 @@
 ( COLD )  0 ,  ( WARM ) 0 ,  ( H ) 0 ,  ( BASE ) #10 ,
 ( STATE ) 0 ,  ( 'IN )  0 ,
 ( NULL ) 0 , 0 , 8009 , ( NOP R>DROP EXIT )
-( CONTEXT ) 1 , 0 , 0 ,
-
-0 , 0 , 0 , 0 ,
+( CONTEXT ) 1 ,  0 ,  HERE 0 , 2001 ,  HERE SWAP ,A 2001 ,  ,A
 
 2 +ORIGIN CONSTANT H
 3 +ORIGIN CONSTANT BASE
@@ -471,13 +469,13 @@ CODE WORD  ( char -- addr )
 `   top = word(SOURCE, top, HERE); NEXT
 
 CODE FIND  ( str -- xt flag | str 0 )
-`       w = find(top, M[CONTEXT + 1]);
+`       w = find(top, M[CONTEXT + 1]); // search FORTH only
 `       if (w > 0) *--S = w, top = -1;
 `       else if (w < 0) *--S = -w, top = 1;
 `       else push 0; NEXT
 
 CODE -FIND  ( str v -- str t | xt f )
-`       w = find(*S, M[CONTEXT + top]);
+`       w = find(*S, M[CONTEXT + top]); // search v
 `       if (w) *S = w < 0 ? -w : w, top = 0;
 `       else top = -1; NEXT
 
@@ -550,7 +548,7 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
 : INTERPRET  ( -- )
     BEGIN  STATE @
-        IF  $ 2 -'
+        IF  $ 6 -'
             IF  FIND DUP
                 IF  0< IF  COMPILE,  ELSE  EXECUTE  THEN
                 ELSE  DROP NUMBER \\ LITERAL

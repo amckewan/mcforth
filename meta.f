@@ -110,6 +110,7 @@ FORTH    \ : forget   SMUDGE ;
 : $ ; IMMEDIATE
 : T: : ;
 : forget SMUDGE ;
+: ,A  dA @ - , ;
 
 HEX  8000 1000 0 FILL  8000 H' !
 { include kernel.f }

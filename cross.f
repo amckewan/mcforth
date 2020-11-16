@@ -171,9 +171,7 @@ VARIABLE OP  ( next opcode )
 : CONDITION  ( todo optimizer )
     58 OP, ;
 
-: NOT  ( invert last conditional op )  ?EXEC  LATEST 70 78 WITHIN
-0 AND
-    IF  LATEST 8 XOR PATCH  ELSE  70 OP, ( 0= )  THEN ;
+: NOT  ?EXEC  70 OP, ;
 
 : IF        CONDITION  >MARK ;
 : THEN      >RESOLVE ;
@@ -201,6 +199,8 @@ VARIABLE OP  ( next opcode )
 : { ;
 : } ;
 : forget ;
+: ,A  , ;
+
 \ : CELL+ CELL + ;
 \ : CELLS CELL * ;
 

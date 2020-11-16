@@ -55,8 +55,7 @@ cell find(cell name, cell link) {
             //printf("found xt=%tX\n", xt);
             return xt;
         }
-
-        link = *(cell *)(m + link);
+        link = AT(link);
     }
     //printf("not found\n");
     return 0;
