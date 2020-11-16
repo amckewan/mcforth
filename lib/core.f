@@ -43,12 +43,15 @@ FORTH
 : ERASE  0 FILL ;
 : PLACE  ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;
 
-\ multi-line comments
-: (   BEGIN  [CHAR] ) PARSE 2DROP
-        SOURCE-ID 1+ 2 U< IF EXIT THEN
-        SOURCE DROP  >IN @ +  1- C@ [CHAR] ) = IF EXIT THEN
-        REFILL 0= ABORT" Missing )"
-      AGAIN ; IMMEDIATE
+: S=  COMPARE 0= ;
+: /STRING  ROT OVER +  ROT ROT - ;
+: -TRAILING  ( a n -- a n' )
+    BEGIN  DUP WHILE  2DUP + 1- C@ BL = WHILE  1-  REPEAT THEN ;
+
+\ Multi-line comments, using (( ... )) so we can use () inside
+: ((    BEGIN   SOURCE  >IN @ /STRING  S" ))" SEARCH NOT
+        WHILE   2DROP  REFILL 0= ABORT" Missing ))"
+        REPEAT  SOURCE ROT - 2 + >IN !  2DROP ; IMMEDIATE
 
 ( *** more stuff *** )
 : ABS       DUP 0< IF NEGATE THEN ;
@@ -127,11 +130,6 @@ FORTH
 
 : EVALUATE ( a n -- )
     -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;
-
-: S=  COMPARE 0= ;
-: /STRING  ROT OVER +  ROT ROT - ;
-: -TRAILING  ( a n -- a n' )
-    BEGIN  DUP WHILE  2DUP + 1- C@ BL = WHILE  1-  REPEAT THEN ;
 
 : MARKER  ALIGN HERE  CONTEXT CELL+ 2@ , ,  CREATE ,
     DOES> @  DUP H !  2@ CONTEXT CELL+ 2!  FORTH ;

@@ -1,4 +1,6 @@
-# Objects
+# Classes and Objects
+
+This OO system has the following attributes:
 
 - message passing
 - `object selector` syntax
@@ -10,7 +12,7 @@ the virtual method table. Message passing requires a runtime lookup but is more 
 What would method lookup look like?
 
     xt find_method(cell methods, cell selector) {
-        cell link = methods + selector & 0x1C; // 8 threads CELLS(THREADS - 1)
+        cell link = methods + (selector & CELLS(THREADS - 1));
         while ((link = AT(link)) {
             if (AT(link + CELL) == selector) {
                 return link + 2 * CELL;
@@ -30,19 +32,17 @@ different ways. Interfaces are not required. I'll go with this.
 ## Selectors
 
 Objects just leave their address on the stack.
-This allows simple dictionary, allocated, locals, etc.
+This allows simple dictionary, allocated, locals, etc. objects.
 Selectors are active, they find and execute a method.
 So selectors have to be words and can use their PFA as the selector Id.
 
     : selector create does> send-message ;
 
-    OP: DOSEL  todo, the only difficult part is "message not understood"
-
 Selectors can be created ahead of time, or as needed when defining methods.
 
 ### Binding
 
-We can bind with a class and selector.
+We need a class and selector to bind.
 
     code -bind ( sel class -- xt f )
     : bind ( sel class -- xt ) -bind abort" message not understood" ;
@@ -63,19 +63,16 @@ This might not work with ivars (which should be early bound anyway??).
 
 Methods take an addition parameter which is the object. At the start
 of the method we need to save self and set it from the stack.
-The saving and restoring of self are compiled with m: and m; respectively.
+The saving and restoring of self are compiled with m: and ;m respectively.
 
 m: method  ( args [obj] -- )  self >r to self  ...   r> to self ;
 
 or like gforth:
 
-m:  ( -- ) ... m; overrides method
+m:  ( -- ) ... ;m overrides method
 
 The latter may be a good factorization although a bit clumsy syntatically.
-And it requires that selectors are predefined. Which may not be such a bad thing.
-If we mess with search order we need to make sure selectors go into FORTH.
-
-However it is nice in that it make things like Object::addr easy
+However it is nice in that it make things like Object::addr easier:
 
     :noname ; overrides addr
     :noname drop ; overrides init
@@ -83,6 +80,8 @@ However it is nice in that it make things like Object::addr easy
 or even
     ' nop overrides addr
     ' drop overrides init
+
+We can implement overrides for :nomame and leave the decision for :m until later.
 
 If we do this, we should pick a better name since "override" is only meaningful
 for a vtable implementation. Perhaps "implements" or "does";

@@ -546,6 +546,8 @@ FORTH
 
 CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
+: ?STACK  DEPTH 0< ABORT" stack?" ;
+
 : INTERPRET  ( -- )
     BEGIN  STATE @
         IF  $ 6 -'
@@ -555,7 +557,7 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
                 THEN
             ELSE  EXECUTE
             THEN
-        ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE  THEN
+        ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE ?STACK  THEN
         THEN
     AGAIN ;
 
