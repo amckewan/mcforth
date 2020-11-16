@@ -50,8 +50,6 @@ cell *R;
 byte *I;
 cell w;
 
-//BASE = 10;
-
 if (COLD) {
 //  if (verbose) printf("Running from %u\n", COLD);
     I = abs(COLD);
@@ -84,8 +82,7 @@ next:
 #define LOGICAL ? -1 : 0
 
 #define NEXT        goto next;
-#define AT(addr)    *(cell*)(addr)
-#define LIT         AT(I)
+#define LIT         at(I)
 #define OFFSET      *(int8_t *)I
 #define BRANCH      I += OFFSET
 #define NOBRANCH    I += 1
@@ -121,12 +118,12 @@ OP: ---
 
 10 OP! ( runtime for defining words )
 
-OP: DOCON       push AT(aligned(I)); EXIT
+OP: DOCON       push at(aligned(I)); EXIT
 OP: DOVAR       push rel(aligned(I)); EXIT
-OP: DOCREATE    push rel(aligned(I)); w = AT(I - 1) >> 8;
+OP: DOCREATE    push rel(aligned(I)); w = at(I - 1) >> 8;
                 ` if (w) I = abs(w); else EXIT
-OP: DOVALUE     push AT(aligned(I)); EXIT
-OP: DODEFER     w = AT(aligned(I)); I = m + w; NEXT
+OP: DOVALUE     push at(aligned(I)); EXIT
+OP: DODEFER     w = at(aligned(I)); I = m + w; NEXT
 
 
 20 OP! ( lit op )
@@ -141,9 +138,9 @@ OP: LITOR       top |= LIT, I += CELL; NEXT
 OP: LITXOR      top ^= LIT, I += CELL; NEXT
 OP: ---
 
-OP: LIT@        push AT(m + LIT); I += CELL; NEXT
-OP: LIT!        AT(m + LIT)  = top, pop; I += CELL; NEXT
-OP: LIT+!       AT(m + LIT) += top, pop; I += CELL; NEXT
+OP: LIT@        push AT(LIT); I += CELL; NEXT
+OP: LIT!        AT(LIT)  = top, pop; I += CELL; NEXT
+OP: LIT+!       AT(LIT) += top, pop; I += CELL; NEXT
 
 30 OP! ( lit cond : op | lit )
 \ not needed for 0= 0< etc. so this frees up 6 slots, and be careful!
@@ -336,8 +333,8 @@ CODE C@  ( a -- c )  top = m[top]; NEXT
 CODE C!  ( c a -- )  m[top] = *S; pop2; NEXT
 : COUNT  DUP 1+ SWAP C@ ;
 
-CODE 2@     *--S = AT(m + top + CELL); top = AT(m + top); NEXT
-CODE 2!     AT(m + top) = *S++; AT(m + top + CELL) = *S++; pop; NEXT
+CODE 2@     *--S = AT(top + CELL); top = AT(top); NEXT
+CODE 2!     AT(top) = *S++; AT(top + CELL) = *S++; pop; NEXT
 
 ( 16-bit fetch and store )
 ` #define W(a)  *(uint16_t *)(m + (a))

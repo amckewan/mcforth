@@ -15,6 +15,12 @@ typedef intptr_t cell;
 typedef uintptr_t ucell;
 typedef uint8_t byte;
 
+#define CELL sizeof(cell)
+#define CELLS(n) ((n) * CELL)
+#define at(a) *(cell*)(a)
+#define AT(va) at(m + (va))
+#define FETCH(va) AT(m + (va))
+
 extern byte *const m; // forth memory
 extern int verbose;
 

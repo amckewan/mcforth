@@ -118,7 +118,7 @@ CREATE CONTEXT  1 H, 6 +ORIGIN ( NULL) DUP H, ( FORTH ) H, ( COMPILER )
 
 : HEADER   ( -- )
     ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
-    BL WORD COUNT DUP ( 80 OR)  C, S,  ALIGN ;
+    BL WORD COUNT DUP  C, S,  ALIGN ;
 
 VARIABLE STATE-T
 : ?EXEC  STATE-T @ 0= ABORT" cannot execute target word!" ;

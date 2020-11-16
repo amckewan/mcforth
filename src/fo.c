@@ -40,7 +40,7 @@ int match(const char *name, const char *str, int len) {
 }
 
 cell find(cell name, cell link) {
-    //printf("find '"); typex((char*)m+name+1, m[name]); printf("'\n");
+    //printf("find '"); type(name+1, m[name]); printf("' link %tX\n", link);
     // return xt if found, else zero
     int len = m[name];
     while (link) {
