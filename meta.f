@@ -102,7 +102,7 @@ FORTH    \ : forget   SMUDGE ;
 : TRIM ( a a - a)   DUP >R  dA @ -  SWAP !  R>
    DUP CELL+  DUP C@  DF AND  SWAP C! ;
 : CLIP ( a)   DUP BEGIN  DUP SCAN  DUP WHILE  TRIM  REPEAT
-   9 +ORIGIN 8000 + XOR  dA @ -  SWAP !  DUP @  SWAP dA @ +  ! ;
+   6 +ORIGIN 8000 + XOR  dA @ -  SWAP !  DUP @  SWAP dA @ +  ! ;
 : PRUNE   { CONTEXT CELL+  DUP CLIP  CELL+ CLIP
     THERE 2 +ORIGIN 8000 + !  { EMPTY ;
 

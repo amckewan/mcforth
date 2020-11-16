@@ -20,10 +20,10 @@ The first X cells of memory are used for variables at fixed offsets that are sha
 |  3     | BASE      |
 |  4     | STATE     |
 |  5     | 'IN       | points to current input source
-|  6     | CONTEXT   | 1 (FORTH) or 2 (COMPILER)
-|  7     |           | forth vocabulary
-|  8     |           | compiler vocabulary
-|  9     |           | NULL word to end each vocabulary
+|  6-8   |           | NULL word to end each vocabulary
+|  9     | CONTEXT   | 1 (FORTH) or 2 (COMPILER)
+|  A     |           | forth vocabulary
+|  B     |           | compiler vocabulary
 |  C     |           | next available slot
 
 

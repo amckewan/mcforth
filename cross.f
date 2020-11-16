@@ -107,12 +107,12 @@ VARIABLE ?CODE
 : EXIT  0 OP, ;
 
 \ Create Headers in Target Image
-CREATE CONTEXT  1 H, 9 +ORIGIN ( NULL) DUP H, ( FORTH ) H, ( COMPILER )
+CREATE CONTEXT  1 H, 6 +ORIGIN ( NULL) DUP H, ( FORTH ) H, ( COMPILER )
 : FORTH     1 CONTEXT ! ; FORTH
 : COMPILER  2 CONTEXT ! ;
 
 : PRUNE  ( store here and context for target )
-    HERE 2 +ORIGIN T!  CONTEXT CELL+ 2@  7 +ORIGIN T!  8 +ORIGIN T! ;
+    HERE 2 +ORIGIN T!  CONTEXT CELL+ 2@  A +ORIGIN T!  B +ORIGIN T! ;
 
 : HASH   ( voc -- thread )  CELLS CONTEXT + ;
 

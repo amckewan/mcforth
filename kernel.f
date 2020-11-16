@@ -25,7 +25,8 @@
 
 ( COLD )  0 ,  ( WARM ) 0 ,  ( H ) 0 ,  ( BASE ) #10 ,
 ( STATE ) 0 ,  ( 'IN )  0 ,
-( CONTEXT ) 1 , 0 , 0 ,  ( NULL ) 0 , 0 , 8009 , ( NOP R>DROP EXIT )
+( NULL ) 0 , 0 , 8009 , ( NOP R>DROP EXIT )
+( CONTEXT ) 1 , 0 , 0 ,
 
 0 , 0 , 0 , 0 ,
 
@@ -33,7 +34,7 @@
 3 +ORIGIN CONSTANT BASE
 4 +ORIGIN CONSTANT STATE
 5 +ORIGIN CONSTANT 'IN
-6 +ORIGIN CONSTANT CONTEXT
+9 +ORIGIN CONSTANT CONTEXT
 
 ``
 #define COLD M[0]
@@ -42,7 +43,7 @@
 #define BASE M[3]
 #define STATE M[4]
 #define SOURCE M[5]
-#define CONTEXT 6
+#define CONTEXT 9
 
 cell *S, top;
 cell *R;
