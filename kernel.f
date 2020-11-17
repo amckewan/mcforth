@@ -535,6 +535,7 @@ FORTH
 
     DUP C@ $ 10 = IF ( constant ) CELL+ @      \\ LITERAL  EXIT THEN
     DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
+    DUP C@ $ 13 = IF ( value )    CELL+ dA @ - $ 28 OP, ,  EXIT THEN
 
     \ inline lit op exit (e.g. : 1+ 1 + ;)
     DUP COUNT $ 20 $ 30 WITHIN SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
