@@ -9,12 +9,23 @@ HEX
 
 : LIT?  ( -- f )  ?CODE @ DUP IF  C@ 8 =  THEN ;
 : LIT@  ( -- n )  ?CODE @ 1+ @ ;
+: LIT!  ( n -- )  ?CODE @ 1+ ! ;
+
+: UNARY  ( xt -- )
+    CREATE ,  DOES> @
+    LIT? IF  LIT@ SWAP EXECUTE LIT!  ELSE  COMPILE, THEN ;
+
+\ except for CELLS, not sure how much value these have
+' 1+    COMPILER UNARY 1+       FORTH
+' 1-    COMPILER UNARY 1-       FORTH
+' CELL+ COMPILER UNARY CELL+    FORTH
+' CELLS COMPILER UNARY CELLS    FORTH
 
 : BINARY  ( op -- )
     CREATE C,  DOES> C@
     LIT? IF  LIT@ UNDO
         LIT? IF  LIT@ SWAP ( op n1 n2 )
-            ROT HERE !  HERE EXECUTE  ?CODE @ 1+ !
+            ROT HERE !  HERE EXECUTE  LIT!
         ELSE
             SWAP 40 XOR OP, ,
         THEN
