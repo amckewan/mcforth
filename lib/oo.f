@@ -2,28 +2,33 @@
 
 forth decimal
 
+((
+Note on the "addresses" for the entities:
+    Class:      XT
+    Selector:   XT
+    Object:     first instance variable (after class pointer)
+))
+
 \ =====================================================================
 \ Class structure
 \ =====================================================================
 
 8 constant #threads \ todo use this
 
-: MFA              ;    \ method table
-: IFA    8 CELLS + ;    \ ivar vocabulary
-: DFA    9 CELLS + ;    \ datalen of named ivars
-: XFA   10 CELLS + ;    \ width of indexed ivars
-: SFA   11 CELLS + ;    \ superclass ptr field
+\ Offsets from the XT of the class
 
-12 cells constant class-size
+: MFA      CELL+   ;    \ method table
+: IFA    9 CELLS + ;    \ ivar vocabulary
+: DFA   10 CELLS + ;    \ datalen of named ivars
+: XFA   11 CELLS + ;    \ width of indexed ivars
+: SFA   12 CELLS + ;    \ superclass ptr field
+
+12 cells constant class-size ( not including xt )
 
 0 value ^class
 
-: make-object ( class <name> -- )
-    create ,  does> cell+ ;
-
 \ =====================================================================
 \ Methods are stored in an 8-way linked-list from the MFA field.
-\ Each method is identified by the PFA of the selector
 \
 \ Method Structure:
 \   0   link to previous method
@@ -34,14 +39,16 @@ forth decimal
 
 : hash  ( sel class -- sel list )  MFA over 7 cells and + ;
 
-: -bind ( sel class -- xt f )
+: bind? ( sel class -- xt f )
     hash begin @ dup while
-      2dup cell+ @ = if  2 cells +  nip false exit  then
-    repeat invert ;
+      2dup cell+ @ = if  2 cells +  swap exit  then
+    repeat ;
 
-: bind ( sel class -- xt ) -bind abort" message not understood" ;
+: bind ( sel class -- xt ) bind? not abort" message not understood" ;
 
-: send-message ( obj sel -- )  over @ bind execute ;
+: >class ( obj -- class )  cell - @ ;
+
+: send-message ( obj sel -- )  over >class bind execute ;
 
 \ =====================================================================
 \ Selectors
@@ -56,19 +63,21 @@ for early binding.
     ' print ' object bind execute
 ))
 
-: make-selector  create  does> send-message ;
+: make-selector ( -- sel )
+    \ header here $xx ,
+    create here cell -  does> cell - send-message ;
 
-make-selector print
+make-selector print @
 
-: sel? ( xt -- f )  @ ['] print @ = ;
+: sel? ( xt -- f )  @ literal = ;
 
 : selector ( -- sel )
-    >in @  bl word find if  dup sel? if  >body nip exit  then then  drop
-    >in !  make-selector here ;
+    >in @  bl word find if  dup sel? if  nip exit  then then  drop
+    >in !  make-selector ;
 
 \ The check is not really necessary, but may prevent
 \ a later "not understood" error.
-: 'sel  ( -- sel )  ' dup sel? 0= abort" not a selector" >body ;
+: 'sel  ( -- sel )  ' dup sel? 0= abort" not a selector" ;
 
 \ =====================================================================
 \ Methods
@@ -78,7 +87,7 @@ make-selector print
 
 : link,  ( var -- )  align here  over @ ,  swap ! ;
 
-: method  selector  ^class hash link,  ,  ] ;
+: method  selector  ^class MFA hash link,  ,  ] ;
 
 : enter  r>  ^self >r  >r  to ^self ;
 : exitm  r>drop  r> to ^self ;
@@ -90,50 +99,62 @@ forth
 
 \ =====================================================================
 \ Class Object
-\ =====================================================================
-
+\
 \ Object is the base class for all objects.
 \ We need to construct some of this by hand.
+\
+\ =====================================================================
 
-create Object  here class-size dup allot erase
+: make-object ( class <name> -- )
+    create  dup ,  here swap DFA @ dup allot erase
+    \ todo: initialize ivars
+    does> cell+ ;
 
-object to ^class
+: make-ivar 1 abort" todo" ;
 
-cell ^class dfa !
+: do-class  does> make-object ;
+
+create Object   do-class
+                here cell - to ^class
+                here class-size dup allot erase
 
 method init     drop ;
 method addr     ;
 method print    ." Object@" . ;
 
+: subclass  ( class <name> -- )
+    create do-class
+    here cell - to ^class
+    dup here class-size dup allot move
+    ^class SFA ! ;
 
+: class ['] object subclass ;
+
+: end-class
+    \ detach ivar dictionary
+    0 to ^class ;
+
+
+: classes 4 context ! ;
+
+((
+class point
+
+end-class
+
+class enhanced-point
+' point subclass enhanced-point
+
+))
 
 
 \ =====================================================================
 \ Testing
 \ =====================================================================
 
-
-create o Object ,
+Object o
 
 \ o print
-
-
-: subclass ( class -- )
-    create  here to ^class  class-size allot
-    dup ^class class-size move  ^class SFA !
-    ;
-
-: ;class ;
-
-: classes 4 context ! ;
-
-(( Instance variables
-
-    0 --> link (don't need use vocab link)
-
-    0 --> offset
-    0 --> class
-))
 
 : ivalign  ^class DFA dup @ aligned swap ! ;
 
@@ -155,12 +176,15 @@ create o Object ,
 
 : var  ivalign cell bytes ;
 
-object subclass point
+' object subclass point
 var x
 var y
 
-m: print ." I am a point " x ? y ? ;m
+m: print x @ 0 .r ." @" y ? ;m
 
+point p 3 , 4 ,
+
+\S
 create p point , 3 , 4 ,
 
 object subclass rect
