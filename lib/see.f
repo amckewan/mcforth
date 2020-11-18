@@ -37,6 +37,8 @@ include see.info
     dup 8 = over 20 40 within or if drop .lit exit then
     dup 40 50 within if drop .lit .branch exit then
     dup A D within if drop .slit exit then
+    dup 18 = if drop count . count . exit then
+    dup 1A 1C within if drop count . exit then
     drop ;
 
 : (see) ( xt -- )
@@ -44,7 +46,7 @@ include see.info
     begin
         dup . dup count ( a a+1 op )
         dup .b dup .op .operands cr
-        swap c@ dup 0= swap 10 20 within or
+        swap c@ dup 0= swap 10 18 within or
     until drop ;
 
 : see ' (see) ;

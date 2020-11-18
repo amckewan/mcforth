@@ -99,6 +99,17 @@ opcode | function | operands
 12 | docreate | op, align, I for DOES>, data
 13 | dovalue | op, align, value
 14 | dodefer | op, align, xt
+15 | 
+16 | 
+17 |
+18 | local{ | #locals, #params
+19 | }local |
+1A | local@ | local#
+1B | local! | local#
+1C |
+1D |
+1E |
+1F |
 
 ## Page 2: Literals
 

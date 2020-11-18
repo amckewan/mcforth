@@ -45,6 +45,7 @@
 
 cell *S, top;
 cell *R;
+cell *L;
 byte *I;
 cell w;
 
@@ -122,6 +123,23 @@ OP: DOCREATE    push rel(aligned(I)); w = at(I - 1) >> 8;
                 ` if (w) I = abs(w); else EXIT
 OP: DOVALUE     push at(aligned(I)); EXIT
 OP: DODEFER     w = at(aligned(I)); I = m + w; NEXT
+OP: ---
+OP: ---
+OP: ---
+
+\ Local frame
+\ L --> old L
+\       local#1
+\       local#2
+\       local#n
+
+OP: L{          *--R = (cell)L, L = R;
+                ` w = *I++; while (w--) *--R = 0;
+                ` w = *I++; while (w--) *--R = top, pop;
+                ` NEXT
+OP: }L          R = L + 1, L = (cell *)*L; NEXT
+OP: L@          w = *I++, push L[-w]; NEXT
+OP: L!          w = *I++, L[-w] = top, pop; NEXT
 
 
 20 OP! ( lit op )
