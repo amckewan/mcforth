@@ -65,7 +65,7 @@ start:
 next:
 #if 0
     if (verbose > -1) {
-        printf("I=%tX op=%02X ", rel(I), *I);
+        printf("I=%tX (%tX) op=%02X ", rel(I), I-(byte*)M, *I);
         printf("R=%tX %tX %tX (%td) ", R[0], R[1], R[2], R0-R);
         printf("S=[%td] %tX %tX %tX %tX ", S0-S, S[2], S[1], S[0], top);
         printf("H=%tX\n", HERE);
@@ -91,7 +91,7 @@ next:
 0 OP! ( special functions )
 
 OP: EXIT        EXIT
-OP: CALL        w = *(uint16_t *)I; *--R = (cell)I + 2; I = m + w; NEXT
+OP: CALL        w = *(uint16_t *)I; *--R = (cell)I + 2; I = (byte*)(M + w); NEXT
 OP: CALLX       w = LIT; *--R = (cell)I + CELL; I = m + w; NEXT
 OP: BRANCH      BRANCH; NEXT
 OP: DO          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
@@ -601,6 +601,7 @@ TAG TAG
 
 : BOOT
     SOURCE-STACK 'IN !
+QUIT
     ARGC $ 1 ?DO  I ARGV INCLUDED  LOOP
     TAG COUNT TYPE  QUIT ;
 0 HAS BOOT

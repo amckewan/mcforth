@@ -5,7 +5,7 @@ all: abs
 CC = clang -m32
 CC64 = clang -m64
 CFLAGS = -Wall -Werror
-CFLAGS += -Ofast
+CFLAGS += -O0
 
 SOURCES = src/fo.c src/misc.c src/parse.c src/file.c src/oo.c
 HEADERS = src/fo.h
@@ -33,6 +33,8 @@ abs:
 	gforth -e "4 CONSTANT CELL" -e "305419896 CONSTANT OFFSET" src/cross.f -e ciao
 	mv kernel.bin kernel1.bin
 	hexdump -C kernel1.bin > kernel1.hex
+	gforth src/makeimg.f
+	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
 
 
 bootstrap:

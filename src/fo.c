@@ -39,20 +39,22 @@ int match(const char *name, const char *str, int len) {
     return 1;
 }
 
-cell find(cell name, cell link) {
-    //printf("find '"); type(name+1, m[name]); printf("' link %tX\n", link);
-    // return xt if found, else zero
-    int len = m[name];
+#define relof(a)    ((cell)(a) - (cell)M)
+
+cell find(cell strx, cell link) {
+    const char *str = (const char *)strx;
+    int len = *str++;
+    //printf("find %s %X (%X)\n", str, link, relof(link));
     while (link) {
         //printf("find len=%d link=%tX\n", len, link);
-        if ((m[link + CELL] & 63) == len
-              && match((char*)m + name + 1, (char*)m + link + CELL + 1, len)) {
+        char *name = (char*)(link + CELL);
+        if ((*name & 63) == len && match(name + 1, str, len)) {
             cell xt = aligned(link + CELL + 1 + len);
-            if (m[link + CELL] & 0x80) // headless
-                xt = *(cell *)(m + xt);
-            if (m[link + CELL] & 0x40) // immediate
+            if (*name & 0x80) // headless
+                xt = *(cell *)xt;
+            if (*name & 0x40) // immediate
                 xt = -xt;
-            //printf("found xt=%tX\n", xt);
+            //printf("found xt=%tX (%tX)\n", xt, relof(xt));
             return xt;
         }
         link = AT(link);
@@ -163,8 +165,34 @@ void load_image(const char *filename) {
     fclose(f);
 }
 
+void load_and_relocate() {
+    FILE *image_bin = fopen("kernel0.bin", "r");
+    FILE *reloc_bin = fopen("reloc.bin", "r");
+    if (!image_bin || !reloc_bin) {
+        printf("can't open images\n");
+        exit(1);
+    }
+    size_t size = fread(M, 1, sizeof M, image_bin);
+    fclose(image_bin);
+    uint8_t *reloc = malloc(size);
+    fread(reloc, 1, size, reloc_bin);
+    fclose(reloc_bin);
+
+    // add M to every cell that needs relocating
+    printf("M = %p\n", M);
+    printf("relocating %tu bytes\n", size);
+    uint8_t *image = (uint8_t *)M;
+    cell offset = (cell)M;
+    for (size_t i = 0; i < size; i++) {
+        if (reloc[i]) {
+            if (verbose > 1) printf("offset %4X\n", i);
+            *(cell *)(image + i) += offset;
+        }
+    }
+}
+
 int main(int argc, char *argv[]) {
-    memcpy(m, dict, sizeof dict);
+//    memcpy(m, dict, sizeof dict);
 
     for (int i = 1; i < argc; i++) {
         char *arg = argv[i];
@@ -179,6 +207,8 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
+    load_and_relocate();
 
     if (verbose > 1) {
         printf("sizeof(source) = %tu\n", sizeof(struct source));

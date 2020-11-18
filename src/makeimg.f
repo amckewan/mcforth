@@ -1,7 +1,9 @@
 ( Create relocatable image )
 
+\ warnings off
+
 : bin1 s" kernel0.bin" ;
-: bin2 s" kernel.bin"  ;
+: bin2 s" kernel1.bin"  ;
 
 
 $2000 constant maxsize
@@ -14,6 +16,7 @@ create image2 0 , 0 ,
 : ?ERR  ABORT" file I/O error" ;
 
 : OPEN  ( -- fid ) R/O OPEN-FILE ?ERR ;
+: WRITE ( a n fid -- )  WRITE-FILE ?ERR ;
 : CLOSE ( fid -- ) CLOSE-FILE ?ERR ;
 
 : READ  ( fname len -- data len )
@@ -27,17 +30,36 @@ create image2 0 , 0 ,
 bin1 read image1 2!
 bin2 read image2 2!
 
-variable reloc
+: check-sizes
+    image1 @ image2 @ - abort" sizes differ" ;
+check-sizes
+
+image1 2@ constant size constant addr1
+image2 2@ drop constant addr2
+
+\ start simple, one byte per image byte, 1=relocate
+size allocate ?err constant reloc
+reloc size erase
+
+s" reloc.bin" w/o create-file ?err constant out
+
+variable #reloc
 : compare
-    image1 @ image2 @ - abort" sizes differ"
-    image2 2@ drop image1 2@ 0 do ( a1 a1 )
+    addr2 addr1  size 0 do
         over cell@
         over cell@ -
-        ?dup if cr ." offset " i . ." mod " i 3 and . ." diff " .  1 reloc +!  then
+        ?dup if
+            cr ." offset " i 4 .r ."  mod " i 3 and . ." diff " .
+            1 #reloc +!
+            1 i reloc + c!
+        then
 
         cell + swap cell + swap
-    cell +loop ;
+    cell +loop 2drop ;
 
 hex compare
-decimal cr image1 @ cell / . ." cells " reloc ? ." relocations" cr
+decimal cr size cell / . ." cells " #reloc ? ." relocations" cr
+
+reloc size out write
+out close
 bye
