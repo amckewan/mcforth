@@ -1,6 +1,6 @@
 # mcforth makefile
 
-all: test
+all: abs
 
 CC = clang -m32
 CC64 = clang -m64
@@ -25,6 +25,15 @@ fo: kernel.inc $(SOURCES) $(HEADERS)
 kernel.inc: src/meta.f src/kernel.f
 	./forth src/meta.f -e ciao
 	hexdump -C kernel.img > kernel.hex
+
+abs:
+	gforth -e "4 CONSTANT CELL" -e "0 CONSTANT OFFSET" src/cross.f -e ciao
+	mv kernel.bin kernel0.bin
+	hexdump -C kernel0.bin > kernel0.hex
+	gforth -e "4 CONSTANT CELL" -e "305419896 CONSTANT OFFSET" src/cross.f -e ciao
+	mv kernel.bin kernel1.bin
+	hexdump -C kernel1.bin > kernel1.hex
+
 
 bootstrap:
 	gforth -e "4 CONSTANT CELL" src/cross.f -e ciao

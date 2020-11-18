@@ -92,7 +92,7 @@ next:
 
 OP: EXIT        EXIT
 OP: CALL        w = *(uint16_t *)I; *--R = (cell)I + 2; I = m + w; NEXT
-OP: CALL32      w = LIT; *--R = (cell)I + CELL; I = m + w; NEXT
+OP: CALLX       w = LIT; *--R = (cell)I + CELL; I = m + w; NEXT
 OP: BRANCH      BRANCH; NEXT
 OP: DO          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
 OP: ?DO         if (top == *S) BRANCH;
@@ -559,7 +559,7 @@ FORTH
     DUP COUNT $ 20 $ 30 WITHIN SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
 
     DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN
-    $ 8 OP, dA @ - , ;
+    $ 2 OP, dA @ - , ;
 
 ( ********** Interpreter ********** )
 

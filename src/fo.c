@@ -7,7 +7,7 @@
 #define STACKSIZE   100
 
 static cell M[DATASIZE];
-byte * const m = (byte *)M;
+byte * const m = (byte *)0;
 
 // return stack grows down from top of memory
 cell *const R0 = M + DATASIZE;

@@ -3,6 +3,7 @@ fo
 forth
 fo64
 forth64
+*.bin
 *.inc
 *.img
 *.hex

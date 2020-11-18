@@ -1,4 +1,5 @@
 \ Cross compiler
+\ CELL and OFFSET defined on the command line
 
 warnings off
 
@@ -11,7 +12,7 @@ CREATE EOL 1 C, 0A C,
 
 \ Memory Access Words
 CREATE IMAGE 2000 ALLOT   IMAGE 2000 ERASE
-: THERE  ( taddr -- addr )   IMAGE + ;
+: THERE  ( taddr -- addr )   OFFSET - IMAGE + ;
 : TC@    ( taddr -- char )   THERE C@ ;
 : TC!    ( char taddr -- )   THERE C! ;
 
@@ -25,7 +26,7 @@ CELL 1 CELLS = [IF]
 : T!     ( n taddr -- )      THERE L! ;
 [THEN]
 
-VARIABLE H
+VARIABLE H  OFFSET H !
 : HERE  ( -- taddr )   H @ ;
 : ALLOT ( n -- )       H +! ;
 : C,    ( char -- )    HERE TC!      1 H +! ;
@@ -35,7 +36,7 @@ VARIABLE H
 
 : ALIGN  BEGIN HERE CELL 1 - AND WHILE 0 C, REPEAT ;
 
-: TDUMP  IMAGE H @ DUMP ;
+: TDUMP  IMAGE H @ OFFSET - DUMP ;
 
 \ Output to prims.inc
 : ?ERR  ABORT" file I/O error" ;
@@ -64,14 +65,14 @@ variable seer
 : CLOSE  OUT @ CLOSE-FILE ?ERR ;
 
 \ save image
-: SAVE-IMG
+: SAVE-BIN
     R/W CREATE-FILE ?ERR
-    DUP IMAGE HERE ROT WRITE-FILE ?ERR
+    DUP IMAGE HERE OFFSET - ROT WRITE-FILE ?ERR
     CLOSE-FILE ?ERR ;
 
 : SAVE-INC
     OPEN  BASE @ DECIMAL
-    HERE 0 DO
+    HERE OFFSET DO
         I THERE 10 0 DO
             COUNT 0 <# #S #> WRITE  S" ," WRITE
         LOOP DROP
@@ -79,9 +80,9 @@ variable seer
     10 +LOOP  CLOSE  BASE ! ;
 
 : SAVE  ( -- )
-    CLOSE  close-info
-    CR ." Saving " BASE @ DECIMAL HERE . BASE ! ." bytes..."
-    S" kernel.img" SAVE-IMG
+    ALIGN  CLOSE  close-info
+    CR ." Saving " BASE @ DECIMAL HERE OFFSET - . BASE ! ." bytes..."
+    S" kernel.bin" SAVE-BIN
     S" kernel.inc" SAVE-INC
     ." done" ;
 
@@ -93,15 +94,17 @@ S" see.info" open-info
 \ **********************************************************************
 \ Compiler
 
-: +ORIGIN  ( n -- ta )  CELL * ;
+: +ORIGIN  ( n -- ta )  CELL * OFFSET + ;
 
 VARIABLE ?CODE
-: LATEST ( -- n )  ?CODE @ DUP IF TC@ ELSE INVERT THEN ;
-: PATCH  ( n -- )  ?CODE @ DUP 0= ABORT" patch?" TC! ;
-: OP,  ( opcode -- )  HERE ?CODE !  C, ;
+\ : LATEST ( -- n )  ?CODE @ DUP IF TC@ ELSE INVERT THEN ;
+\ : PATCH  ( n -- )  ?CODE @ DUP 0= ABORT" patch?" TC! ;
+\ : OP,  ( opcode -- )  HERE ?CODE !  C, ;
+: OP,  ( opcode -- )  C, ;
 
 : COMPILE,  ( addr -- )
     DUP TC@ 5F >  OVER 1+ TC@ 0= AND IF  TC@ OP, EXIT  THEN
+OFFSET - CELL /
     1 OP, DUP C, 8 RSHIFT C, ( le) ;
 
 : EXIT  0 OP, ;
