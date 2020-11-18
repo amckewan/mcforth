@@ -113,6 +113,6 @@ FORTH    \ : forget   SMUDGE ;
 : ,A  dA @ - , ;
 
 HEX  8000 1000 0 FILL  8000 H' !
-{ include kernel.f }
+{ include ./kernel.f }
 PRUNE
 SAVE

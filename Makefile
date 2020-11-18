@@ -22,12 +22,12 @@ forth.inc: fo rth extend lib/*
 fo: kernel.inc $(SOURCES) $(HEADERS)
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o $@
 
-kernel.inc: meta.f kernel.f
-	./forth meta.f -e ciao
+kernel.inc: src/meta.f src/kernel.f
+	./forth src/meta.f -e ciao
 	hexdump -C kernel.img > kernel.hex
 
 bootstrap:
-	gforth -e "4 CONSTANT CELL" cross.f -e ciao
+	gforth -e "4 CONSTANT CELL" src/cross.f -e ciao
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
 	./fo extend
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
@@ -39,16 +39,16 @@ asm: $(SOURCES) $(HEADERS)
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) src/oo.c -S
 
 forth64:
-	gforth -e "8 CONSTANT CELL" cross.f -e ciao
+	gforth -e "8 CONSTANT CELL" src/cross.f -e ciao
 	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo64
 	./fo64 extend
 	$(CC64) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth64
-	./forth64 meta.f -e ciao
+	./forth64 src/meta.f -e ciao
 	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo64
 	./fo64 extend
 	hexdump -C kernel.img > kernel64.hex
 	$(CC64) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth64
-	@./forth64 test.f -e "cr bye"
+	@./forth64 test/test.f -e "cr bye"
 
 asm64:
 	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) src/fo.c -S
@@ -56,8 +56,8 @@ asm64:
 run: forth
 	@./forth
 
-test: forth test.f test/*
-	@./forth test.f -e "cr bye"
+test: forth test/*
+	@./forth test/test.f -e "cr bye"
 
 bench: forth
 	make -C bench
@@ -69,4 +69,4 @@ checkans: forth
 	./forth /usr/share/gforth/0.7.3/test/checkans.fs -e bye
 
 clean:
-	@rm -f fo* *.inc *.img *.hex *.s
+	@rm -f fo* *.inc *.img *.hex *.info *.s
