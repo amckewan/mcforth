@@ -11,15 +11,15 @@ HEX
 : LIT@  ( -- n )  ?CODE @ 1+ @ ;
 : LIT!  ( n -- )  ?CODE @ 1+ ! ;
 
-: UNARY  ( xt -- )
-    CREATE ,  DOES> @
-    LIT? IF  LIT@ SWAP EXECUTE LIT!  ELSE  COMPILE, THEN ;
+\ : UNARY  ( xt -- )
+\     CREATE ,  DOES> @
+\     LIT? IF  LIT@ SWAP EXECUTE LIT!  ELSE  COMPILE, THEN ;
 
 \ except for CELLS, not sure how much value these have
-' 1+    COMPILER UNARY 1+       FORTH
-' 1-    COMPILER UNARY 1-       FORTH
-' CELL+ COMPILER UNARY CELL+    FORTH
-' CELLS COMPILER UNARY CELLS    FORTH
+\ ' 1+    COMPILER UNARY 1+       FORTH
+\ ' 1-    COMPILER UNARY 1-       FORTH
+\ ' CELL+ COMPILER UNARY CELL+    FORTH
+\ ' CELLS COMPILER UNARY CELLS    FORTH
 
 : BINARY  ( op -- )
     CREATE C,  DOES> C@
