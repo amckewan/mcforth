@@ -63,8 +63,8 @@ start:
     S = S0;
     R = R0;
 next:
-#if 0
-    if (verbose > -1) {
+#if 1
+    if (verbose > 1) {
         printf("I=%tX (%tX) op=%02X ", rel(I), I-(byte*)M, *I);
         printf("R=%tX %tX %tX (%td) ", R[0], R[1], R[2], R0-R);
         printf("S=[%td] %tX %tX %tX %tX ", S0-S, S[2], S[1], S[0], top);
@@ -92,7 +92,7 @@ next:
 
 OP: EXIT        EXIT
 OP: CALL        w = *(uint16_t *)I; *--R = (cell)I + 2; I = (byte*)(M + w); NEXT
-OP: CALLX       w = LIT; *--R = (cell)I + CELL; I = m + w; NEXT
+OP: CALLX       w = LIT; *--R = (cell)I + CELL; I = (byte *)w; NEXT
 OP: BRANCH      BRANCH; NEXT
 OP: DO          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
 OP: ?DO         if (top == *S) BRANCH;
@@ -120,9 +120,9 @@ OP: ---
 OP: DOCON       push at(aligned(I)); EXIT
 OP: DOVAR       push rel(aligned(I)); EXIT
 OP: DOCREATE    push rel(aligned(I)); w = at(I - 1) >> 8;
-                ` if (w) I = abs(w); else EXIT
+                ` if (w) I = abs(w + (cell)M); else EXIT
 OP: DOVALUE     push at(aligned(I)); EXIT
-OP: DODEFER     w = at(aligned(I)); I = m + w; NEXT
+OP: DODEFER     w = at(aligned(I)); I = (byte*)w; NEXT
 OP: ---
 OP: ---
 OP: ---
@@ -238,9 +238,9 @@ CODE OR         top |= *S++; NEXT
 CODE XOR        top ^= *S++; NEXT
 OP: ---
 
-CODE @          top = *(cell *)(m + top); NEXT
-CODE !          *(cell *)(m + top) = *S; pop2; NEXT
-CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
+CODE @          top = at(top); NEXT
+CODE !          at(top) = *S; pop2; NEXT
+CODE +!         at(top) += *S; pop2; NEXT
 
 
 
@@ -345,22 +345,22 @@ CODE 2/     top >>= 1; NEXT
 CELL CONSTANT CELL
 : CELL+  CELL + ;
 
-CODE C@  ( a -- c )  top = m[top]; NEXT
-CODE C!  ( c a -- )  m[top] = *S; pop2; NEXT
+CODE C@  ( a -- c )  top = bat(top); NEXT
+CODE C!  ( c a -- )  bat(top) = *S; pop2; NEXT
 : COUNT  DUP 1+ SWAP C@ ;
 
 CODE 2@     *--S = AT(top + CELL); top = AT(top); NEXT
 CODE 2!     AT(top) = *S++; AT(top + CELL) = *S++; pop; NEXT
 
 ( 16-bit fetch and store )
-` #define W(a)  *(uint16_t *)(m + (a))
+` #define W(a)  *(uint16_t *)(a)
 CODE W@     top = W(top); NEXT
 CODE W!     W(top) = *S++, pop; NEXT
 
 CODE FILL  ( a u c -- )       memset(abs(S[1]), top, *S);       pop3; NEXT
 CODE MOVE  ( src dest u -- )  memmove(abs(*S), abs(S[1]), top); pop3; NEXT
 
-CODE M  push (cell)m; NEXT
+CODE M  push (cell)M; NEXT
 
 CODE KEY   ( -- char )  push getchar(); NEXT
 CODE EMIT  ( char -- )  putchar(top); pop; NEXT
@@ -513,7 +513,7 @@ CODE .S ( -- )
 
 CODE WORDS  ( -- )  words(M[CONTEXT + M[CONTEXT]]); NEXT
 CODE DUMP  ( a n -- )  dump(*S++, top, BASE); pop; NEXT
-CODE VERBOSE  push (byte *)&verbose - m; NEXT
+CODE VERBOSE  push (cell)&verbose; NEXT
 
 ( ********** Compiler ********** )
 
@@ -556,14 +556,14 @@ FORTH
     DUP C@ $ 13 = IF ( value )    CELL+ dA @ - $ 28 OP, ,  EXIT THEN
 
     \ inline lit op exit (e.g. : 1+ 1 + ;)
-    DUP COUNT $ 20 $ 30 WITHIN SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
+    \ DUP COUNT $ 20 $ 30 WITHIN SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
 
-    DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN
+    \ DUP M - $ 40000 U< IF  $ 1 OP, dA @ - CELL / W,  EXIT THEN
     $ 2 OP, dA @ - , ;
 
 ( ********** Interpreter ********** )
 
-CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
+CODE EXECUTE  *--R = (cell)I, I = (byte*)top, pop; NEXT
 
 : ?STACK  DEPTH 0< ABORT" stack?" ;
 

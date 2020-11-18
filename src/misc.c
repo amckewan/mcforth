@@ -2,10 +2,6 @@
 
 #include "fo.h"
 
-/*
- * Utilities
- */
-
 char *new_string(const char *str, int len) {
     char *cstr = malloc(len + 1);
     memcpy(cstr, str, len);
@@ -31,11 +27,11 @@ void dump(int a, int n, int base) {
         if (base == 10) printf("%4d ", a); else printf("%04X ", a);
         for (j = 0; j < 16; j++) {
             if (j % 4 == 0) putchar(' ');
-            printf("%02X ", m[a + j]);
+            printf("%02X ", bat(a + j));
         }
         putchar(' ');
         for (j = 0; j < 16; j++)
-            putchar(isprint(m[a + j]) ? m[a + j] : '.');
+            putchar(isprint(bat(a + j)) ? bat(a + j) : '.');
         putchar('\n');
     }
 }
@@ -91,9 +87,9 @@ int compare(const char *a1, int n1, const char *a2, int n2) {
 */
 
 int search(cell *sp, cell top) {
-    const char *str = (const char *)(m + sp[2]);
+    const char *str = (const char *)sp[2];
     unsigned len = sp[1];
-    const char * const pattern = (const char *)(m + sp[0]);
+    const char * const pattern = (const char *)sp[0];
     const unsigned pattern_len = top;
 
     if (pattern_len == 0) {
@@ -108,7 +104,7 @@ int search(cell *sp, cell top) {
             str = first;
             if (len < pattern_len) break; // not enough room
             if (!memcmp(str, pattern, pattern_len)) {
-                sp[2] = str - (char*)m;
+                sp[2] = (cell)str;
                 sp[1] = len;
                 top = TRUE;
                 break;

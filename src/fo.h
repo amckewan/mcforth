@@ -18,14 +18,14 @@ typedef uint8_t byte;
 #define CELL sizeof(cell)
 #define CELLS(n) ((n) * CELL)
 #define at(a) *(cell*)(a)
-#define AT(va) at(m + (va))
-#define FETCH(va) AT(m + (va))
+#define bat(a) *(byte*)(a)
+#define AT(va) at((va))
 
-extern byte *const m; // forth memory
+//extern byte *const m; // forth memory
 extern int verbose;
 
-#define abs(va)    (void *)(m + (va))
-#define rel(pa)    (cell)((byte*)(pa) - m)
+#define abs(va)    (void *)(va)
+#define rel(pa)    (cell)((byte*)(pa))
 
 #define TRUE -1
 #define FALSE 0
@@ -51,10 +51,10 @@ struct source {
     cell unused;
 };
 
-// This is assumed for the memory layout in fo.c
+// This is assumed for the memory layout in kernel.f
 STATIC_ASSERT(sizeof(struct source) == 8*sizeof(cell), source_size);
 
-// lib.c
+// misc.c
 char *new_string(const char *str, int len);
 //cell new_string(cell str_va, int len);
 void fatal(const char *msg);

@@ -7,7 +7,6 @@
 #define STACKSIZE   100
 
 static cell M[DATASIZE];
-byte * const m = (byte *)0;
 
 // return stack grows down from top of memory
 cell *const R0 = M + DATASIZE;
@@ -23,7 +22,7 @@ int verbose;
 
 
 cell name_to_xt(cell nfa) {
-    return aligned(nfa + (m[nfa] & 31) + 1);
+    return aligned(nfa + (bat(nfa) & 31) + 1);
 }
 
 cell xt_to_name(cell cfa) {
@@ -111,7 +110,7 @@ cell to_number(cell *sp, cell top, int base) {
 }
 
 void type(cell addr, cell len) {
-    while (len--) putchar(m[addr++]);
+    while (len--) putchar(bat(addr++));
 }
 
 void *dotq(void *I) {
@@ -122,16 +121,16 @@ void *dotq(void *I) {
 }
 
 void dotid(cell nfa) {
-    type(nfa + 1, m[nfa] & 31);
+    type(nfa + 1, bat(nfa) & 31);
     putchar(BL);
-    if ((m[nfa] & 0x80)) printf("%% ");
-    if ((m[nfa] & 0x20)) printf("(smudged) ");
+    if ((bat(nfa) & 0x80)) printf("%% ");
+    if ((bat(nfa) & 0x20)) printf("(smudged) ");
 }
 
 void words(cell link) {
     while (link) {
         dotid(link + CELL);
-        link = *(cell*)(m + link);
+        link = at(link);
     }
 }
 
@@ -211,10 +210,10 @@ int main(int argc, char *argv[]) {
     load_and_relocate();
 
     if (verbose > 1) {
-        printf("sizeof(source) = %tu\n", sizeof(struct source));
-        printf("m = %p, argv = %p, diff = %td\n", m, argv, (byte*)argv-m);
-        byte *temp = malloc(100);
-        printf("m = %p, malloc = %p, diff = %td\n", m, temp, temp-m);
+        // printf("sizeof(source) = %tu\n", sizeof(struct source));
+        // printf("m = %p, argv = %p, diff = %td\n", m, argv, (byte*)argv-m);
+        // byte *temp = malloc(100);
+        // printf("m = %p, malloc = %p, diff = %td\n", m, temp, temp-m);
     }
 
     return run(argc, argv);
