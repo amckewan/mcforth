@@ -33,39 +33,90 @@ static int read_bin(struct bin *bin, const char *filename) {
     cell here = *(cell*)bin->data;
     bin->origin = here - bin->size;
     bin->filename = strdup(filename);
-    printf("size = 0x%X origin = 0x%X\n", bin->size, bin->origin);
+    printf("size = %X origin = %X\n", bin->size, bin->origin);
     return 0;
 }
 
-static void compare_bin(struct bin *bin1, struct bin *bin2) {
+static void mark_bitmap(uint8_t *bitmap, int offset) {
+    int i = offset >> 3;
+    uint8_t mask = 1 << (offset & 7);
+    bitmap[i] |= mask;
+}
+
+static uint8_t *compare_bin(struct bin *bin1, struct bin *bin2) {
     uint8_t *data1 = bin1->data;
     uint8_t *data2 = bin2->data;
     cell delta = bin2->origin - bin1->origin;
     printf("delta = %tX\n", delta);
     int size = bin1->size;
+    uint8_t *bitmap = calloc(size/8+1, 1);
     int offset = 0;
+    int diffs = 0;
     while (offset < size) {
         cell diff = at(data2 + offset) - at(data1 + offset);
         if (diff) {
             // find diff same as delta in next cell bytes
-            int j = 1;
+            int j = 0;
             while (diff != delta) {
-                if (++j == CELL) break;
+                //printf("offset %X diff %tX\n", offset, diff);
+                if (++j == CELL) {
+                    printf("fail: ");
+                    printf("offset %X diff %tX\n", offset, diff);
+                    exit(-1);
+                    return 0;
+                }
                 offset++;
                 diff = at(data2 + offset) - at(data1 + offset);
             }
             printf("offset %X diff %tX\n", offset, diff);
+            mark_bitmap(bitmap, offset);
             offset += CELL;
+            diffs++;
         } else {
             offset++;
         }
     }
+    printf("%d diffs / %d bytes\n", diffs, size);
+    return bitmap;
+}
+
+void relocate_image(uint8_t *image, int size, uint8_t *bitmap, cell delta) {
+    uint8_t mask = *bitmap++;
+    int bit = 0;
+    for (int offset = 0; offset < size; offset++) {
+        if (mask & 1) {
+            at(image + offset) += delta;
+        }
+        if (++bit == 8) {
+            mask = *bitmap++;
+            bit = 0;
+        } else {
+            mask >>= 1;
+        }
+    }
+}
+
+static int write_image(const char *imgfile, struct bin *bin, uint8_t *bitmap) {
+    FILE *f = fopen(imgfile, "w");
+    fwrite(bin->data, 1, bin->size, f);
+    fwrite(bitmap, 1, bin->size/8, f);
+    fclose(f);
+    return 0;
 }
 
 int relocate(const char *binfile1, const char *binfile2, const char *imgfile) {
     struct bin bin1, bin2;
     if (read_bin(&bin1, binfile1)) return -1;
     if (read_bin(&bin2, binfile2)) return -1;
-    compare_bin(&bin1, &bin2);
+    uint8_t *bitmap = compare_bin(&bin1, &bin2);
+    if (bitmap) {
+        cell delta = bin2.origin - bin1.origin;
+        relocate_image(bin2.data, bin2.size, bitmap, -delta);
+        write_image(imgfile, &bin2, bitmap);
+    }
+    return 0;
+}
+
+int read_image(const char *imgfile) {
     return 0;
 }

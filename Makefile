@@ -28,14 +28,16 @@ kernel.inc: src/meta.f src/kernel.f
 
 abs:
 	gforth -e "4 CONSTANT CELL" -e "0 CONSTANT ORIGIN" src/cross.f -e ciao
-	mv kernel.bin kernel0.bin
-	hexdump -C kernel0.bin > kernel0.hex
-	gforth -e "4 CONSTANT CELL" -e "305419896 CONSTANT ORIGIN" src/cross.f -e ciao
 	mv kernel.bin kernel1.bin
 	hexdump -C kernel1.bin > kernel1.hex
+	gforth -e "4 CONSTANT CELL" -e "4096 CONSTANT ORIGIN" src/cross.f -e ciao
+	mv kernel.bin kernel2.bin
+	hexdump -C kernel2.bin > kernel2.hex
 	#gforth src/makeimg.f
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
 	./fo -r
+	hexdump -C kernel.img > kernel.hex
+
 
 bootstrap:
 	gforth -e "4 CONSTANT CELL" src/cross.f -e ciao
@@ -80,4 +82,4 @@ checkans: forth
 	./forth /usr/share/gforth/0.7.3/test/checkans.fs -e bye
 
 clean:
-	@rm -f fo* *.inc *.img *.hex *.info *.s
+	@rm -f fo* *.inc *.bin *.img *.hex *.info *.s

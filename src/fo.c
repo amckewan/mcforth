@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
                     if (++i < argc) load_image(argv[i]);
                     continue;
                 case 'r':
-                    return relocate("kernel0.bin", "kernel1.bin", "kernel.img");
+                    return relocate("kernel1.bin", "kernel2.bin", "kernel.img");
                     continue;
             }
         }
