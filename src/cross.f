@@ -1,5 +1,5 @@
 \ Cross compiler
-\ CELL and OFFSET defined on the command line
+\ CELL and ORIGIN defined on the command line
 
 warnings off
 
@@ -12,7 +12,7 @@ CREATE EOL 1 C, 0A C,
 
 \ Memory Access Words
 CREATE IMAGE 2000 ALLOT   IMAGE 2000 ERASE
-: THERE  ( taddr -- addr )   OFFSET - IMAGE + ;
+: THERE  ( taddr -- addr )   ORIGIN - IMAGE + ;
 : TC@    ( taddr -- char )   THERE C@ ;
 : TC!    ( char taddr -- )   THERE C! ;
 
@@ -26,7 +26,7 @@ CELL 1 CELLS = [IF]
 : T!     ( n taddr -- )      THERE L! ;
 [THEN]
 
-VARIABLE H  OFFSET H !
+VARIABLE H  ORIGIN H !
 : HERE  ( -- taddr )   H @ ;
 : ALLOT ( n -- )       H +! ;
 : C,    ( char -- )    HERE TC!      1 H +! ;
@@ -36,7 +36,7 @@ VARIABLE H  OFFSET H !
 
 : ALIGN  BEGIN HERE CELL 1 - AND WHILE 0 C, REPEAT ;
 
-: TDUMP  IMAGE H @ OFFSET - DUMP ;
+: TDUMP  IMAGE H @ ORIGIN - DUMP ;
 
 \ Output to prims.inc
 : ?ERR  ABORT" file I/O error" ;
@@ -67,12 +67,12 @@ variable seer
 \ save image
 : SAVE-BIN
     R/W CREATE-FILE ?ERR
-    DUP IMAGE HERE OFFSET - ROT WRITE-FILE ?ERR
+    DUP IMAGE HERE ORIGIN - ROT WRITE-FILE ?ERR
     CLOSE-FILE ?ERR ;
 
 : SAVE-INC
     OPEN  BASE @ DECIMAL
-    HERE OFFSET DO
+    HERE ORIGIN DO
         I THERE 10 0 DO
             COUNT 0 <# #S #> WRITE  S" ," WRITE
         LOOP DROP
@@ -80,8 +80,8 @@ variable seer
     10 +LOOP  CLOSE  BASE ! ;
 
 : SAVE  ( -- )
-    ALIGN  CLOSE  close-info
-    CR ." Saving " BASE @ DECIMAL HERE OFFSET - . BASE ! ." bytes..."
+    CLOSE  close-info
+    CR ." Saving " BASE @ DECIMAL HERE ORIGIN - . BASE ! ." bytes..."
     S" kernel.bin" SAVE-BIN
     S" kernel.inc" SAVE-INC
     ." done" ;
@@ -94,7 +94,7 @@ S" see.info" open-info
 \ **********************************************************************
 \ Compiler
 
-: +ORIGIN  ( n -- ta )  CELL * OFFSET + ;
+: +ORIGIN  ( n -- ta )  CELL * ORIGIN + ;
 
 VARIABLE ?CODE
 \ : LATEST ( -- n )  ?CODE @ DUP IF TC@ ELSE INVERT THEN ;
@@ -104,7 +104,7 @@ VARIABLE ?CODE
 
 : COMPILE,  ( addr -- )
     DUP TC@ 5F >  OVER 1+ TC@ 0= AND IF  TC@ OP, EXIT  THEN
-OFFSET - CELL /
+ORIGIN - CELL /
     1 OP, DUP C, 8 RSHIFT C, ( le) ;
 
 : EXIT  0 OP, ;
@@ -115,7 +115,7 @@ CREATE CONTEXT  1 H, 6 +ORIGIN ( NULL) DUP H, ( FORTH ) H, ( COMPILER )
 : COMPILER  2 CONTEXT ! ;
 
 : PRUNE  ( store here and context for target )
-    HERE 2 +ORIGIN T!  CONTEXT CELL+ 2@  A +ORIGIN T!  B +ORIGIN T! ;
+    ALIGN HERE 0 +ORIGIN T!  CONTEXT CELL+ 2@  A +ORIGIN T!  B +ORIGIN T! ;
 
 : HASH   ( voc -- thread )  CELLS CONTEXT + ;
 
@@ -135,8 +135,8 @@ VARIABLE CSP
    DOES>  ?EXEC  @ COMPILE, ;
 
 : H. . ;
-: '-T  ' >BODY @ ;
-: HAS ( n -- )  '-T  SWAP +ORIGIN T! ;
+: T'  ' >BODY @ ;
+: HAS ( n -- )  T' SWAP +ORIGIN T! ;
 
 \ Generate primatives
 : ?COMMENT  ( allow Forth comment after OP: etc. )

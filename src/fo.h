@@ -78,3 +78,6 @@ cell open_on_path(cell *S, cell len, cell source_va);
 cell accept(cell addr_va, cell max);
 cell refill(cell source_va);
 void type(cell addr, cell len);
+
+// image.c
+int relocate(const char *binfile1, const char *binfile2, const char *imgfile);

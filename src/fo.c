@@ -146,9 +146,9 @@ int run(int argc, char *argv[]) {
 
 // Initial dictionary
 byte dict[] = {
-#ifdef KERNEL
+#if defined KERNEL
     #include "kernel.inc"
-#else
+#elif defined FORTH
     #include "forth.inc"
 #endif
 };
@@ -193,18 +193,25 @@ void load_and_relocate() {
 int main(int argc, char *argv[]) {
 //    memcpy(m, dict, sizeof dict);
 
+    int fargc = 1;
+    char **fargv = calloc(argc, sizeof *argv);
+    fargv[0] = argv[0];
     for (int i = 1; i < argc; i++) {
         char *arg = argv[i];
         if (*arg++ == '-') {
             switch (*arg) {
                 case 'v':
                     verbose = strlen(arg);
-                    break;
+                    continue;
                 case 'i':
                     if (++i < argc) load_image(argv[i]);
-                    break;
+                    continue;
+                case 'r':
+                    return relocate("kernel0.bin", "kernel1.bin", "kernel.img");
+                    continue;
             }
         }
+        fargv[fargc++] = argv[i];
     }
 
     load_and_relocate();
@@ -216,5 +223,5 @@ int main(int argc, char *argv[]) {
         // printf("m = %p, malloc = %p, diff = %td\n", m, temp, temp-m);
     }
 
-    return run(argc, argv);
+    return run(fargc, fargv);
 }

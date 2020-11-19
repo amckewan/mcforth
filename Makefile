@@ -5,15 +5,15 @@ all: abs
 CC = clang -m32
 CC64 = clang -m64
 CFLAGS = -Wall -Werror
-CFLAGS += -O0
+CFLAGS += -O3
 
-SOURCES = src/fo.c src/misc.c src/parse.c src/file.c src/oo.c
+SOURCES = src/fo.c src/misc.c src/parse.c src/file.c src/image.c src/oo.c
 HEADERS = src/fo.h
 INCLUDES = -I.
 LIBS = -lreadline
 
 forth: forth.inc $(SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o $@
+	$(CC) -DFORTH $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o $@
 
 forth.inc: fo rth extend lib/*
 	./fo extend
@@ -27,21 +27,21 @@ kernel.inc: src/meta.f src/kernel.f
 	hexdump -C kernel.img > kernel.hex
 
 abs:
-	gforth -e "4 CONSTANT CELL" -e "0 CONSTANT OFFSET" src/cross.f -e ciao
+	gforth -e "4 CONSTANT CELL" -e "0 CONSTANT ORIGIN" src/cross.f -e ciao
 	mv kernel.bin kernel0.bin
 	hexdump -C kernel0.bin > kernel0.hex
-	gforth -e "4 CONSTANT CELL" -e "305419896 CONSTANT OFFSET" src/cross.f -e ciao
+	gforth -e "4 CONSTANT CELL" -e "305419896 CONSTANT ORIGIN" src/cross.f -e ciao
 	mv kernel.bin kernel1.bin
 	hexdump -C kernel1.bin > kernel1.hex
-	gforth src/makeimg.f
-	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
-
+	#gforth src/makeimg.f
+	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
+	./fo -r
 
 bootstrap:
 	gforth -e "4 CONSTANT CELL" src/cross.f -e ciao
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
 	./fo extend
-	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
+	$(CC) -DFORTH $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
 	rm kernel.inc
 	$(MAKE) test
 
@@ -53,12 +53,12 @@ forth64:
 	gforth -e "8 CONSTANT CELL" src/cross.f -e ciao
 	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo64
 	./fo64 extend
-	$(CC64) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth64
+	$(CC64) -DFORTH $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth64
 	./forth64 src/meta.f -e ciao
 	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo64
 	./fo64 extend
 	hexdump -C kernel.img > kernel64.hex
-	$(CC64) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth64
+	$(CC64) -DFORTH $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth64
 	@./forth64 test/test.f -e "cr bye"
 
 asm64:

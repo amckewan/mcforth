@@ -23,21 +23,21 @@
 
 \ Variables shared with C code at fixed offsets
 
-( COLD )  0 ,  ( WARM ) 0 ,  ( H ) 0 ,  ( BASE ) #10 ,
-( STATE ) 0 ,  ( 'IN )  0 ,
+( H ) 0 ,  ( COLD )  0 ,  ( WARM ) 0 ,
+( BASE ) #10 , ( STATE ) 0 ,  ( 'IN )  0 ,
 ( NULL ) 0 , 0 , 8009 , ( NOP R>DROP EXIT )
 ( CONTEXT ) 1 ,  0 ,  HERE 0 , 2001 ,  HERE SWAP ,A 2001 ,  ,A
 
-2 +ORIGIN CONSTANT H
+0 +ORIGIN CONSTANT H
 3 +ORIGIN CONSTANT BASE
 4 +ORIGIN CONSTANT STATE
 5 +ORIGIN CONSTANT 'IN
 9 +ORIGIN CONSTANT CONTEXT
 
 ``
-#define COLD M[0]
-#define WARM M[1]
-#define HERE M[2]
+#define HERE M[0]
+#define COLD M[1]
+#define WARM M[2]
 #define BASE M[3]
 #define STATE M[4]
 #define SOURCE M[5]
@@ -360,8 +360,6 @@ CODE W!     W(top) = *S++, pop; NEXT
 CODE FILL  ( a u c -- )       memset(abs(S[1]), top, *S);       pop3; NEXT
 CODE MOVE  ( src dest u -- )  memmove(abs(*S), abs(S[1]), top); pop3; NEXT
 
-CODE M  push (cell)M; NEXT
-
 CODE KEY   ( -- char )  push getchar(); NEXT
 CODE EMIT  ( char -- )  putchar(top); pop; NEXT
 CODE TYPE  ( a n -- )   type(*S, top); pop2; NEXT
@@ -585,7 +583,7 @@ CODE R0!  R = R0; NEXT
 : QUIT  R0!
     BEGIN  SOURCE-DEPTH 0> WHILE  SOURCE>  REPEAT
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
-1 HAS QUIT
+2 HAS QUIT
 
 CODE OPEN-ON-PATH  ( str len -- filename fid ior )
     ` top = open_on_path(S, top, SOURCE);
@@ -601,10 +599,10 @@ TAG TAG
 
 : BOOT
     SOURCE-STACK 'IN !
-QUIT
-    ARGC $ 1 ?DO  I ARGV INCLUDED  LOOP
+\ QUIT
+    ARGC $ 1 ?DO  I ARGV TYPE SPACE  LOOP CR
     TAG COUNT TYPE  QUIT ;
-0 HAS BOOT
+1 HAS BOOT
 
 
 ( ********** Defining Words ********** )
@@ -631,7 +629,7 @@ VARIABLE 'RECURSE
 
 \ | opc | I for does | data
 : CREATE  HEADER $ 12 , ;
-: DOES>   R> M -  dA @ -  $ 8 LSHIFT $ 12 OR
+: DOES>   R> H -  dA @ -  $ 8 LSHIFT $ 12 OR
           PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) ! ;
 : >BODY   CELL+ ;
 
