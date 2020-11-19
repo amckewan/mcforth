@@ -153,17 +153,6 @@ byte dict[] = {
 #endif
 };
 
-void load_image(const char *filename) {
-    printf("load image %s\n", filename);
-    FILE *f = fopen(filename, "r");
-    if (!f) {
-        printf("can't open image %s\n", filename);
-        return;
-    }
-    fread(M, 1, sizeof M, f);
-    fclose(f);
-}
-
 void load_and_relocate() {
     FILE *image_bin = fopen("kernel0.bin", "r");
     FILE *reloc_bin = fopen("reloc.bin", "r");
@@ -192,6 +181,7 @@ void load_and_relocate() {
 
 int main(int argc, char *argv[]) {
 //    memcpy(m, dict, sizeof dict);
+    int loaded = 0;
 
     int fargc = 1;
     char **fargv = calloc(argc, sizeof *argv);
@@ -204,17 +194,27 @@ int main(int argc, char *argv[]) {
                     verbose = strlen(arg);
                     continue;
                 case 'i':
-                    if (++i < argc) load_image(argv[i]);
+                    if (++i < argc) {
+                        loaded = load_image((uint8_t*)M, sizeof M, argv[i]);
+                    }
                     continue;
                 case 'r':
-                    return relocate("kernel1.bin", "kernel2.bin", "kernel.img");
-                    continue;
+                    if (argc < i + 3) {
+                        printf("usage?\n");
+                        return -1;
+                    }
+                    return create_image(argv[i+1], argv[i+2], argv[i+3]);
             }
         }
         fargv[fargc++] = argv[i];
     }
 
-    load_and_relocate();
+    if (!loaded) {
+        printf("no image\n");
+        return -1;
+    }
+
+    //load_and_relocate();
 
     if (verbose > 1) {
         // printf("sizeof(source) = %tu\n", sizeof(struct source));

@@ -80,4 +80,8 @@ cell refill(cell source_va);
 void type(cell addr, cell len);
 
 // image.c
-int relocate(const char *binfile1, const char *binfile2, const char *imgfile);
+int create_image(const char *binfile1, const char *binfile2, const char *imgfile);
+int load_image(uint8_t *image, int max_size, const char *imgfile);
+
+// to be:
+uint8_t *load_image2(const char *imgfile);

@@ -1,4 +1,5 @@
-// Relocate and load images
+// Create and load dictionary images
+// Copyright (c) 2020 Andrew McKewan
 
 #include "fo.h"
 
@@ -14,21 +15,29 @@ static int oops(const char *msg) {
     return -1;
 }
 
+static int file_size(FILE *f) {
+    fseek(f, 0, SEEK_END);
+    int size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    return size;
+}
+
 static int read_bin(struct bin *bin, const char *filename) {
     printf("reading %s\n", filename);
     FILE *f = fopen(filename, "r");
     if (!f) return oops("can't open it");
-    fseek(f, 0, SEEK_END);
-    bin->size = ftell(f);
+
+    bin->size = file_size(f);
     if (bin->size < 100) return oops("file too small");
     if (bin->size % CELL) printf("warning: size not aligned\n");
-    fseek(f, 0, SEEK_SET);
+
     // allocate an extra zero cell at the end to simplify compare
     bin->data = malloc(bin->size + CELL);
     at(bin->data + bin->size) = 0;
     size_t read = fread(bin->data, 1, bin->size, f);
     fclose(f);
     if (read != bin->size) return oops("read error");
+
     // we know the first cell contains "here" so we can calculate origin
     cell here = *(cell*)bin->data;
     bin->origin = here - bin->size;
@@ -80,7 +89,7 @@ static uint8_t *compare_bin(struct bin *bin1, struct bin *bin2) {
     return bitmap;
 }
 
-void relocate_image(uint8_t *image, int size, uint8_t *bitmap, cell delta) {
+static void relocate(uint8_t *image, int size, uint8_t *bitmap, cell delta) {
     uint8_t mask = *bitmap++;
     int bit = 0;
     for (int offset = 0; offset < size; offset++) {
@@ -104,19 +113,38 @@ static int write_image(const char *imgfile, struct bin *bin, uint8_t *bitmap) {
     return 0;
 }
 
-int relocate(const char *binfile1, const char *binfile2, const char *imgfile) {
+int create_image(const char *binfile1, const char *binfile2, const char *imgfile) {
     struct bin bin1, bin2;
     if (read_bin(&bin1, binfile1)) return -1;
     if (read_bin(&bin2, binfile2)) return -1;
     uint8_t *bitmap = compare_bin(&bin1, &bin2);
     if (bitmap) {
         cell delta = bin2.origin - bin1.origin;
-        relocate_image(bin2.data, bin2.size, bitmap, -delta);
+        relocate(bin2.data, bin2.size, bitmap, -delta);
         write_image(imgfile, &bin2, bitmap);
     }
     return 0;
 }
 
-int read_image(const char *imgfile) {
-    return 0;
+static int relocate_image(uint8_t *image, int bytes_read) {
+    if (bytes_read < CELL) return 0;
+    int size = at(image);
+    if (bytes_read < size + size/8) return 0;
+    uint8_t *bitmap = image + size;
+    cell delta = (cell) image;
+    relocate(image, size, bitmap, delta);
+    return size;
+}
+
+int load_image(uint8_t *image, int max_size, const char *imgfile) {
+    printf("loading %s\n", imgfile);
+    FILE *f = fopen(imgfile, "r");
+    if (!f) {
+        printf("can't open %s\n", imgfile);
+        return 0;
+    }
+    int size = fread(image, 1, max_size, f);
+    fclose(f);
+    printf("read %d bytes\n", size);
+    return relocate_image(image, size);
 }

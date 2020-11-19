@@ -35,7 +35,7 @@ abs:
 	hexdump -C kernel2.bin > kernel2.hex
 	#gforth src/makeimg.f
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
-	./fo -r
+	./fo -r kernel1.bin kernel2.bin kernel.img
 	hexdump -C kernel.img > kernel.hex
 
 
