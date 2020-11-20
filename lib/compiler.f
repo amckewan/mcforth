@@ -11,16 +11,6 @@ HEX
 : LIT@  ( -- n )  ?CODE @ 1+ @ ;
 : LIT!  ( n -- )  ?CODE @ 1+ ! ;
 
-\ : UNARY  ( xt -- )
-\     CREATE ,  DOES> @
-\     LIT? IF  LIT@ SWAP EXECUTE LIT!  ELSE  COMPILE, THEN ;
-
-\ except for CELLS, not sure how much value these have
-\ ' 1+    COMPILER UNARY 1+       FORTH
-\ ' 1-    COMPILER UNARY 1-       FORTH
-\ ' CELL+ COMPILER UNARY CELL+    FORTH
-\ ' CELLS COMPILER UNARY CELLS    FORTH
-
 : BINARY  ( op -- )
     CREATE C,  DOES> C@
     LIT? IF  LIT@ UNDO
@@ -35,6 +25,12 @@ HEX
 COMPILER
 61 BINARY +     62 BINARY -     63 BINARY *     64 BINARY /
 65 BINARY AND   66 BINARY OR    67 BINARY XOR
+
+\ : 1+     LIT? IF  LIT@ 1+    LIT!  ELSE  1    \\ LITERAL \\ +  THEN ;
+\ : 1-     LIT? IF  LIT@ 1-    LIT!  ELSE  1    \\ LITERAL \\ -  THEN ;
+\ : CELL+  LIT? IF  LIT@ CELL+ LIT!  ELSE  CELL \\ LITERAL \\ +  THEN ;
+\ : CELLS  LIT? IF  LIT@ CELLS LIT!  ELSE  CELL \\ LITERAL \\ *  THEN ;
+
 
 \ 70-72, 78-7A not used for lit+op
 73 BINARY =     74 BINARY <     75 BINARY >     76 BINARY U<      77 BINARY U>

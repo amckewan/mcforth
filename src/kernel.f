@@ -548,8 +548,20 @@ FORTH
         SWAP 1+ SWAP
     REPEAT DROP ;
 
+: xINLINE?  ( xt -- n t | f ) \ count inlineable ops
+    DUP BEGIN  COUNT DUP WHILE
+        DUP $ 60 < IF
+            $ E0 AND $ 20 = NOT IF  2DROP $ 0 EXIT  THEN
+            CELL+ DUP
+        THEN  DROP
+    REPEAT DROP 1- SWAP - $ -1 ;
+
 : INLINE ( xt n -- )
-    BEGIN  DUP WHILE  SWAP COUNT OP,  SWAP 1- REPEAT  2DROP ;
+\    BEGIN DUP WHILE  SWAP COUNT OP,  SWAP 1- REPEAT  2DROP EXIT
+
+    OVER + SWAP  BEGIN 2DUP U> WHILE
+        COUNT  DUP OP,  $ E0 AND $ 20 = ( lit ) IF  DUP @ , CELL+  THEN
+    REPEAT 2DROP ;
 
 : COMPILE,  ( xt -- )
     DUP INLINE? IF INLINE EXIT THEN
@@ -559,7 +571,7 @@ FORTH
     DUP C@ $ 13 = IF ( value )    CELL+ dA @ - $ 28 OP, ,  EXIT THEN
 
     \ inline lit op exit (e.g. : 1+ 1 + ;)
-    DUP COUNT $ 20 $ 30 WITHIN SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
+    \ DUP COUNT $ 20 $ 30 WITHIN SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
 
     DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN
     $ 2 OP, dA @ - , ;
