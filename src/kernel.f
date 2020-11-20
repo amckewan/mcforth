@@ -340,17 +340,19 @@ CODE SM/REM  ( d n -- rem quot ) {
 `   top = quot;
 `   NEXT }
 
-CODE 1+     top += 1; NEXT
-CODE 1-     top -= 1; NEXT
+\ CODE 1+     top += 1; NEXT
+\ CODE 1-     top -= 1; NEXT
+: 1+  $ 1 + ;
+: 1-  $ 1 - ;
 CODE 2*     top <<= 1; NEXT
 CODE 2/     top >>= 1; NEXT
 
 CELL CONSTANT CELL
 : CELL+  CELL + ;
 
-CODE C@  ( a -- c )  top = m[top]; NEXT
-CODE C!  ( c a -- )  m[top] = *S; pop2; NEXT
-: COUNT  DUP 1+ SWAP C@ ;
+CODE COUNT  *--S = top + 1;
+CODE C@     top = m[top]; NEXT
+CODE C!     m[top] = *S; pop2; NEXT
 
 CODE 2@     *--S = AT(top + CELL); top = AT(top); NEXT
 CODE 2!     AT(top) = *S++; AT(top + CELL) = *S++; pop; NEXT
@@ -429,7 +431,7 @@ CODE WRITE-LINE ( a u fid -- ior )
 \ 8 entries * 8 cells per entry
 40 CELLS BUFFER SOURCE-STACK
 
-CODE CELLS      top *= CELL; NEXT
+: CELLS  CELL * ;
 
 : >IN           'IN @ ;
 : SOURCE-BUF    >IN $ 2 CELLS + ;
@@ -543,22 +545,22 @@ COMPILER
 FORTH
 
 : INLINE?  ( xt -- n t | f ) \ count inlineable ops
-    $ 0 SWAP BEGIN  COUNT DUP WHILE
-        $ 60 < IF  2DROP $ 0 EXIT  THEN
-        SWAP 1+ SWAP
-    REPEAT DROP ;
-
-: xINLINE?  ( xt -- n t | f ) \ count inlineable ops
-    DUP BEGIN  COUNT DUP WHILE
-        DUP $ 60 < IF
-            $ E0 AND $ 20 = NOT IF  2DROP $ 0 EXIT  THEN
-            CELL+ DUP
-        THEN  DROP
-    REPEAT DROP 1- SWAP - $ -1 ;
+    DUP BEGIN  DUP C@ WHILE
+        COUNT $ 60 < IF  2DROP $ 0 EXIT  THEN
+    REPEAT SWAP - $ -1 ;
 
 : INLINE ( xt n -- )
-\    BEGIN DUP WHILE  SWAP COUNT OP,  SWAP 1- REPEAT  2DROP EXIT
+    OVER + SWAP BEGIN  2DUP U> WHILE  COUNT OP, REPEAT  2DROP ;
 
+: xINLINE?  ( xt -- n t | f ) \ count inlineable ops
+    DUP BEGIN  DUP C@ WHILE  COUNT
+        DUP $ 60 < IF
+                    $ E0 AND $ 20 = NOT IF  2DROP $ 0 EXIT  THEN
+            CELL+ DUP
+        THEN DROP
+    REPEAT SWAP - $ -1 ;
+
+: xINLINE ( xt n -- )
     OVER + SWAP  BEGIN 2DUP U> WHILE
         COUNT  DUP OP,  $ E0 AND $ 20 = ( lit ) IF  DUP @ , CELL+  THEN
     REPEAT 2DROP ;
@@ -571,6 +573,7 @@ FORTH
     DUP C@ $ 13 = IF ( value )    CELL+ dA @ - $ 28 OP, ,  EXIT THEN
 
     \ inline lit op exit (e.g. : 1+ 1 + ;)
+    \ doing it better in compiler.h
     \ DUP COUNT $ 20 $ 30 WITHIN SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
 
     DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN

@@ -26,10 +26,13 @@ COMPILER
 61 BINARY +     62 BINARY -     63 BINARY *     64 BINARY /
 65 BINARY AND   66 BINARY OR    67 BINARY XOR
 
-\ : 1+     LIT? IF  LIT@ 1+    LIT!  ELSE  1    \\ LITERAL \\ +  THEN ;
-\ : 1-     LIT? IF  LIT@ 1-    LIT!  ELSE  1    \\ LITERAL \\ -  THEN ;
-\ : CELL+  LIT? IF  LIT@ CELL+ LIT!  ELSE  CELL \\ LITERAL \\ +  THEN ;
-\ : CELLS  LIT? IF  LIT@ CELLS LIT!  ELSE  CELL \\ LITERAL \\ *  THEN ;
+\ todo: refactor
+: 1+     LIT? IF  LIT@ 1 +    LIT!  ELSE  1    \\ LITERAL \\ +  THEN ;
+: 1-     LIT? IF  LIT@ 1 -    LIT!  ELSE  1    \\ LITERAL \\ -  THEN ;
+: CELL+  LIT? IF  LIT@ CELL + LIT!  ELSE  CELL \\ LITERAL \\ +  THEN ;
+: CELLS  LIT? IF  LIT@ CELL * LIT!  ELSE  CELL \\ LITERAL \\ *  THEN ;
+: 2*     LIT? IF  LIT@ 2 *    LIT!  ELSE  1    \\ LITERAL \\ *  THEN ;
+: 2/     LIT? IF  LIT@ 2 /    LIT!  ELSE  2    \\ LITERAL \\ /  THEN ;
 
 
 \ 70-72, 78-7A not used for lit+op
