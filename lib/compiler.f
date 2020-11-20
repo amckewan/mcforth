@@ -7,7 +7,7 @@ HEX
 : PATCH  ( op -- )      ?CODE @ C! ;
 : UNDO   ( -- )         0 ?CODE 2@  H !  ?CODE 2! ;
 
-: LIT?  ( -- f )  ?CODE @ DUP IF  C@ 8 =  THEN ;
+: LIT?  ( -- f )  ?CODE @ DUP IF  C@ 20 =  THEN ;
 : LIT@  ( -- n )  ?CODE @ 1+ @ ;
 : LIT!  ( n -- )  ?CODE @ 1+ ! ;
 
@@ -33,8 +33,8 @@ HEX
     THEN ;
 
 COMPILER
-60 BINARY +     61 BINARY -     62 BINARY *     63 BINARY /
-64 BINARY AND   65 BINARY OR    66 BINARY XOR
+61 BINARY +     62 BINARY -     63 BINARY *     64 BINARY /
+65 BINARY AND   66 BINARY OR    67 BINARY XOR
 
 \ 70-72, 78-7A not used for lit+op
 73 BINARY =     74 BINARY <     75 BINARY >     76 BINARY U<      77 BINARY U>

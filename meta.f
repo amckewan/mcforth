@@ -71,6 +71,7 @@ VARIABLE OP  ( next opcode )
     OP @ info
     C-COMMENT  S" case 0x" WRITE  OP @ 0 <# # # #> WRITE  S" : " WRITE
     ?COMMENT ` ( copy rest of line )  1 OP +! ;
+: ---  1 OP +! ;
 
 : CODE  >IN @ HEADER >IN !  OP @ OP,  \\ EXIT  OP: ;
 

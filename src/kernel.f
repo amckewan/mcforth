@@ -104,28 +104,28 @@ OP: +LOOP       w = *R, *R += top;
                 ` if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
                 ` else BRANCH; pop; NEXT
 
-OP: LIT         push LIT; I += CELL; NEXT
+---
 OP: NOP         NEXT
 OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
 OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT }
                 ` show_error((char*)I, abs(HERE), abs(SOURCE));
                 ` goto abort;
-OP: ---
-OP: ---
-OP: ---
+---
+---
+---
 
 10 OP! ( runtime for defining words )
 
 OP: DOCON       push at(aligned(I)); EXIT
 OP: DOVAR       push rel(aligned(I)); EXIT
-OP: DOCREATE    push rel(aligned(I)); w = at(I - 1) >> 8;
+OP: DOCDOES     push rel(aligned(I)); w = at(I - 1) >> 8;
                 ` if (w) I = abs(w); else EXIT
 OP: DOVALUE     push at(aligned(I)); EXIT
 OP: DODEFER     w = at(aligned(I)); I = m + w; NEXT
-OP: ---
-OP: ---
-OP: ---
+---
+---
+---
 
 \ Local frame
 \ L --> old L
@@ -141,39 +141,44 @@ OP: }L          R = L + 1, L = (cell *)*L; NEXT
 OP: L@          w = *I++, push L[-w]; NEXT
 OP: L!          w = *I++, L[-w] = top, pop; NEXT
 
+---
+---
+---
+---
 
 20 OP! ( lit op )
-` #define LITOP(op) top op LIT, I += CELL; NEXT
 
-OP: LIT+        LITOP(+=)
+OP: LIT         push LIT,   I += CELL; NEXT
+OP: LIT+        top += LIT, I += CELL; NEXT
 OP: LIT-        top -= LIT, I += CELL; NEXT
 OP: LIT*        top *= LIT, I += CELL; NEXT
 OP: LIT/        top /= LIT, I += CELL; NEXT
 OP: LITAND      top &= LIT, I += CELL; NEXT
 OP: LITOR       top |= LIT, I += CELL; NEXT
 OP: LITXOR      top ^= LIT, I += CELL; NEXT
-OP: ---
 
 OP: LIT@        push AT(LIT); I += CELL; NEXT
 OP: LIT!        AT(LIT)  = top, pop; I += CELL; NEXT
 OP: LIT+!       AT(LIT) += top, pop; I += CELL; NEXT
 
+( 5 spare )
+
 30 OP! ( lit cond : op | lit )
 \ not needed for 0= 0< etc. so this frees up 6 slots, and be careful!
 ` #define LITCOND(cond) top = (cond) LOGICAL; I += CELL; NEXT
 
-OP: ---
-OP: ---
-OP: ---
+---
+---
+---
 OP: LIT=        LITCOND(top == LIT)
 OP: LIT<        LITCOND(top < LIT)
 OP: LIT>        LITCOND(top > LIT)
 OP: LITU<       LITCOND((ucell)top < (ucell)LIT)
 OP: LITU>       LITCOND((ucell)top > (ucell)LIT)
 
-OP: ---
-OP: ---
-OP: ---
+---
+---
+---
 OP: LIT<>       LITCOND(top != LIT)
 OP: LIT>=       LITCOND(top >= LIT)
 OP: LIT<=       LITCOND(top <= LIT)
@@ -185,18 +190,18 @@ OP: LITU<=      LITCOND((ucell)top <= (ucell)LIT)
 
 ` #define LITIF(cond) w = LIT, I += CELL; if (cond) NOBRANCH; else BRANCH; pop; NEXT
 
-OP: ---
-OP: ---
-OP: ---
+---
+---
+---
 OP: LIT=IF      LITIF(top == w)
 OP: LIT<IF      LITIF(top < w)
 OP: LIT>IF      LITIF(top > w)
 OP: LITU<IF     LITIF((ucell)top < (ucell)w)
 OP: LITU>IF     LITIF((ucell)top > (ucell)w)
 
-OP: ---
-OP: ---
-OP: ---
+---
+---
+---
 OP: LIT<>IF     LITIF(top != w)
 OP: LIT>=IF     LITIF(top >= w)
 OP: LIT<=IF     LITIF(top <= w)
@@ -229,20 +234,18 @@ OP: U<=IF    IF2((ucell)*S <= (ucell)top)
 
 60 OP! ( binary/memory ops )
 
-CODE +          top += *S++; NEXT
+---
+CODE +          top = *S++ + top; NEXT
 CODE -          top = *S++ - top; NEXT
-CODE *          top *= *S++; NEXT
+CODE *          top = *S++ * top; NEXT
 CODE /          top = *S++ / top; NEXT
-CODE AND        top &= *S++; NEXT
-CODE OR         top |= *S++; NEXT
-CODE XOR        top ^= *S++; NEXT
-OP: ---
+CODE AND        top = *S++ & top; NEXT
+CODE OR         top = *S++ | top; NEXT
+CODE XOR        top = *S++ ^ top; NEXT
 
 CODE @          top = *(cell *)(m + top); NEXT
 CODE !          *(cell *)(m + top) = *S; pop2; NEXT
 CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
-
-
 
 70 OP! ( conditionals )
 
@@ -536,7 +539,7 @@ CODE ALIGNED  top = aligned(top); NEXT
 : OP, ( opc -- )  ?CODE @ HERE ?CODE 2!  C, ;
 
 COMPILER
-: LITERAL  $ 8 OP, , ;
+: LITERAL  $ 20 OP, , ;
 FORTH
 
 : INLINE?  ( xt -- n t | f ) \ count inlineable ops
@@ -559,7 +562,7 @@ FORTH
     DUP COUNT $ 20 $ 30 WITHIN SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
 
     DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN
-    $ 8 OP, dA @ - , ;
+    $ 2 OP, dA @ - , ;
 
 ( ********** Interpreter ********** )
 

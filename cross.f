@@ -143,13 +143,14 @@ VARIABLE OP  ( next opcode )
     OP @ info
     C-COMMENT  S" case 0x" WRITE  OP @ 0 <# # # #> WRITE  S" : " WRITE
     ?COMMENT ` ( copy rest of line )  1 OP +! ;
+: ---  1 OP +! ;
 
 : (PRIM)   OP @ C,  EXIT  OP: ;
 : PRIM   >IN @ HEADER        >IN ! (PRIM) ;  ( in target only )
 : CODE   >IN @ TARGET-CREATE >IN ! (PRIM) ;  ( in host and target)
 
 \ Target Literals
-: LITERAL  ( n -- )  ?EXEC  8 C,  , ;
+: LITERAL  ( n -- )  ?EXEC  20 C,  , ;
 : $   BL WORD NUMBER DROP LITERAL ;
 
 \ Define Meta Branching Constructs
