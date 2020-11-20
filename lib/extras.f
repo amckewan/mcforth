@@ -1,9 +1,19 @@
 ( useful extras )
 
-\ Multi-line comments, using (( ... )) so we can use () inside
-: ((    BEGIN   SOURCE  >IN @ /STRING  S" ))" SEARCH NOT
-        WHILE   2DROP  REFILL 0= ABORT" Missing ))"
-        REPEAT  SOURCE ROT - 2 + >IN !  2DROP ;
+: COMMENT  CHAR
+    BEGIN  DUP DUP PARSE + C@ -
+    WHILE  REFILL 0= ABORT" comment?"
+    REPEAT DROP ;
+
+comment * this is a test *
+comment *
+this is also a test*
+comment ~
+this
+is
+typical
+~
+\ comment ~ missing delimiter fails...
 
 ( copied from standard )
 : [ELSE] ( -- )
