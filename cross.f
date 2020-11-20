@@ -209,7 +209,7 @@ VARIABLE OP  ( next opcode )
 : ;   ?CSP EXIT [ ;
 : :   TARGET-CREATE !CSP ] ;_
 
-include kernel.f
+include src/kernel.f
 
 PRUNE
 SAVE
