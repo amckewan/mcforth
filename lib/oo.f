@@ -93,7 +93,7 @@ forth
 \ 0 --> offset
 \ 1 --> class (or 0)
 \
-\ Instance variables are immediate words
+\ Instance variables are compiler words
 \ =====================================================================
 
 : classes 4 context ! ;

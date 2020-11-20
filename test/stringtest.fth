@@ -109,7 +109,7 @@ T{ S11 S12  COMPARE -> 1 }T
 T{ S12 S11  COMPARE -> -1 }T
 
 \ ------------------------------------------------------------------------------
-[DEFINED] CMOVE [IF]
+DEFINED CMOVE [IF]
 TESTING CMOVE and CMOVE>
 
 PAD 30 CHARS 0 FILL
@@ -152,7 +152,7 @@ T{ PAD 5 CHARS + 6 BLANK -> }T
 T{ PAD 12 S13 COMPARE -> 0 }T
 
 \ ------------------------------------------------------------------------------
-[DEFINED] SLITERAL [IF]
+DEFINED SLITERAL [IF]
 TESTING SLITERAL
 
 T{ HERE DUP S1 DUP ALLOT ROT SWAP MOVE S1 SWAP DROP 2CONSTANT S1A -> }T
@@ -162,7 +162,7 @@ T{ S1A DROP S14 DROP = -> FALSE }T
 [THEN]
 
 \ ------------------------------------------------------------------------------
-[DEFINED] UNESCAPE [IF]
+DEFINED UNESCAPE [IF]
 TESTING UNESCAPE
 
 CREATE SUBBUF 48 CHARS ALLOT

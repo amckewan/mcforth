@@ -70,15 +70,15 @@
 \     REFILL and SOURCE-ID from the user input device which are not possible
 \     when testing from a file such as this one
 \     UNUSED (partially tested) as the value returned is system dependent
-\     Obsolescent words #TIB CONVERT EXPECT QUERY SPAN TIB as they have been
+\     Obsolescent words #TIB CONVERT EXPECT QUERY SPAN TIB as they DEFINED been
 \     removed from the Forth 2012 standard
 
-\ Results from words that output to the user output device have to visually
+\ Results from words that output to the user output device DEFINED to visually
 \ checked for correctness. These are .R U.R .(
 
 \ -----------------------------------------------------------------------------
 \ Assumptions & dependencies:
-\     - tester.fr (or ttester.fs), errorreport.fth and utilities.fth have been
+\     - tester.fr (or ttester.fs), errorreport.fth and utilities.fth DEFINED been
 \       included prior to this file
 \     - the Core word set available
 \ -----------------------------------------------------------------------------
@@ -141,7 +141,7 @@ T{ 1 2 3 NIP -> 1 3 }T
 T{ 1 2 TUCK -> 2 1 2 }T
 T{ 1 2 3 TUCK -> 1 3 2 3 }T
 
-HAVE ROLL [IF]
+DEFINED ROLL [IF]
 T{ : RO5 100 200 300 400 500 ; -> }T
 T{ RO5 3 ROLL -> 100 300 400 500 200 }T
 T{ RO5 2 ROLL -> RO5 ROT }T
@@ -154,7 +154,7 @@ T{ RO5 0 PICK -> RO5 DUP }T
 [THEN]
 
 \ -----------------------------------------------------------------------------
-HAVE 2>R [IF]
+DEFINED 2>R [IF]
 TESTING 2>R 2R@ 2R>   (contributed by James Bowman)
 
 T{ : RR0 2>R 100 R> R> ; -> }T
@@ -309,7 +309,7 @@ T{ MAX-INT MAX-INT 1 WITHIN -> TRUE }T
 T{ MAX-INT MAX-INT MAX-INT WITHIN -> FALSE }T
 
 \ -----------------------------------------------------------------------------
-HAVE UNUSED [IF]
+DEFINED UNUSED [IF]
 TESTING UNUSED  (contributed by James Bowman & Peter Knaggs)
 
 VARIABLE UNUSED0
@@ -401,7 +401,7 @@ T{ -1  2  1 QD6 -> 2 3 4 5 6 7 6 }T
 T{  2 -1  1 QD6 -> -1 0 1 3 }T
 
 \ -----------------------------------------------------------------------------
-HAVE BBFFER: [IF]
+DEFINED BBFFER: [IF]
 TESTING BUFFER:
 
 T{ 8 BUFFER: BUF:TEST -> }T
@@ -429,7 +429,7 @@ T{ 123 VALUE VAL3 IMMEDIATE VAL3 -> 123 }T
 T{ : VD3 VAL3 LITERAL ; VD3 -> 123 }T
 
 \ -----------------------------------------------------------------------------
-HAVE CASE [IF]
+DEFINED CASE [IF]
 TESTING CASE OF ENDOF ENDCASE
 
 : CS1 CASE 1 OF 111 ENDOF
@@ -504,7 +504,7 @@ T{ :NONAME ( n -- 0,1,..n ) DUP IF DUP >R 1- RECURSE R> THEN ;
 T{ 0 RN1 EXECUTE -> 0 }T
 T{ 4 RN1 EXECUTE -> 0 1 2 3 4 }T
 
-HAVE CASE [IF]
+DEFINED CASE [IF]
 :NONAME  ( n -- n1 )    \ Multiple RECURSEs in one definition
    1- DUP
    CASE 0 OF EXIT ENDOF
@@ -522,7 +522,7 @@ T{ 25 RN2 EXECUTE -> 33 22 11 0 }T
 [THEN]
 
 \ -----------------------------------------------------------------------------
-HAVE C" [IF]
+DEFINED C" [IF]
 TESTING C"
 
 T{ : CQ1 C" 123" ; -> }T
@@ -542,7 +542,7 @@ T{ 123 AS1 -> 246 }T
 
 \ -----------------------------------------------------------------------------
 \ Cannot automatically test SAVE-INPUT and RESTORE-INPUT from a console source
-HAVE SAVE-INPUT [IF]
+DEFINED SAVE-INPUT [IF]
 TESTING SAVE-INPUT and RESTORE-INPUT with a string source
 
 VARIABLE SI_INC 0 SI_INC !
@@ -734,7 +734,7 @@ TESTING S\"  (Forth 2012 compilation mode)
 \ Note this tests the Core Ext definition of S\" which has unedfined
 \ interpretation semantics. S\" in interpretation mode is tested in the tests on
 \ the File-Access word set
-HAVE S\" [IF]
+DEFINED S\" [IF]
 T{ : SSQ1 S\" abc" S" abc" S= ; -> }T  \ No escapes
 T{ SSQ1 -> TRUE }T
 T{ : SSQ2 S\" " ; SSQ2 SWAP DROP -> 0 }T    \ Empty string

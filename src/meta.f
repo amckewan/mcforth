@@ -107,7 +107,7 @@ FORTH    \ : forget   SMUDGE ;
     THERE 2 +ORIGIN 8000 + !  { EMPTY ;
 
 \ for compatibility with cross.fs
-: $ ; IMMEDIATE
+COMPILER : $ ; FORTH
 : T: : ;
 : forget SMUDGE ;
 : ,A  dA @ - , ;

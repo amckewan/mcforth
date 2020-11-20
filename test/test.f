@@ -1,12 +1,13 @@
-.( Hello, shall we test?) CR
-
 \ exit on error
 : BYE CR BYE ; ' BYE 1 CELLS !
 
-include lib/standard.f
+include lib/core.f
+include lib/coreext.f
 
 include test/tester.f
 VERBOSE ON
+: FAILED \\ \ ; ( to mark tests that fail )
+
 include test/core.fr
 include test/coreexttest.fth
 include test/coreplustest.fth

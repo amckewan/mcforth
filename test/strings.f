@@ -1,6 +1,6 @@
 TESTING STRINGS
 
-[DEFINED] /STRING [IF]
+DEFINED /STRING [IF]
 { s" abcdef" nip -> 6 }
 { s" abcdef" 2 /string nip -> 4 }
 { s" abcdef" -2 /string nip -> 8 }

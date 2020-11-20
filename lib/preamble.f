@@ -1,17 +1,20 @@
-: \         SOURCE >IN ! DROP ; IMMEDIATE
-: (         ')' PARSE 2DROP ; IMMEDIATE
-: .(        ')' PARSE TYPE  ; IMMEDIATE
-
-( ***** Preamble ***** )
-
-5 5 + BASE !
-: DECIMAL   10 BASE ! ;
-: HEX       16 BASE ! ;  HEX
-
 : FORTH     1 CONTEXT ! ;
 : COMPILER  2 CONTEXT ! ;
 
-: <MARK     HERE  0 ?CODE ! ;
+COMPILER
+: \         SOURCE >IN ! DROP ;
+: (         ')' PARSE 2DROP ;
+FORTH
+: \         \\ \ ;
+: (         \\ ( ;
+
+( This is enough to load the compiler, yet keep it optional. )
+
+5 5 + BASE !
+: DECIMAL   10 BASE ! ;
+: HEX       16 BASE ! ;
+
+: <MARK     HERE  -OPT ;
 : <RESOLVE  <MARK  - C, ;
 : >MARK     <MARK  0 C, ;
 : >RESOLVE  <MARK  OVER -  SWAP C! ;

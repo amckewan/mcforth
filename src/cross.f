@@ -2,7 +2,7 @@
 
 warnings off
 
-: TAG S" cross forth" ;
+: TAG S" cross" ;
 
 HEX
 
@@ -95,16 +95,11 @@ S" see.info" open-info
 
 : +ORIGIN  ( n -- ta )  CELL * ;
 
-VARIABLE ?CODE
-: LATEST ( -- n )  ?CODE @ DUP IF TC@ ELSE INVERT THEN ;
-: PATCH  ( n -- )  ?CODE @ DUP 0= ABORT" patch?" TC! ;
-: OP,  ( opcode -- )  HERE ?CODE !  C, ;
-
 : COMPILE,  ( addr -- )
-    DUP TC@ 5F >  OVER 1+ TC@ 0= AND IF  TC@ OP, EXIT  THEN
-    1 OP, DUP C, 8 RSHIFT C, ( le) ;
+    DUP TC@ 5F >  OVER 1+ TC@ 0= AND IF  TC@ C, EXIT  THEN
+    1 C, DUP C, 8 RSHIFT C, ( le) ;
 
-: EXIT  0 OP, ;
+: EXIT  0 C, ;
 
 \ Create Headers in Target Image
 CREATE CONTEXT  1 H, 6 +ORIGIN ( NULL) DUP H, ( FORTH ) H, ( COMPILER )
@@ -149,51 +144,45 @@ VARIABLE OP  ( next opcode )
     C-COMMENT  S" case 0x" WRITE  OP @ 0 <# # # #> WRITE  S" : " WRITE
     ?COMMENT ` ( copy rest of line )  1 OP +! ;
 
-: (PRIM)   OP @ OP,  EXIT  OP: ;
+: (PRIM)   OP @ C,  EXIT  OP: ;
 : PRIM   >IN @ HEADER        >IN ! (PRIM) ;  ( in target only )
 : CODE   >IN @ TARGET-CREATE >IN ! (PRIM) ;  ( in host and target)
 
-: BINARY  ( op -- )
-    CREATE H,  DOES> ?EXEC @ OP, ;
-
 \ Target Literals
-: LITERAL  ( n -- )  ?EXEC  8 OP,  , ;
+: LITERAL  ( n -- )  ?EXEC  8 C,  , ;
 : $   BL WORD NUMBER DROP LITERAL ;
 
 \ Define Meta Branching Constructs
 : ?CONDITION  INVERT ABORT" unbalanced" ;
-: MARK      ( -- here )     ?EXEC  HERE  0 ?CODE ! ;
+: MARK      ( -- here )     ?EXEC  HERE  ;
 : >MARK     ( -- f addr )   TRUE  MARK   0 C, ;
 : >RESOLVE  ( f addr -- )   MARK  OVER -  SWAP TC!   ?CONDITION ;
 : <MARK     ( -- f addr )   TRUE  MARK ;
 : <RESOLVE  ( f addr -- )   MARK  - C,   ?CONDITION ;
 
-: CONDITION  ( todo optimizer )
-    58 OP, ;
+: NOT  ?EXEC  70 C, ;
 
-: NOT  ?EXEC  70 OP, ;
-
-: IF        CONDITION  >MARK ;
+: IF        58 C,  >MARK ;
 : THEN      >RESOLVE ;
-: ELSE      3 OP,  >MARK  2SWAP >RESOLVE ;
+: ELSE      3 C,  >MARK  2SWAP >RESOLVE ;
 : BEGIN     <MARK ;
-: UNTIL     CONDITION  <RESOLVE ;
-: AGAIN     3 OP,  <RESOLVE ;
+: UNTIL     58 C,  <RESOLVE ;
+: AGAIN     3 C,  <RESOLVE ;
 : WHILE     IF  2SWAP ;
 : REPEAT    AGAIN  THEN ;
 
-: DO        4 OP,  >MARK  <MARK ;
-: ?DO       5 OP,  >MARK  <MARK ;
-: LOOP      6 OP,  <RESOLVE  >RESOLVE ;
-: +LOOP     7 OP,  <RESOLVE  >RESOLVE ;
+: DO        4 C,  >MARK  <MARK ;
+: ?DO       5 C,  >MARK  <MARK ;
+: LOOP      6 C,  <RESOLVE  >RESOLVE ;
+: +LOOP     7 C,  <RESOLVE  >RESOLVE ;
 
 \ Compile Strings into the Target
-: C"  HERE  [CHAR] " PARSE S,  0 C, ; \ c-style string
-: ,"  ?EXEC  [CHAR] " PARSE  DUP C,  S,  0 ?CODE ! ;
+: C"   HERE  [CHAR] " PARSE S, 0 C, ; \ c-style string
+: ,"         [CHAR] " PARSE DUP C, S, ;
 
-: S"      0A OP,  ," ;
-: ."      0B OP,  ," ;
-: ABORT"  0C OP,  ," ;
+: S"      A C,  ," ;
+: ."      B C,  ," ;
+: ABORT"  C C,  ," ;
 
 : \\ ;
 : { ;
@@ -205,8 +194,8 @@ VARIABLE OP  ( next opcode )
 \ : CELLS CELL * ;
 
 \ Defining Words
-: CONSTANT  TARGET-CREATE  10 OP, ALIGN   , ;
-: VARIABLE  TARGET-CREATE  11 OP, ALIGN 0 , ;
+: CONSTANT  TARGET-CREATE  10 C, ALIGN   , ;
+: VARIABLE  TARGET-CREATE  11 C, ALIGN 0 , ;
 
 : BUFFER ( n <name> -- )  ALIGN  HERE  SWAP ALLOT  CONSTANT ;
 : TAG  HERE  TAG DUP C, S,  CONSTANT ;
@@ -214,11 +203,11 @@ VARIABLE OP  ( next opcode )
 : [   0 STATE-T ! ;
 : ]  -1 STATE-T ! ;
 
-: T:  HEADER   0 ?CODE !  ] ;  \ to create words with no host header
+: T:  HEADER  ] ;  \ to create words with no host header
 
-: ;_  [COMPILE] ; ; IMMEDIATE \ concession
+: ;_  [COMPILE] ; ; IMMEDIATE
 : ;   ?CSP EXIT [ ;
-: :   TARGET-CREATE  0 ?CODE !  !CSP ] ;_
+: :   TARGET-CREATE !CSP ] ;_
 
 include kernel.f
 
