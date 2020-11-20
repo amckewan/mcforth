@@ -654,7 +654,7 @@ FAILED { GT2STRING FIND -> ' GT2 1 }
 { GT5 -> 123 }
 { : GT6 345 ; IMMEDIATE -> }
 { : GT7 POSTPONE GT6 ; -> }
-{ GT7 -> 345 }
+FAILED { GT7 -> 345 }
 
 { : GT8 STATE @ ; IMMEDIATE -> }
 { GT8 -> 0 }

@@ -486,7 +486,7 @@ CODE PARSE-NAME ( -- a n )  push parse_name(SOURCE, --S); NEXT
 CODE WORD  ( char -- addr )
 `   top = word(SOURCE, top, HERE); NEXT
 
-CODE FIND  ( str -- xt flag | str 0 )
+CODE xFIND  ( str -- xt flag | str 0 )
 `       w = find(top, M[CONTEXT + 1]); // search FORTH only
 `       if (w > 0) *--S = w, top = -1;
 `       else if (w < 0) *--S = -w, top = 1;
@@ -570,13 +570,10 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 : INTERPRET  ( -- )
     BEGIN  STATE @
         IF  $ 6 -'
-            IF  FIND DUP
-                IF  0< IF  COMPILE,  ELSE  EXECUTE  THEN
-                ELSE  DROP NUMBER \\ LITERAL
-                THEN
+            IF  $ 1 -FIND IF  NUMBER \\ LITERAL  ELSE  COMPILE,  THEN
             ELSE  EXECUTE
             THEN
-        ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE ?STACK  THEN
+        ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE  ?STACK  THEN
         THEN
     AGAIN ;
 
@@ -620,9 +617,8 @@ VARIABLE WARNING
 
 VARIABLE 'RECURSE
 
-: HEADER  ( -- )  WARN  -OPT
-    ALIGN  HERE  LAST  DUP @ ,  !
-    BL WORD C@  1+ ALLOT  ALIGN ;
+: LINK,   ALIGN HERE  OVER @ ,  SWAP ! ;
+: HEADER  WARN  LAST LINK,  BL WORD C@ 1+ ALLOT  ALIGN  -OPT ;
 
 : CONSTANT  HEADER  $ 10 , , ;
 : VARIABLE  HEADER  $ 11 , $ 0 , ;

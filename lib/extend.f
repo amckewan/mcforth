@@ -21,13 +21,9 @@ FORTH
 
 : 2OVER     3 PICK 3 PICK ;
 : 2SWAP     ROT >R ROT R> ;
-\ only with multi-op inlining
-\ or just add to compiler
 : 2>R       SWAP >R >R ;
 : 2R>       R> R> SWAP ;
 : 2R@       R> R> 2DUP >R >R SWAP ;
-
-: ENVIRONMENT?  2DROP FALSE ;
 
 : NOT  0= ;
 : 0<>  0= NOT ;
@@ -36,7 +32,7 @@ FORTH
 : CHAR  BL WORD 1+ C@ ;
 COMPILER
 : [CHAR]  CHAR \\ LITERAL ;
-: [']     ' \\ LITERAL ;
+: [']     '    \\ LITERAL ;
 FORTH
 
 : BLANK  BL FILL ;
@@ -44,14 +40,9 @@ FORTH
 : PLACE  ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;
 
 : S=  COMPARE 0= ;
-: /STRING  ROT OVER +  ROT ROT - ;
+: /STRING  ROT OVER +  -ROT - ;
 : -TRAILING  ( a n -- a n' )
     BEGIN  DUP WHILE  2DUP + 1- C@ BL = WHILE  1-  REPEAT THEN ;
-
-\ Multi-line comments, using (( ... )) so we can use () inside
-: ((    BEGIN   SOURCE  >IN @ /STRING  S" ))" SEARCH NOT
-        WHILE   2DROP  REFILL 0= ABORT" Missing ))"
-        REPEAT  SOURCE ROT - 2 + >IN !  2DROP ;
 
 ( *** more stuff *** )
 : ABS       DUP 0< IF NEGATE THEN ;
@@ -102,30 +93,26 @@ VARIABLE HLD
 
 ( *** Save dictionary image *** )
 
-: ?IOERR  DUP IF CR ." ior = " DUP . THEN ABORT" File I/O Error" ;
-: WRITE ( a u fid -- )  WRITE-FILE ?IOERR ;
-: .ADDR ( a fid -- )  >R  S" /* " R@ WRITE  (.) R@ WRITE  S"  */ " R> WRITE ;
+: ?IOERR  ABORT" File I/O Error" ;
 
 : SAVE ( <filename> -- ) \ format for include
-    BL WORD COUNT W/O CREATE-FILE ?IOERR ( fid)
+    PARSE-NAME W/O CREATE-FILE ?IOERR
     HERE 0 DO
-        I 15 AND 0= IF  I OVER .ADDR  THEN
-        DUP I C@ 0 <# [CHAR] , HOLD #S #> ROT
+        DUP I C@ 0 <# ',' HOLD #S #> ROT
         I 15 AND 15 = IF WRITE-LINE ELSE WRITE-FILE THEN ?IOERR
     LOOP
-    HERE 15 AND IF  DUP 0 0 ROT WRITE-LINE ?IOERR  THEN
     CLOSE-FILE ?IOERR ;
 
 : SAVE-IMAGE ( <filename> -- )
-    BL WORD COUNT W/O CREATE-FILE ?IOERR ( fid)
-    DUP 0 HERE ROT WRITE
+    PARSE-NAME W/O CREATE-FILE ?IOERR
+    DUP 0 HERE ROT WRITE-FILE ?IOERR
     CLOSE-FILE ?IOERR ;
 
 ( *** more stuff *** )
 
 COMPILER
-: POSTPONE  2 -' IF  FIND DUP 0= ABORT" ?"
-    0< IF  \\ LITERAL  [ FORTH ' COMPILE, COMPILER ] LITERAL  THEN THEN  COMPILE, ;
+: POSTPONE  2 -' IF  1 -FIND ABORT" ?" \\ LITERAL
+    [ FORTH ' COMPILE, COMPILER ] LITERAL  THEN  COMPILE, ;
 FORTH
 
 : EVALUATE ( a n -- )

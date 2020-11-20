@@ -14,11 +14,12 @@
 : DEFER@  >BODY @ ;
 : DEFER!  >BODY ! ;
 
-\ for now...
-: IMMEDIATE  PREVIOUS  $40 OR  SWAP C! ;
-
-\ CODE FIND  ( str -- xt flag | str 0 )
-\ : POSTPONE  2 -' IF  FIND DUP 0= ABORT" ?"
-\    0< IF  \\ LITERAL  [ FORTH ' COMPILE, COMPILER ] LITERAL  THEN THEN  COMPILE, ;
+: IMMEDIATE ( create a compiler synonym )
+    2 CELLS CONTEXT + LINK,
+    PREVIOUS 1+ ALIGNED
+    2DUP HERE OVER ALLOT SWAP MOVE
+    + COMPILE, \\ EXIT ;
 
 : FIND  2 -FIND IF 1 -FIND NOT ELSE 1 THEN ;
+
+: ENVIRONMENT?  2DROP FALSE ;

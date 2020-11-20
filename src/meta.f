@@ -60,7 +60,7 @@ S" see.info"  OPEN-INFO
 
 : ?COMMENT  ( allow Forth comment after OP: or CODE )
     >IN @  PARSE-NAME S" (" COMPARE
-    IF  >IN !  ELSE  DROP  POSTPONE (  THEN ;
+    IF  >IN !  ELSE  DROP  \\ (  THEN ;
 
 : C-COMMENT  S" /* " WRITE  PARSE-NAME WRITE  S"  */ " WRITE ;
 

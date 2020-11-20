@@ -1,6 +1,6 @@
 # mcforth makefile
 
-all: bootstrap
+all: test
 
 CC = clang -m32
 CC64 = clang -m64

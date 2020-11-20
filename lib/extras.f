@@ -1,7 +1,9 @@
-\ include std/core
-\ some of standard programming tools
-\ require core-ext
-\ require std-tools
+( useful extras )
+
+\ Multi-line comments, using (( ... )) so we can use () inside
+: ((    BEGIN   SOURCE  >IN @ /STRING  S" ))" SEARCH NOT
+        WHILE   2DROP  REFILL 0= ABORT" Missing ))"
+        REPEAT  SOURCE ROT - 2 + >IN !  2DROP ;
 
 ( copied from standard )
 : [ELSE] ( -- )
@@ -24,8 +26,4 @@
 : [IF]  0= IF  [ELSE]  THEN ;
 : [THEN] ;
 
-: DEFINED ( -- f ) 1 -' NIP NOT ;
-
-\ : [DEFINED]   DEFINED ;
-\ : [UNDEFINED] DEFINED NOT ;
-
+: DEFINED ( -- f )  1 -' NIP NOT ;
