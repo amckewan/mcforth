@@ -19,11 +19,11 @@ include rth
         r> 1+
     repeat drop ;
 
-: BOOT
+:NONAME
     SOURCE-STACK 'IN !
     doargs
     TAG COUNT TYPE QUIT ;
-' BOOT 0 !
+0 !
 
 save forth.inc
 save-image forth.img

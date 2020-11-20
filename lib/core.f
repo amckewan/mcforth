@@ -1,4 +1,6 @@
-( some standard words )
+( some standard words for passing the tests )
+
+: ENVIRONMENT?  2DROP FALSE ;
 
 : CHARS  ; \ useless
 : CHAR+  1 + ; \ almost useless
@@ -22,4 +24,5 @@
 
 : FIND  2 -FIND IF 1 -FIND NOT ELSE 1 THEN ;
 
-: ENVIRONMENT?  2DROP FALSE ;
+\ Mine compiles as a variable, which makes CREATE IMMEDIATE DOES> not work
+: CREATE  HEADER $12 , ;

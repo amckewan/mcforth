@@ -44,7 +44,6 @@ FORTH
 : -TRAILING  ( a n -- a n' )
     BEGIN  DUP WHILE  2DUP + 1- C@ BL = WHILE  1-  REPEAT THEN ;
 
-( *** more stuff *** )
 : ABS       DUP 0< IF NEGATE THEN ;
 : MIN       2DUP > IF SWAP THEN DROP ;
 : MAX       2DUP < IF SWAP THEN DROP ;
@@ -58,9 +57,30 @@ FORTH
 
 : \S        BEGIN REFILL 0= UNTIL ;
 
+COMPILER
+: POSTPONE  2 -' IF  1 -FIND ABORT" ?" \\ LITERAL
+    [ FORTH ' COMPILE, COMPILER ] LITERAL  THEN  COMPILE, ;
+FORTH
 
-( *** Interpreter string literals *** )
+: EVALUATE ( a n -- )
+    -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;
 
+: MARKER  ALIGN HERE  CONTEXT CELL+ 2@ , ,  CREATE ,
+    DOES> @  DUP H !  2@ CONTEXT CELL+ 2!  FORTH ;
+
+: VALUE  HEADER  $13 , , ;
+: TO  ' >BODY ! ;
+COMPILER
+: TO  ' >BODY \\ LITERAL POSTPONE ! ;
+FORTH
+
+: DEFER  HEADER  $14 , CELL , ( abort ) ;
+: IS  ' >BODY ! ;
+COMPILER
+: IS  \\ TO ;
+FORTH
+
+\ Interpreter string literals
 CREATE SBUF 300 ALLOT
 VARIABLE #SBUF
 : STASH ( a n -- a' n )  DUP 300 U> ABORT" too big for stash"
@@ -69,8 +89,7 @@ VARIABLE #SBUF
     DUP >R OVER >R  MOVE  R> R> ;
 : S"  [CHAR] " PARSE STASH ;
 
-( *** Pictured numeric output *** )
-
+\ Pictured numeric output
 \ Adapted from Wil Baden's ThisForth
 VARIABLE HLD
 : PAD       HERE 200 + ;
@@ -90,11 +109,8 @@ VARIABLE HLD
 : H.        BASE @ HEX  SWAP U.  BASE ! ;
 : ?         @ . ;
 
-
-( *** Save dictionary image *** )
-
+\ Save dictionary image
 : ?IOERR  ABORT" File I/O Error" ;
-
 : SAVE ( <filename> -- ) \ format for include
     PARSE-NAME W/O CREATE-FILE ?IOERR
     HERE 0 DO
@@ -102,37 +118,7 @@ VARIABLE HLD
         I 15 AND 15 = IF WRITE-LINE ELSE WRITE-FILE THEN ?IOERR
     LOOP
     CLOSE-FILE ?IOERR ;
-
 : SAVE-IMAGE ( <filename> -- )
     PARSE-NAME W/O CREATE-FILE ?IOERR
     DUP 0 HERE ROT WRITE-FILE ?IOERR
     CLOSE-FILE ?IOERR ;
-
-( *** more stuff *** )
-
-COMPILER
-: POSTPONE  2 -' IF  1 -FIND ABORT" ?" \\ LITERAL
-    [ FORTH ' COMPILE, COMPILER ] LITERAL  THEN  COMPILE, ;
-FORTH
-
-: EVALUATE ( a n -- )
-    -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;
-
-: MARKER  ALIGN HERE  CONTEXT CELL+ 2@ , ,  CREATE ,
-    DOES> @  DUP H !  2@ CONTEXT CELL+ 2!  FORTH ;
-
-( *** Value *** )
-
-: VALUE  HEADER  $13 , , ;
-: TO  ' >BODY ! ;
-COMPILER
-: TO  ' >BODY \\ LITERAL POSTPONE ! ;
-FORTH
-
-( *** Defer *** )
-
-: DEFER  HEADER  $14 , CELL , ( abort ) ;
-: IS  ' >BODY ! ;
-COMPILER
-: IS  \\ TO ;
-FORTH

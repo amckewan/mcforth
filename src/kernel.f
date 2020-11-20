@@ -596,11 +596,11 @@ CODE OPEN-ON-PATH  ( str len -- filename fid ior )
 
 TAG TAG
 
-: BOOT
+: COLD
     SOURCE-STACK 'IN !
     ARGC $ 1 ?DO  I ARGV INCLUDED  LOOP
     TAG COUNT TYPE  QUIT ;
-0 HAS BOOT
+0 HAS COLD
 
 
 ( ********** Defining Words ********** )
@@ -621,10 +621,10 @@ VARIABLE 'RECURSE
 : HEADER  WARN  LAST LINK,  BL WORD C@ 1+ ALLOT  ALIGN  -OPT ;
 
 : CONSTANT  HEADER  $ 10 , , ;
-: VARIABLE  HEADER  $ 11 , $ 0 , ;
+: CREATE    HEADER  $ 11 , ;
+: VARIABLE  CREATE $ 0 , ;
 
 \ | opc | I for does | data
-: CREATE  HEADER $ 12 , ;
 : DOES>   R> M -  dA @ -  $ 8 LSHIFT $ 12 OR
           PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) ! ;
 : >BODY   CELL+ ;
