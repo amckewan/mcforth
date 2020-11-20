@@ -166,18 +166,23 @@ void load_image(const char *filename) {
 int main(int argc, char *argv[]) {
     memcpy(m, dict, sizeof dict);
 
+    // process args, handle and remove the ones I use
+    int fargc = 1;
+    char **fargv = calloc(argc, sizeof *argv);
+    fargv[0] = argv[0];
     for (int i = 1; i < argc; i++) {
         char *arg = argv[i];
         if (*arg++ == '-') {
             switch (*arg) {
                 case 'v':
                     verbose = strlen(arg);
-                    break;
+                    continue;
                 case 'i':
                     if (++i < argc) load_image(argv[i]);
-                    break;
+                    continue;
             }
         }
+        fargv[fargc++] = argv[i];
     }
 
     if (verbose > 1) {
@@ -187,5 +192,5 @@ int main(int argc, char *argv[]) {
         printf("m = %p, malloc = %p, diff = %td\n", m, temp, temp-m);
     }
 
-    return run(argc, argv);
+    return run(fargc, fargv);
 }
