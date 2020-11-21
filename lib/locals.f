@@ -3,8 +3,8 @@
 
 forth decimal
 
-variable h'  \ space to store local names
-: flip  h @ h' dup @ h ! ! ;
+variable h'  \ a place to store local names
+: teleport  h @ h' dup @ h ! ! ;
 
 \ Locals are added to the locals vocabulary (6)
 \ when executed they compile code to fetch the local
@@ -20,21 +20,37 @@ variable #locals    \ # of locals defined so far (including params)
     create  #locals @ ,  1 #locals +!
     does> @  $1A ( L@ ) L, ;
 
-: local  context @ locals  flip make-local flip  context ! ;
+: local  context @ locals  teleport make-local teleport  context ! ;
 : param  local  1 #params +! ;
 
-: locals,   $18 op, ( L{ )  #params @ #locals @ over - c, c, ;
+: locals,       $18 op, ( L{ )  #params @ #locals @ over - c, c, ;
+: end-locals,   #locals @ if  $19 op, ( }L )  then ;
 
-: clear-locals
+: clear-locals  [ context 6 cells + dup @ ] literal literal ! ;
+: init-locals
+    clear-locals
     #params off  #locals off
-    [ context 6 cells + dup @ ] literal literal !
     here 1000 + h' ! ;
 
-: :     clear-locals  :  ;
+: :         init-locals : ;
+: :noname   init-locals :noname ;
+
 compiler
 : -->   6 -' abort" local?"  >body @  $1B ( L! ) L, ;
-: exit  #locals @ if  $19 op, ( }L )  then  \\ exit  ;
-: ;     \\ exit  \\ [  reveal  clear-locals ( needed?) ;
+: does> end-locals,  postpone does>  init-locals ;
+: exit  end-locals,  \\ exit  ;
+: ;     \\ exit  \\ [  reveal ( oh no! )  clear-locals ;
+
+\ syntax { param1 param2 | local1 local2 -- results }
+: { 0 begin
+        >in @ char swap >in !
+        dup 0=  over '-' = or  over '}' = or  not
+    while
+        '|' = if  char or
+        else  dup if local else param then  then
+    repeat
+    2drop '}' parse 2drop
+    #locals @ if locals, then ;
 forth
 
 \ test
@@ -42,3 +58,8 @@ forth
 : t [ local a local b locals, ] a . b . ;
 
 : add [ param a param b locals, ] a b + ;
+
+: add1 { a b } a b + ;
+: add2 { a b -- c } a b + ;
+: add3 { a b | c -- c } a b + --> c  c ;
+
