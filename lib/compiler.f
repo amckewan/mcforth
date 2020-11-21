@@ -1,19 +1,18 @@
-( ***** Optimizing Compiler ***** )
+( Optimizing compiler )
 
-HEX
+FORTH HEX
 
-: LATEST ( -- op/0 )    ?CODE       @ DUP IF C@ THEN ;
-: PRIOR  ( -- op/0 )    ?CODE CELL+ @ DUP IF C@ THEN ;
+: LATEST ( -- op/0 )    ?CODE @ DUP IF C@ THEN ;
 : PATCH  ( op -- )      ?CODE @ C! ;
-: UNDO   ( -- )         0 ?CODE 2@  H !  ?CODE 2! ;
+: REMOVE ( -- )         0 ?CODE 2@  H !  ?CODE 2! ;
 
 : LIT?  ( -- f )  ?CODE @ DUP IF  C@ 20 =  THEN ;
-: LIT@  ( -- n )  ?CODE @ 1+ @ ;
-: LIT!  ( n -- )  ?CODE @ 1+ ! ;
+: LIT@  ( -- n )  ?CODE @ 1 + @ ;
+: LIT!  ( n -- )  ?CODE @ 1 + ! ;
 
 : BINARY  ( op -- )
     CREATE C,  DOES> C@
-    LIT? IF  LIT@ UNDO
+    LIT? IF  LIT@ REMOVE
         LIT? IF  LIT@ SWAP ( op n1 n2 )
             ROT HERE !  HERE EXECUTE  LIT!
         ELSE
@@ -22,23 +21,26 @@ HEX
     ELSE  OP,
     THEN ;
 
+: UNARY ( n binary-xt forth-xt -- )
+    CREATE , SWAP , ,  DOES> ( fxt n bxt )
+    LIT? IF    LIT@  SWAP 2@ EXECUTE  LIT!
+         ELSE  CELL+ 2@ \\ LITERAL EXECUTE  THEN ;
+
 COMPILER
 61 BINARY +     62 BINARY -     63 BINARY *     64 BINARY /
 65 BINARY AND   66 BINARY OR    67 BINARY XOR
 
-\ todo: refactor
-: 1+     LIT? IF  LIT@ 1 +    LIT!  ELSE  1    \\ LITERAL \\ +  THEN ;
-: 1-     LIT? IF  LIT@ 1 -    LIT!  ELSE  1    \\ LITERAL \\ -  THEN ;
-: CELL+  LIT? IF  LIT@ CELL + LIT!  ELSE  CELL \\ LITERAL \\ +  THEN ;
-: CELLS  LIT? IF  LIT@ CELL * LIT!  ELSE  CELL \\ LITERAL \\ *  THEN ;
-: 2*     LIT? IF  LIT@ 2 *    LIT!  ELSE  1    \\ LITERAL \\ *  THEN ;
-: 2/     LIT? IF  LIT@ 2 /    LIT!  ELSE  2    \\ LITERAL \\ /  THEN ;
+   1 ' + FORTH ' + COMPILER UNARY 1+
+   1 ' - FORTH ' - COMPILER UNARY 1-
+   2 ' * FORTH ' * COMPILER UNARY 2*
+   2 ' / FORTH ' / COMPILER UNARY 2/
+CELL ' + FORTH ' + COMPILER UNARY CELL+
+CELL ' * FORTH ' * COMPILER UNARY CELLS
 
-
-\ 70-72, 78-7A not used for lit+op
+\ 70-72 and 78-7A not used for lit+op
 73 BINARY =     74 BINARY <     75 BINARY >     76 BINARY U<      77 BINARY U>
 
-\ do we want any of these? or just use NOT
+\ do we want any of these? or just use NOT?
 7B BINARY <>    \ 7C BINARY >=    7D BINARY <=   \ 7E BINARY U>=     7F BINARY U<=
 
 : NOT  ( invert last conditional op )
@@ -47,8 +49,8 @@ COMPILER
 FORTH
 
 : MEMORY  ( op -- )
-    CREATE C,  DOES> C@  LIT?
-      IF  40 XOR PATCH  ELSE  OP,  THEN ;
+    CREATE C,  DOES> C@
+      LIT? IF  40 XOR PATCH  ELSE  OP,  THEN ;
 COMPILER
 68 MEMORY @     69 MEMORY !     6A MEMORY +!
 FORTH
@@ -56,7 +58,7 @@ FORTH
 : CONDITION ( -- )  LATEST
     DUP        70 80 WITHIN IF ( cond )      20 - PATCH  ELSE
     DUP F7 AND 33 38 WITHIN IF ( lit-cond )  10 + PATCH  ELSE
-    DROP 58 OP, ( 0branch ) THEN THEN ;
+    DROP 58 OP, ( 0<>IF ) THEN THEN ;
 
 COMPILER
 : IF        CONDITION  >MARK ;

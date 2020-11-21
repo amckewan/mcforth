@@ -223,7 +223,7 @@ OP: >IF      IF2(*S > top)
 OP: U<IF     IF2((ucell)*S < (ucell)top)
 OP: U>IF     IF2((ucell)*S > (ucell)top)
 
-OP: ?BRANCH  IF1(top != 0)
+OP: 0<>IF    IF1(top != 0)
 OP: 0>=IF    IF1(top >= 0)
 OP: 0<=IF    IF1(top <= 0)
 OP: <>IF     IF2(*S != top)
