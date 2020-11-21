@@ -1,5 +1,12 @@
 ( useful extras )
 
+COMPILER
+: .(  ')' PARSE TYPE  ;
+FORTH
+: .(  \\ .( ;
+
+( Multi-line comments )
+
 : COMMENT  CHAR
     BEGIN  DUP DUP PARSE + C@ -
     WHILE  REFILL 0= ABORT" comment?"

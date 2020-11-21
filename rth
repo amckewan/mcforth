@@ -1,6 +1,6 @@
 0 warning !
 include lib/preamble.f
 include lib/compiler.f
-include lib/extend.f
+include lib/core.f
 include lib/extras.f
 include lib/see.f

@@ -1,8 +1,10 @@
+.( Testing 1,2,3... ) CR
+
 \ exit on error
 : BYE CR BYE ; ' BYE 1 CELLS !
 
-include lib/core.f
-include lib/coreext.f
+\ need standard stuff
+include lib/standard.f
 
 include test/tester.f
 VERBOSE ON
