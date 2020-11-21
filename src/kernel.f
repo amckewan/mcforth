@@ -105,7 +105,7 @@ OP: +LOOP       w = *R, *R += top;
                 ` else BRANCH; pop; NEXT
 
 ---
-OP: NOP         NEXT
+CODE NOP        NEXT
 OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
 OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT }
@@ -160,10 +160,14 @@ OP: LITXOR      top ^= LIT, I += CELL; NEXT
 OP: LIT@        push AT(LIT); I += CELL; NEXT
 OP: LIT!        AT(LIT)  = top, pop; I += CELL; NEXT
 OP: LIT+!       AT(LIT) += top, pop; I += CELL; NEXT
-
-( 5 spare )
+---
+---
+---
+---
+---
 
 30 OP! ( lit cond : op | lit )
+
 \ not needed for 0= 0< etc. so this frees up 6 slots, and be careful!
 ` #define LITCOND(cond) top = (cond) LOGICAL; I += CELL; NEXT
 
@@ -544,26 +548,36 @@ COMPILER
 : LITERAL  $ 20 OP, , ;
 FORTH
 
-: INLINE?  ( xt -- n t | f ) \ count inlineable ops
+0 [IF]
+\ Inline primatives and literals.
+\ Perhaps revisit this some day.
+\ Inlining binary ops is ok but as soon as we inline LIT@
+\ strange things start to happen.
+\ Technically we could also inline calls and branches, which doesn't
+\ leave much that can't be inlined. We would just get big and fat.
+: INLINE?  ( xt -- n t | f )
+    DUP BEGIN  DUP C@ WHILE  COUNT
+        DUP $ 60 < IF
+\            $ E0 AND $ 20 = NOT IF  2DROP $ 0 EXIT  THEN
+            $ 20 $ 28 WITHIN NOT IF  2DROP $ 0 EXIT  THEN
+            CELL+ DUP
+        THEN DROP
+    REPEAT SWAP - $ -1 ;
+
+: INLINE ( xt n -- )
+    OVER + SWAP  BEGIN 2DUP U> WHILE
+        COUNT  DUP OP,  $ E0 AND $ 20 = ( lit ) IF  DUP @ , CELL+  THEN
+    REPEAT 2DROP ;
+[ELSE]
+\ Inline just primatives >= $60
+: INLINE?  ( xt -- n t | f )
     DUP BEGIN  DUP C@ WHILE
         COUNT $ 60 < IF  2DROP $ 0 EXIT  THEN
     REPEAT SWAP - $ -1 ;
 
 : INLINE ( xt n -- )
     OVER + SWAP BEGIN  2DUP U> WHILE  COUNT OP, REPEAT  2DROP ;
-
-: xINLINE?  ( xt -- n t | f ) \ count inlineable ops
-    DUP BEGIN  DUP C@ WHILE  COUNT
-        DUP $ 60 < IF
-                    $ E0 AND $ 20 = NOT IF  2DROP $ 0 EXIT  THEN
-            CELL+ DUP
-        THEN DROP
-    REPEAT SWAP - $ -1 ;
-
-: xINLINE ( xt n -- )
-    OVER + SWAP  BEGIN 2DUP U> WHILE
-        COUNT  DUP OP,  $ E0 AND $ 20 = ( lit ) IF  DUP @ , CELL+  THEN
-    REPEAT 2DROP ;
+[THEN]
 
 : COMPILE,  ( xt -- )
     DUP INLINE? IF INLINE EXIT THEN
@@ -574,7 +588,7 @@ FORTH
 
     \ inline lit op exit (e.g. : 1+ 1 + ;)
     \ doing it better in compiler.h
-    \ DUP COUNT $ 20 $ 30 WITHIN SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
+    \ DUP COUNT $ 20 $ 29 WITHIN SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
 
     DUP $ 10000 U< IF  $ 1 OP, dA @ - W,  EXIT THEN
     $ 2 OP, dA @ - , ;
@@ -643,7 +657,7 @@ VARIABLE 'RECURSE
 : VARIABLE  CREATE $ 0 , ;
 
 \ | opc | I for does | data
-: DOES>   R> M -  dA @ -  $ 8 LSHIFT $ 12 OR
+: DOES>   NOP R> M -  dA @ -  $ 8 LSHIFT $ 12 OR
           PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) ! ;
 : >BODY   CELL+ ;
 

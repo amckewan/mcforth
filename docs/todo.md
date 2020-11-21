@@ -1,5 +1,6 @@
 # To-do list
 
+* locals
 * add object model
 * move stuff from kernel to extend
 * remove non-essential code words (keep opcodes trim)
@@ -14,7 +15,6 @@
 
 ## Do later (or never)
 
-* locals
 * add require
 * improve documentation
 * view source

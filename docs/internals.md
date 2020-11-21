@@ -81,14 +81,14 @@ opcode | function | operands
 5 | ?do | offset
 6 | loop | offset
 7 | +loop | offset
-8 | lit | value
+8 |
 9 | nop
 A | s" | counted string
 B | ." | counted string
 C | abort" | counted string
-D | ---
-E | ---
-F | ---
+D | 
+E | 
+F | 
 
 ## Page 1: Runtime
 
@@ -117,7 +117,7 @@ Binary and memory operations followed by a literal (e.g. `5 +`)
 
 20  | 21  | 22  | 23  | 24  | 25  | 26  | 27  | 28  | 29  | 2A  | 2B  | 2C  | 2D  | 2E  | 2F
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
-+   | -   | *   | /   | AND | OR  | XOR | --- | @   | !   | +!
+LIT | +   | -   | *   | /   | AND | OR  | XOR | @   | !   | +!
 
 
 ## Page 3: Literal Conditionals
@@ -141,7 +141,7 @@ Conditional branch (e.g. `< if`)
 
 60  | 61  | 62  | 63  | 64  | 65  | 66  | 67  | 68  | 69  | 6A  | 6B  | 6C  | 6D  | 6E  | 6F
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
-+   | -   | *   | /   | AND | OR  | XOR | --- | @   | !
+    | +   | -   | *   | /   | AND | OR  | XOR | @   | !
 
 ## Page 7: Conditionals
 
