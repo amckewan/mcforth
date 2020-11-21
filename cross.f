@@ -97,7 +97,8 @@ S" see.info" open-info
 
 : COMPILE,  ( addr -- )
     DUP TC@ 5F >  OVER 1+ TC@ 0= AND IF  TC@ C, EXIT  THEN
-    1 C, DUP C, 8 RSHIFT C, ( le) ;
+    DUP CELL 1- AND ABORT" xt not aligned"
+    1 C, CELL / DUP C, 8 RSHIFT C, ( le) ;
 
 : EXIT  0 C, ;
 

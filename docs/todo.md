@@ -8,7 +8,7 @@
 
 ## Optimizing compiler
 
-* inline lits with prims
+* inline lits with prims (partially tried)
 * specials (e.g. dup if )
 * lit pick
 * lit lit within
