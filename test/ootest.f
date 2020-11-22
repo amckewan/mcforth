@@ -61,3 +61,14 @@ end-class
 { 55 rr setcolor -> }
 { rr get -> 11 22 33 44 55 }
 { rr print -> }
+
+TESTING access to super ivars
+
+point subclass point2
+    m: get x @ y @ ;m
+end-class
+
+{ point2 var p2 -> }
+{ p2 get -> 0 0 }
+{ 88 99 p2 put -> }
+{ p2 get -> 88 99 }

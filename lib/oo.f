@@ -92,19 +92,27 @@ forth
 \ 0 --> offset
 \ 1 --> class (or 0)
 \
-\ Instance variables are compiler words
 \ =====================================================================
 
-: classes 4 context ! ;
+\ Instance variables are compiler words in vocabulary 4.
+: ivars   4 context ! ;
 
-: ivalign  ^class DFA dup @ aligned swap ! ;
+: init-ivars ( class -- )
+    IFA @ context 4 cells + ! ;
 
-: do-plain-ivar  ( offset -- )
-    ^self + ;
+: subclass  ( class <name> -- )
+    create here
+    dup to ^class
+    2dup class-size dup allot move
+    over init-ivars
+    SFA ! ;
 
-: doivar  ( offset -- )
-    \ cr ." iv@" dup .
-    ^self + ;
+: end-class
+    [ context 4 cells + dup @ ] literal literal
+    dup @ ^class IFA ! !
+    0 to ^class ;
+
+: doivar  ( offset -- )  ^self + ;
 
 : (ivar)  ( class size -- )
     create
@@ -117,14 +125,16 @@ forth
             'sel swap bind compile,
         then ;
 
-: (ivar)  classes (ivar) forth ;
+: (ivar)  ivars (ivar) forth ;
 
 : bytes  ( n -- )  0 swap (ivar) ;
+
+: ivalign  ^class DFA dup @ aligned swap ! ;
 
 : make-ivar ( class <name> -- )
     ivalign dup DFA @ (ivar) ;
 
-classes
+ivars
 : self   postpone ^self  'sel ^class       bind compile, ;
 : super  postpone ^self  'sel ^class SFA @ bind compile, ;
 forth
@@ -143,18 +153,8 @@ forth
 \ : new ...
 
 \ =====================================================================
-\ Create classes
+\ Define Object
 \ =====================================================================
-
-: subclass  ( class <name> -- )
-    create here
-    dup to ^class
-    2dup class-size dup allot move
-    SFA ! ;
-
-: end-class
-    \ todo: detach ivar vocabulary
-    0 to ^class ;
 
 create Object   here to ^class
                 here class-size dup allot erase
