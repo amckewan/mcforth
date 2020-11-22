@@ -5,6 +5,7 @@
 
 \ need standard stuff
 include lib/standard.f
+include lib/locals.f
 
 include test/tester.f
 VERBOSE ON
@@ -16,6 +17,7 @@ include test/coreplustest.fth
 include test/value.f
 include test/strings.f
 include test/stringtest.fth
+include test/localstest.f
 
 \ gforth tests
 \ include /usr/share/gforth/0.7.3/test/

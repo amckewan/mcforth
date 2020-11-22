@@ -24,7 +24,7 @@ include see.info
 : .name ( xt -- ) >name count 1f and type space ;
 
 : .call ( a -- a+2 ) dup w@ cells ( dup . ) .name 2 + ;
-: .call32 ( a -- a+4 ) dup @ ( dup . ) .name cell+ ;
+: .callx ( a -- a+4 ) dup @ ( dup . ) .name cell+ ;
 : .branch ( a -- a+1 ) dup dup c@ dup 80 and if -1 ff xor or then + . 1+ ;
 : .lit  dup ? cell + ;
 : .slit  count 2dup type '"' emit space + ;
@@ -32,9 +32,9 @@ include see.info
 : .operands ( a opc -- a' )
     \ case?
     dup 1 = if drop .call exit then
-    dup 2 = if drop .call32 exit then
+    dup 2 = if drop .callx exit then
     dup 3 8 within over 50 60 within or if drop .branch exit then
-    dup 8 = over 20 40 within or if drop .lit exit then
+    dup 20 40 within if drop .lit exit then
     dup 40 50 within if drop .lit .branch exit then
     dup A D within if drop .slit exit then
     dup 18 = if drop count . count . exit then
@@ -45,8 +45,9 @@ include see.info
     \ dup >name count 1f and type
     begin
         dup . dup count ( a a+1 op )
-        dup .b dup .op .operands cr
-        swap c@ dup 0= swap 10 18 within or
+        dup .b dup .op .operands cr ( a a+1 )
+        over c@ 12 = if  drop @ 8 rshift 0
+        else swap c@ dup 0= swap 10 18 within or  then
     until drop ;
 
 : see ' (see) ;

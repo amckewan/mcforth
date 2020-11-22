@@ -119,7 +119,7 @@ OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT }
 
 OP: DOCON       push at(aligned(I)); EXIT
 OP: DOVAR       push rel(aligned(I)); EXIT
-OP: DOCDOES     push rel(aligned(I)); w = at(I - 1) >> 8;
+OP: DOES>       push rel(aligned(I)); w = at(I - 1) >> 8;
                 ` if (w) I = abs(w); else EXIT
 OP: DOVALUE     push at(aligned(I)); EXIT
 OP: DODEFER     w = at(aligned(I)); I = m + w; NEXT
@@ -549,6 +549,7 @@ COMPILER
 FORTH
 
 0 [IF]
+\ forth.img, 10644 without this, 11024 with it. 12728 with literals
 \ Inline primatives and literals.
 \ Perhaps revisit this some day.
 \ Inlining binary ops is ok but as soon as we inline LIT@
@@ -558,8 +559,9 @@ FORTH
 : INLINE?  ( xt -- n t | f )
     DUP BEGIN  DUP C@ WHILE  COUNT
         DUP $ 60 < IF
-\            $ E0 AND $ 20 = NOT IF  2DROP $ 0 EXIT  THEN
-            $ 20 $ 28 WITHIN NOT IF  2DROP $ 0 EXIT  THEN
+            $ E0 AND $ 20 = NOT IF  2DROP $ 0 EXIT  THEN
+\            $ 20 $ 2B WITHIN NOT IF  2DROP $ 0 EXIT  THEN
+            \ dup 1- c@ $ 29 > if source-line @ . source-name @ $ 10 type cr then
             CELL+ DUP
         THEN DROP
     REPEAT SWAP - $ -1 ;
@@ -585,6 +587,10 @@ FORTH
     DUP C@ $ 10 = IF ( constant ) CELL+ @      \\ LITERAL  EXIT THEN
     DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
     DUP C@ $ 13 = IF ( value )    CELL+ dA @ - $ 28 OP, ,  EXIT THEN
+
+    \ inline lit op exit (e.g. HERE, >IN)
+    \ Not worth it, only a few words get optimized
+    \ DUP COUNT $ E0 AND $ 20 = SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
 
 \ No need yet to support far calls (> 256K dictionary)
 \    DUP $ 10000 CELLS U< NOT IF  $ 2 OP, dA @ - ,  EXIT THEN

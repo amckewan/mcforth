@@ -28,7 +28,8 @@ cell name_to_xt(cell nfa) {
 
 cell xt_to_name(cell cfa) {
     cell nfa = cfa - CELL;
-    while (nfa > cfa - 32 && name_to_xt(nfa) != cfa) nfa -= CELL;
+    // including smudge bit makes mishits less likely
+    while (nfa > cfa - 32 && aligned(nfa + (m[nfa] & 127) + 1) != cfa) nfa -= CELL;
     return nfa;
 }
 

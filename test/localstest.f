@@ -11,6 +11,7 @@
 \ The tests are not claimed to be comprehensive or correct
 
 \ ------------------------------------------------------------------------------
+\              21 Nov 2020 Modified for McForth
 \ Version 0.13 13 Nov 2015 Priority of locals tests made conditional on the
 \              the required search-order words being available
 \         0.11 25 April 2015 Initial release
@@ -20,9 +21,10 @@
 \ and requires those files to have been loaded
 
 \ Words tested in this file are:
-\     { TO (LOCAL)
+\     { TO
 
 \ Words not tested:
+\     (LOCAL)  because I didn't implement it that way
 \     LOCALS|  (designated obsolescent in Forth 2012)
 \ ------------------------------------------------------------------------------
 \ Assumptions, dependencies and notes:
@@ -35,10 +37,6 @@
 \ ------------------------------------------------------------------------------
 
 TESTING Locals word set
-
-compiler
-: to \\ --> ;
-forth
 
 DECIMAL
 
@@ -165,4 +163,4 @@ TESTING system supplies at least 16 locals
 
 \ LOCALS-ERRORS SET-ERROR-COUNT    \ For final error report
 
-CR .( End of Locals word set tests. ) .S
+CR .( End of Locals word set tests. )

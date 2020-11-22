@@ -1,4 +1,6 @@
-( Objects )
+\ Objects
+\ Adapted from Neon model
+\ Copyright (c) 2020 Andrew McKewan
 
 forth decimal
 
@@ -20,7 +22,7 @@ forth decimal
 0 value ^class
 
 \ =====================================================================
-\ Methods are stored in an 8-way linked-list from the MFA field.
+\ Methods are stored in an 8-way linked-list.
 \
 \ Method Structure:
 \   0   link to previous method
@@ -46,28 +48,20 @@ forth decimal
 \ Selectors
 \ =====================================================================
 
-((
-Selectors must be unique, so only create then if they don't already exist.
-
-TODO: Consider using the XT for the selector so a simple ' will do
-for early binding.
-
-    ' print ' object bind execute
-))
-
 : make-selector   create does> send-message ;
 
 make-selector init
 
 : sel? ( xt -- f )  @ [ ' init @ ] literal = ;
 
+\ Selectors must be unique, so only create then if they don't already exist.
 : selector ( -- sel )
-    >in @  bl word find if  dup sel? if  >body nip exit  then then  drop
+    >in @  1 -' not if  dup sel? if  >body nip exit  then then  drop
     >in !  make-selector here ;
 
 \ The check is not really necessary, but may prevent
 \ a later "not understood" error.
-: 'sel  ( -- sel )  ' dup sel? 0= abort" not a selector" >body ;
+: 'sel  ( -- sel )  ' dup sel? not abort" not a selector" >body ;
 
 \ =====================================================================
 \ Methods
@@ -75,16 +69,21 @@ make-selector init
 
 0 value ^self
 
-: link,  ( var -- )  align here  over @ ,  swap ! ;
-
 : method  selector  ^class hash link,  ,  ] ;
 
 : enter  r>  ^self >r  >r  to ^self ;
-: exitm  r>drop  r> to ^self ;
+: endm   r>drop  r> to ^self ;
 
+defined init-locals [IF]
+: m:    method  postpone enter  init-locals ;
+compiler
+: exitm end-locals  postpone endm ;
+[ELSE]
 : m:    method  postpone enter ;
 compiler
-: ;m    postpone exitm  postpone [ ;
+: exitm postpone endm ;
+[THEN]
+: ;m    \\ exitm  \\ [ ;
 forth
 
 \ =====================================================================
@@ -122,8 +121,6 @@ forth
 
 : bytes  ( n -- )  0 swap (ivar) ;
 
-: var  ivalign cell bytes ;
-
 : make-ivar ( class <name> -- )
     ivalign dup DFA @ (ivar) ;
 
@@ -133,11 +130,7 @@ classes
 forth
 
 \ =====================================================================
-\ Class Object
-\
-\ Object is the base class for all objects.
-\ We need to construct some of this by hand.
-\
+\ Build class instances
 \ =====================================================================
 
 : make-object ( class <name> -- )
@@ -145,77 +138,29 @@ forth
     \ todo: initialize ivars
     does> cell+ ;
 
-: do-class  does> ^class if  make-ivar  else  make-object  then ;
+: var  ^class if  make-ivar  else  make-object  then ;
 
-create Object   do-class
-                here to ^class
-                here class-size dup allot erase
+\ : new ...
 
-method init     drop ;
-method print    ." Object@" . ;
+\ =====================================================================
+\ Create classes
+\ =====================================================================
 
-: subclass  ( class-xt <name> -- )
-    create do-class  >body here
+: subclass  ( class <name> -- )
+    create here
     dup to ^class
     2dup class-size dup allot move
     SFA ! ;
 
-: class ['] object subclass ;
-
 : end-class
-    \ detach ivar dictionary
+    \ todo: detach ivar vocabulary
     0 to ^class ;
 
+create Object   here to ^class
+                here class-size dup allot erase
 
-
-\ =====================================================================
-\ Testing
-\ =====================================================================
-
-Object o
-
-\ o print
-
-
-' object subclass point
-var y
-var x
-
-method get 2@ ;
-method put 2! ;
-
-m: print x @ 0 .r '@' emit y ? ;m
-
+    method init     drop ;
+    method print    ." Object " . ;
 end-class
 
-point p
-
-
-class rect
-    point p1
-    point p2
-    m: print  p1 print  p2 print  ;m
-    m: put p2 put  p1 put ;m
-    m: setupr ( pt -- )  get p1 put ;m
-end-class
-
-rect r
-
-' rect subclass crect
-    var color
-    m: print  super print  color ? ;m
-    m: setcolor  color ! ;m
-end-class
-
-crect rr
-
-\S
-create p point , 3 , 4 ,
-
-object subclass rect
-point 3 cells (ivar) p1
-point 3 cells (ivar) p2
-m: print  p1 print  p2 print  ;m
-
-create r rect , point , 1 , 2 , point , 3 , 4 ,
-
+: class  object subclass ; ( shorthand )

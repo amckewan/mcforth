@@ -1,6 +1,10 @@
 # mcforth makefile
 
-all: test
+all: oo
+
+oo: forth
+	./forth test/ootest.f -e "cr bye"
+
 
 CC = clang -m32
 CC64 = clang -m64
