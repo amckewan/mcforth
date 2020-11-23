@@ -62,6 +62,17 @@ cell find(cell name, cell link) {
     return 0;
 }
 
+#define THREADS 8 // # of method threads in the class
+cell find_method(cell class, cell selector) {
+    cell link = class + selector & CELLS(THREADS - 1);
+    while ((link = AT(link))) {
+        if (AT(link + CELL) == selector) {
+            return link + 2 * CELL;
+        }
+    }
+    return 0;
+}
+
 int digit(char c) {
     return (c <= '9') ? c - '0' : 10 + toupper(c) - 'A';
 }

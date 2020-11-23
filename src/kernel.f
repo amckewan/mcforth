@@ -48,12 +48,14 @@ cell *R;
 cell *L;
 byte *I;
 cell w;
+cell self;
 
-if (COLD) {
 //  if (verbose) printf("Running from %u\n", COLD);
-    I = abs(COLD);
-    goto start;
-}
+I = abs(COLD);
+goto start;
+
+not_understood:
+    show_error("\x16message not understood", abs(HERE), abs(SOURCE));
 
 abort:
     I = abs(WARM);
@@ -119,12 +121,14 @@ OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT }
 
 OP: DOCON       push at(aligned(I)); EXIT
 OP: DOVAR       push rel(aligned(I)); EXIT
-OP: DOES>       push rel(aligned(I)); w = at(I - 1) >> 8;
+OP: DODOES      push rel(aligned(I)); w = at(I - 1) >> 8;
                 ` if (w) I = abs(w); else EXIT
 OP: DOVALUE     push at(aligned(I)); EXIT
 OP: DODEFER     w = at(aligned(I)); I = m + w; NEXT
----
----
+OP: DOSELECTOR  w = find_method(AT(top - CELL), aligned(I));
+                ` if (!w) goto not_understood;
+                ` *--R = (cell)I, I = m + w, pop; NEXT
+--- \ OP: DOOBJECT    push rel(aligned(I)) + CELL; EXIT
 ---
 
 \ Local frame
@@ -141,8 +145,8 @@ OP: }L          R = L + 1, L = (cell *)*L; NEXT
 OP: L@          w = *I++, push L[-w]; NEXT
 OP: L!          w = *I++, L[-w] = top, pop; NEXT
 
----
----
+OP: ENTERM      *--R = self, self = top, pop; NEXT
+OP: EXITM       self = *R++; NEXT
 ---
 ---
 
@@ -160,7 +164,7 @@ OP: LITXOR      top ^= LIT, I += CELL; NEXT
 OP: LIT@        push AT(LIT); I += CELL; NEXT
 OP: LIT!        AT(LIT)  = top, pop; I += CELL; NEXT
 OP: LIT+!       AT(LIT) += top, pop; I += CELL; NEXT
----
+OP: IVAR        push self + LIT; I += CELL; NEXT
 ---
 ---
 ---
@@ -505,6 +509,11 @@ CODE -FIND  ( str v -- str t | xt f )
 `       w = find(*S, M[CONTEXT + top]); // search v
 `       if (w) *S = w < 0 ? -w : w, top = 0;
 `       else top = -1; NEXT
+
+\ : bind ( sel class -- xt ) bind? not abort" message not understood" ;
+CODE BIND  ( sel class -- xt )
+    ` top = find_method(top, *S++);
+    ` if (!top) goto not_understood; NEXT;
 
 CODE >NAME ( xt -- nfa )  top = xt_to_name(top); NEXT
 CODE NAME> ( nfa -- xt )  top = name_to_xt(top); NEXT

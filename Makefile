@@ -7,7 +7,7 @@ CC64 = clang -m64
 CFLAGS = -Wall -Werror
 CFLAGS += -Ofast
 
-SOURCES = src/fo.c src/misc.c src/parse.c src/file.c src/oo.c
+SOURCES = src/fo.c src/misc.c src/parse.c src/file.c
 HEADERS = src/fo.h
 INCLUDES = -I.
 LIBS = -lreadline
@@ -19,10 +19,10 @@ forth.inc: fo rth extend lib/*
 	./fo extend
 	hexdump -C forth.img > forth.hex
 
-fo: kernel.inc $(SOURCES) $(HEADERS)
+fo: prims.inc kernel.inc $(SOURCES) $(HEADERS)
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o $@
 
-kernel.inc: meta.f src/kernel.f
+prims.inc kernel.inc: meta.f src/kernel.f
 	./forth meta.f -e ciao
 	hexdump -C kernel.img > kernel.hex
 
