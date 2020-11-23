@@ -4,6 +4,8 @@
 
 forth decimal
 
+internal
+
 \ =====================================================================
 \ Class structure
 \ =====================================================================
@@ -51,9 +53,9 @@ forth decimal
 
 : make-selector   create does> send-message ;
 
-make-selector init
+variable 'init
 
-: sel? ( xt -- f )  @ [ ' init @ ] literal = ;
+: sel? ( xt -- f )  @ 'init @ @ = ;
 
 \ Selectors must be unique, so only create then if they don't already exist.
 : selector ( -- sel )
@@ -70,22 +72,8 @@ make-selector init
 
 0 value ^self
 
-: method  selector  ^class hash link,  ,  ] ;
-
 : enter  r>  ^self >r  >r  to ^self ;
 : endm   r>drop  r> to ^self ;
-
-defined init-locals [IF]
-: m:    method  postpone enter  init-locals ;
-compiler
-: exitm end-locals  postpone endm ;
-[ELSE]
-: m:    method  postpone enter ;
-compiler
-: exitm postpone endm ;
-[THEN]
-: ;m    \\ exitm  \\ [ ;
-forth
 
 \ =====================================================================
 \ Instance Variables
@@ -100,18 +88,6 @@ forth
 
 : init-ivars ( class -- )
     IFA @ context 4 cells + ! ;
-
-: subclass  ( class <name> -- )
-    create here
-    dup to ^class
-    2dup class-size dup allot move
-    over init-ivars
-    SFA ! ;
-
-: end-class
-    [ context 4 cells + dup @ ] literal literal
-    dup @ ^class IFA ! !
-    0 to ^class ;
 
 : doivar  ( offset -- )  ^self + ;
 
@@ -128,17 +104,10 @@ forth
 
 : (ivar)  ivars (ivar) forth ;
 
-: bytes  ( n -- )  0 swap (ivar) ;
-
 : ivalign  ^class DFA dup @ aligned swap ! ;
 
 : make-ivar ( class <name> -- )
     ivalign dup DFA @ (ivar) ;
-
-ivars
-: self   postpone ^self  'sel ^class       bind compile, ;
-: super  postpone ^self  'sel ^class SFA @ bind compile, ;
-forth
 
 \ =====================================================================
 \ Object initialization
@@ -153,16 +122,60 @@ forth
     2dup ! cell+ swap
     2dup DFA @ erase
     \ ...init ivars if needed...
-    drop dup>r init r> ;
+    drop dup>r 'init @ execute r> ;
 
 : make-object ( class <name> -- )
     create  here  over DFA @ cell+ allot  init-object drop
     does> cell+ ;
 
+\ =====================================================================
+\ Public interface
+\ =====================================================================
+
+external
+
+make-selector init  ' init 'init !
+
+ivars
+: self   postpone ^self  'sel ^class       bind compile, ;
+: super  postpone ^self  'sel ^class SFA @ bind compile, ;
+forth
+
+: bind bind ;
+: ivalign ivalign ;
+
+: bytes  ( n -- )  0 swap (ivar) ;
+
 : var  ^class if  make-ivar  else  make-object  then ;
 
 : new  ( class -- object )
     dup DFA @ cell+ allocate abort" alloc?"  init-object ;
+
+: subclass  ( class <name> -- )
+    create here
+    dup to ^class
+    2dup class-size dup allot move
+    over init-ivars
+    SFA ! ;
+
+: end-class
+    [ context 4 cells + dup @ ] literal literal
+    dup @ ^class IFA ! !
+    0 to ^class ;
+
+: method  selector  ^class hash link,  ,  ] ;
+
+defined init-locals [IF]
+: m:    method  postpone enter  init-locals ;
+compiler
+: exitm end-locals  postpone endm ;
+[ELSE]
+: m:    method  postpone enter ;
+compiler
+: exitm postpone endm ;
+[THEN]
+: ;m    \\ exitm  \\ [ ;
+forth
 
 \ =====================================================================
 \ Define class Object
@@ -176,3 +189,5 @@ create Object   here to ^class
 end-class
 
 : class  object subclass ; ( shorthand )
+
+module

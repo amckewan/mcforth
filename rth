@@ -3,4 +3,5 @@ include lib/preamble.f
 include lib/compiler.f
 include lib/core.f
 include lib/extras.f
+include lib/module.f
 include lib/see.f

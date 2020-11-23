@@ -1,6 +1,6 @@
 # mcforth makefile
 
-all: forth
+all: ootest
 
 CC = clang -m32
 CC64 = clang -m64
@@ -48,7 +48,7 @@ forth64:
 	./fo64 extend
 	hexdump -C kernel.img > kernel64.hex
 	$(CC64) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth64
-	@./forth64 test.f -e "cr bye"
+	@./forth64 test/suite.f -e "cr bye"
 
 asm64:
 	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) src/fo.c -S
@@ -57,7 +57,7 @@ run: forth
 	@./forth
 
 test: forth test/*
-	@./forth test.f -e "cr bye"
+	@./forth test/suite.f -e "cr bye"
 
 ootest: forth
 	./forth test/ootest.f -e "cr bye"

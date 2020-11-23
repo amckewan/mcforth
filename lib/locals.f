@@ -3,6 +3,8 @@
 
 forth decimal
 
+internal
+
 variable h'  \ a place to store local names
 : bounce  h @ h' dup @ h ! ! ;
 
@@ -31,6 +33,8 @@ variable #locals    \ # of locals defined (including params)
     h @ 1000 + h' !
     0 #params !  0 #locals ! ;
 
+external
+
 : :         init-locals : ;
 : :noname   init-locals :noname ;
 
@@ -55,3 +59,5 @@ compiler
     2drop '}' parse 2drop
     #locals @ if locals, then ;
 forth
+
+module

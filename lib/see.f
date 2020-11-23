@@ -6,6 +6,8 @@ base @ hex
 \ cheesy decompiler
 : cee ' >name 20 dump ;
 
+internal
+
 \ build opcode table
 create ops 100 cells allot
        ops 100 cells erase
@@ -41,6 +43,8 @@ include see.info
     dup 1A 1C within if drop count . exit then
     drop ;
 
+external
+
 : (see) ( xt -- )
     \ dup >name count 1f and type
     begin
@@ -54,6 +58,5 @@ include see.info
 
 : see:  here ] 1 parse evaluate \\ exit \\ [ (see) ;
 
-: s see: ; \ shorthand
-
+module
 base !
