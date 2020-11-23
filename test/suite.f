@@ -4,8 +4,7 @@
 : BYE CR BYE ; ' BYE 1 CELLS !
 
 \ need standard stuff
-include lib/standard.f
-include lib/locals.f
+include opt/standard.f
 
 include test/tester.f
 VERBOSE ON

@@ -44,3 +44,8 @@ typical
 : [THEN] ;
 
 : DEFINED ( -- f )  1 -' NIP NOT ;
+
+\ My needs are simpler than require, e.g.
+\ need locals from opt/locals.f
+: need  defined if \\ \ then ;
+: from  include ; ( sugar )

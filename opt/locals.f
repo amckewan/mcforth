@@ -3,15 +3,15 @@
 
 forth decimal
 
+\ Local variables are added to the locals vocabulary (6)
+\ when executed they compile code to fetch the local
+
+: locals  6 context ! ;
+
 internal
 
 variable h'  \ a place to store local names
 : bounce  h @ h' dup @ h ! ! ;
-
-\ Locals are added to the locals vocabulary (6)
-\ when executed they compile code to fetch the local
-
-: locals  6 context ! ;
 
 variable #params    \ # of named parameters
 variable #locals    \ # of locals defined (including params)

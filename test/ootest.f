@@ -1,8 +1,8 @@
 ( oo testing )
 
-\ include lib/locals.f
-include lib/oo.f
-include test/tester.f
+need object  from class/object.f
+need testing from test/tester.f
+
 verbose on
 decimal
 
