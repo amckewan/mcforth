@@ -1,5 +1,5 @@
-\ Objects
-\ Adapted from Neon model
+\ Object-oriented extensions
+\ Adapted from the Neon model
 \ Copyright (c) 2020 Andrew McKewan
 
 forth decimal
@@ -8,9 +8,10 @@ forth decimal
 \ Class structure
 \ =====================================================================
 
-8 constant #threads \ todo use this
+\ 8 constant #threads \ todo use this
 
-\ Offsets from the XT of the class
+\ A class has the following fields. The first 8 cells are the
+\ method table.
 
 : IFA    8 CELLS + ;    \ ivar vocabulary
 : DFA    9 CELLS + ;    \ datalen of named ivars
@@ -140,20 +141,31 @@ ivars
 forth
 
 \ =====================================================================
-\ Build class instances
+\ Object initialization
+\
+\ 0. Set class pointer
+\ 1. Clear all instance data to 0
+\ 2. Call the init method of all instance variables (do we need this?)
+\ 3. Send init message
 \ =====================================================================
 
+: init-object  ( [args] class object-base -- object )
+    2dup ! cell+ swap
+    2dup DFA @ erase
+    \ ...init ivars if needed...
+    drop dup>r init r> ;
+
 : make-object ( class <name> -- )
-    create  dup ,  here swap DFA @ dup allot erase
-    \ todo: initialize ivars
+    create  here  over DFA @ cell+ allot  init-object drop
     does> cell+ ;
 
 : var  ^class if  make-ivar  else  make-object  then ;
 
-\ : new ...
+: new  ( class -- object )
+    dup DFA @ cell+ allocate abort" alloc?"  init-object ;
 
 \ =====================================================================
-\ Define Object
+\ Define class Object
 \ =====================================================================
 
 create Object   here to ^class

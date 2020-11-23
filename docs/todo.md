@@ -1,6 +1,6 @@
 # To-do list
 
-* add object model
+* modules (private words)
 * move stuff from kernel to extend
 * remove non-essential code words (keep opcodes trim)
 * fm/mod from f83
@@ -12,6 +12,11 @@
 * specials (e.g. dup if )
 * lit pick
 * lit lit within
+
+## Objects
+
+* Write primatives
+* Add indexed instance variables
 
 ## Do later (or never)
 
