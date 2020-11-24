@@ -36,7 +36,7 @@
 \       If any these are not available the tests will be ignored.
 \ ------------------------------------------------------------------------------
 
-need locals  from opt/locals.f
+need locals  from lib/locals.f
 need testing from test/tester.f
 
 TESTING Locals word set

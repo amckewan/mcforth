@@ -1,6 +1,6 @@
 ( oo testing )
 
-need object  from class/object.f
+need object  from lib/object.f
 need testing from test/tester.f
 
 verbose on
