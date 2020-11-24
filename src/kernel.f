@@ -350,6 +350,8 @@ CODE SM/REM  ( d n -- rem quot ) {
 
 : 1+  $ 1 + ;
 : 1-  $ 1 - ;
+CODE 2*  top <<= 1; NEXT
+CODE 2/  top >>= 1; NEXT
 
 CELL CONSTANT CELL
 : CELL+  CELL + ;
@@ -430,6 +432,19 @@ CODE WRITE-LINE ( a u fid -- ior )
     ` top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
 
 
+\ Memory allocation (standard)
+CODE ALLOCATE ( n -- a ior )    *--S = rel(malloc(top)), top = *S ? 0 : -1; NEXT
+CODE RESIZE   ( a n -- a' ior ) *S = rel(realloc(abs(*S), top)), top = *S ? 0 : -1; NEXT
+CODE FREE     ( a -- ior )      if (top) free(abs(top)); top = 0; NEXT
+
+\ Allocate counted and null-terminate string
+: NEW-CSTR ( adr len -- c-str )
+    DUP $ 2 + ALLOCATE DROP
+    2DUP C!
+    2DUP + $ 0 SWAP 1+ C!
+    DUP>R 1+ SWAP MOVE R> ;
+
+
 ( ********** Input source processig ********** )
 
 \ 8 entries * 8 cells per entry
@@ -448,26 +463,20 @@ CODE WRITE-LINE ( a u fid -- ior )
 
 : SOURCE-DEPTH  >IN SOURCE-STACK -  $ 5 RSHIFT ( 32 /) ;
 
-CODE ALLOCATE   *--S = rel(malloc(top)), top = *S ? 0 : -1; NEXT
-CODE RESIZE     *S = rel(realloc(abs(*S), top)), top = *S ? 0 : -1; NEXT
-CODE FREE       if (top) free(abs(top)); top = 0; NEXT
+: FILE? ( source-id -- f )  1+ $ 2 U< NOT ;
 
-CODE NEW-STRING top = rel(new_string(abs(*S++), top)); NEXT
-
-: FILE?  1+ $ 2 U< NOT ;
-
-: >SOURCE ( filename fileid | -1 -- ) \ CR ." Including " DROP TYPE SPACE ;
+: >SOURCE ( filename len fileid | -1 -- )
     SOURCE-DEPTH $ 7 U> ABORT" nested too deep"
     $ 8 CELLS 'IN +!
     DUP SOURCE-FILE !
-    FILE? IF  $ 80 ALLOCATE DROP SOURCE-BUF !  SOURCE-NAME !  THEN
+    FILE? IF  $ 80 ALLOCATE DROP SOURCE-BUF !  NEW-CSTR SOURCE-NAME !  THEN
     $ 0 SOURCE-LINE ! ;
 
 : SOURCE> ( -- )
     SOURCE-DEPTH $ 1 < ABORT" trying to pop empty source"
     SOURCE-ID FILE? IF
         SOURCE-ID CLOSE-FILE DROP
-        SOURCE-BUF @ FREE DROP
+        SOURCE-BUF  @ FREE DROP
         SOURCE-NAME @ FREE DROP
     THEN
     $ -8 CELLS 'IN +! ;
@@ -494,12 +503,6 @@ CODE PARSE-NAME ( -- a n )  push parse_name(SOURCE, --S); NEXT
 
 CODE WORD  ( char -- addr )
 `   top = word(SOURCE, top, HERE); NEXT
-
-CODE xFIND  ( str -- xt flag | str 0 )
-`       w = find(top, M[CONTEXT + 1]); // search FORTH only
-`       if (w > 0) *--S = w, top = -1;
-`       else if (w < 0) *--S = -w, top = 1;
-`       else push 0; NEXT
 
 CODE -FIND  ( str v -- str t | xt f )
 `       w = find(*S, M[CONTEXT + top]); // search v
@@ -541,8 +544,6 @@ VARIABLE ?CODE 0 ,
 : ,   H @ !  CELL H +! ;
 : C,  H @ C!  $ 1 H +! ;
 : W,  H @ W!  $ 2 H +! ;
-
-\ : ,A  dA @ - , ;
 
 CODE ALIGNED  top = aligned(top); NEXT
 : ALIGN  BEGIN HERE DUP ALIGNED < WHILE $ 0 C, REPEAT ;
@@ -627,13 +628,9 @@ CODE R0!  R = R0; NEXT
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
 1 HAS QUIT
 
-CODE OPEN-ON-PATH  ( str len -- filename fid ior )
-    ` top = open_on_path(S, top, SOURCE);
-    ` *--S = top, top = top ? 0 : -1; NEXT
-
 : INCLUDED  ( str len -- )
-    2DUP OPEN-ON-PATH IF  2DROP CR TYPE  $ -1 ABORT" file not found" THEN
-    >SOURCE 2DROP  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
+    2DUP R/O OPEN-FILE ABORT" file not found"
+    >SOURCE  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
 
 : INCLUDE  PARSE-NAME INCLUDED ;
 

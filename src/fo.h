@@ -56,9 +56,9 @@ STATIC_ASSERT(sizeof(struct source) == 8*sizeof(cell), source_size);
 
 // misc.c
 char *new_string(const char *str, int len);
+char *new_counted_string(const char *str, int len);
 void fatal(const char *msg);
 void dump(int a, int n, int base);
-void show_error(const char *msg, const char *here, const struct source *source);
 int compare(const char *a1, int n1, const char *a2, int n2);
 int search(cell *sp, cell top);
 
@@ -73,3 +73,4 @@ cell open_on_path(cell *S, cell len, cell source_va);
 cell accept(cell addr_va, cell max);
 cell refill(cell source_va);
 void type(cell addr, cell len);
+void show_error(const char *msg, const char *here, const struct source *source);

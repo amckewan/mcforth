@@ -1,6 +1,6 @@
 # mcforth makefile
 
-all: stringtest
+all: test
 
 CC = clang -m32
 CC64 = clang -m64
@@ -62,7 +62,7 @@ ootest: forth
 	./forth test/ootest.f -e "cr bye"
 
 stringtest: forth
-	./forth test/string.f -e "cr bye"
+	./forth test/stringtest.f -e "cr bye"
 
 bench: forth
 	make -C bench

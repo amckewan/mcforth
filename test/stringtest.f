@@ -3,6 +3,7 @@
 need string from lib/string.f
 need testing from test/tester.f
 verbose on
+decimal
 
 TESTING string init
 { string var s -> }
@@ -31,3 +32,18 @@ TESTING string equal
 { s" hello" s put -> }
 { s" hello" s equal -> true }
 { s" goodbye" s equal -> false }
+
+TESTING string starts-with
+{ s" hello" s put -> }
+{ s" " s starts-with -> true }
+{ s" hel" s starts-with -> true }
+{ s" no" s starts-with -> false }
+{ s" hello there" s starts-with -> false }
+
+TESTING string ends-with
+{ s" hello, world" s put -> }
+{ s" " s ends-with -> true }
+{ s" world" s ends-with -> true }
+{ s" xorld" s ends-with -> false }
+{ s" worlds" s ends-with -> false }
+{ s" hello" s ends-with -> false }

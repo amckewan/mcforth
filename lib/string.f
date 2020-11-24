@@ -41,6 +41,16 @@ m: append  ( addr len -- )
 method equal ( addr len -- f )
     2@ compare 0= ;
 
+method starts-with ( a n -- f )
+    2@ 2 pick <
+    if    drop 2drop false
+    else  over compare 0=  then ;
+
+method ends-with ( a n -- f )
+    2@ dup 3 pick <
+    if    2drop 2drop false
+    else  + over -  over compare 0=  then ;
+
 end-class
 
 string var s
