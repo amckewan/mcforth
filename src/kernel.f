@@ -74,7 +74,7 @@ next:
     }
 #endif
 
-    switch (w = *I++) {
+    switch (*I++) {
 
 #define push *--S = top, top =
 #define pop top = *S++
@@ -348,12 +348,8 @@ CODE SM/REM  ( d n -- rem quot ) {
 `   top = quot;
 `   NEXT }
 
-\ CODE 1+     top += 1; NEXT
-\ CODE 1-     top -= 1; NEXT
 : 1+  $ 1 + ;
 : 1-  $ 1 - ;
-CODE 2*     top <<= 1; NEXT
-CODE 2/     top >>= 1; NEXT
 
 CELL CONSTANT CELL
 : CELL+  CELL + ;

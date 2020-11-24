@@ -44,6 +44,8 @@ FORTH
 : -TRAILING  ( a n -- a n' )
     BEGIN  DUP WHILE  2DUP + 1- C@ BL = WHILE  1-  REPEAT THEN ;
 
+: 2*        2 * ;
+: 2/        2 / ;
 : ABS       DUP 0< IF NEGATE THEN ;
 : MIN       2DUP > IF SWAP THEN DROP ;
 : MAX       2DUP < IF SWAP THEN DROP ;

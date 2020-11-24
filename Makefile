@@ -1,6 +1,6 @@
 # mcforth makefile
 
-all: ootest
+all: stringtest
 
 CC = clang -m32
 CC64 = clang -m64
@@ -15,7 +15,7 @@ LIBS = -lreadline
 forth: forth.inc $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o $@
 
-forth.inc: fo rth extend lib/*
+forth.inc: fo rth extend src/*.f
 	./fo extend
 	hexdump -C forth.img > forth.hex
 
@@ -34,9 +34,8 @@ bootstrap:
 	rm kernel.inc
 	$(MAKE) test
 
-asm: $(SOURCES) $(HEADERS)
+asm: prims.inc kernel.inc $(SOURCES) $(HEADERS)
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) src/fo.c -S
-	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) src/oo.c -S
 
 forth64:
 	gforth -e "8 CONSTANT CELL" cross.f -e ciao
@@ -61,6 +60,9 @@ test: forth test/*
 
 ootest: forth
 	./forth test/ootest.f -e "cr bye"
+
+stringtest: forth
+	./forth test/string.f -e "cr bye"
 
 bench: forth
 	make -C bench

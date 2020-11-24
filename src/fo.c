@@ -141,7 +141,7 @@ void dotid(cell nfa) {
 void words(cell link) {
     while (link) {
         dotid(link + CELL);
-        link = *(cell*)(m + link);
+        link = AT(link);
     }
 }
 
@@ -150,7 +150,7 @@ int run(int argc, char *argv[]) {
 #include "prims.inc"
 
     default:
-        printf("Invalid opcode 0x%02tX\n", w);
+        printf("Invalid opcode 0x%02tX\n", I[-1]);
         goto abort;
     }
 }

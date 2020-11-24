@@ -1,5 +1,8 @@
 # To-do list
 
+* move shared vars to fo.h, use them
+* path in forth
+* make source-name a counted string
 * move stuff from kernel to extend
 * remove non-essential code words (keep opcodes trim)
 * fm/mod from f83

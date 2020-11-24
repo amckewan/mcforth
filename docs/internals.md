@@ -31,12 +31,14 @@ The first X cells of memory are used for variables at fixed offsets that are sha
 # Forth registers
 
 Register | Description
---- | ---
-I | Instruction pointer
-S | Stack pointer
-R | Return-stack pointer
-top | Top of stack
-w | Current opcode, scratch register
+---- | ----------
+I    | Instruction pointer
+S    | Stack pointer
+R    | Return-stack pointer
+L    | Local frame pointer
+top  | Top of stack
+self | Object pointer
+w    | Scratch register
 
 # Opcodes
 

@@ -1,7 +1,7 @@
 0 warning !
-include lib/preamble.f
-include lib/compiler.f
-include lib/core.f
-include lib/extras.f
-include lib/module.f
-include lib/see.f
+include src/preamble.f
+include src/compiler.f
+include src/core.f
+include src/extras.f
+include src/module.f
+include src/see.f

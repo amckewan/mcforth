@@ -54,15 +54,10 @@ struct source {
 // This is assumed for the memory layout in fo.c
 STATIC_ASSERT(sizeof(struct source) == 8*sizeof(cell), source_size);
 
-// lib.c
+// misc.c
 char *new_string(const char *str, int len);
-//cell new_string(cell str_va, int len);
 void fatal(const char *msg);
 void dump(int a, int n, int base);
-
-int source_depth();
-void push_source(FILE *file, const char *filename, int len);
-void pop_source();
 void show_error(const char *msg, const char *here, const struct source *source);
 int compare(const char *a1, int n1, const char *a2, int n2);
 int search(cell *sp, cell top);
