@@ -14,6 +14,8 @@
 * specials (e.g. dup if )
 * lit pick
 * lit lit within
+* make dup>r and r>drop compiler only
+* maybe move r>drop below 60 so it doesn't inline?
 
 ## Objects
 

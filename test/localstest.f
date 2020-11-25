@@ -166,4 +166,4 @@ TESTING system supplies at least 16 locals
 
 \ LOCALS-ERRORS SET-ERROR-COUNT    \ For final error report
 
-CR .( End of Locals word set tests. )
+CR .( End of Locals word set tests. ) CR

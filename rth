@@ -2,6 +2,7 @@
 include src/preamble.f
 include src/compiler.f
 include src/core.f
+include src/path.f
 include src/extras.f
 include src/module.f
 include src/see.f
