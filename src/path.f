@@ -1,18 +1,20 @@
 \ path for include
 
-\ returns the path up to and including the last /
-\ returns ./ if no / in the path
-: dirname ( a n -- a n' )
+: find-last-/  ( a n -- a n' )
     begin dup while
         1- 2dup + c@ '/' = if  1+ exit  then
-    repeat 2drop s" ./" ;
+    repeat ;
 
-\ returns part after last / (which may be empty)
+\ return the path up to and including the last /
+\ returns ./ if no / in the path
+: dirname ( a n -- a n' )
+    find-last-/  dup 0= if  2drop s" ./"  then ;
+
+\ returns the filename after the last / (which may be empty)
 \ return original input if no /
 : basename ( a n -- a' n' )
-    2dup begin dup while
-        1- 2dup + c@ '/' = if  1+ nip /string exit  then
-    repeat 2drop ;
+    2dup find-last-/  nip /string ;
+
 
 \ true if filename starts with "./"
 : ./?  ( a n -- a n f )
