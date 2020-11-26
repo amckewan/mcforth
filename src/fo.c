@@ -145,6 +145,67 @@ void words(cell link) {
     }
 }
 
+char *new_string(const char *str, int len) {
+    char *cstr = malloc(len + 2);
+    cstr[0] = len;
+    memcpy(cstr+1, str, len);
+    cstr[len+1] = 0;
+    return cstr;
+}
+
+cell get_env(cell *S, cell len) {
+    char *name = new_string(abs(*S), len);
+    char *value = getenv(name + 1);
+    free(name);
+    *S = value ? rel(value) : 0;
+    return value ? strlen(value) : 0;
+}
+
+void set_env(cell *S, cell len) {
+    char *name = new_string(abs(*S), len);
+    if (S[1] == 0) {
+        unsetenv(name + 1);
+    } else {
+        char *value = new_string(abs(S[2]), S[1]);
+        setenv(name + 1, value + 1, 1);
+        free(value);
+    }
+    free(name);
+}
+
+void dump(int a, int n, int base) {
+    int i, j;
+    for (i = 0; i < n; i += 16, a += 16) {
+        if (base == 10) printf("%4d ", a); else printf("%04X ", a);
+        for (j = 0; j < 16; j++) {
+            if (j % 4 == 0) putchar(' ');
+            printf("%02X ", m[a + j]);
+        }
+        putchar(' ');
+        for (j = 0; j < 16; j++)
+            putchar(isprint(m[a + j]) ? m[a + j] : '.');
+        putchar('\n');
+    }
+}
+
+void show_error(const char *msg, const char *here, const struct source *source) {
+    int col = source->in;
+    if (col == source->len) col++;
+    putchar('\n');
+    if (source->file != SOURCE_CONSOLE && source->file != SOURCE_EVALUATE)
+        printf("%s:%td:%d: ", abs(source->filename+1), source->line, col);
+    int n = *here & 31;
+    while (n--) putchar(*++here);
+    putchar(' ');
+    if (msg) {
+        n = *msg++;
+        while (n--) putchar(*msg++);
+    }
+    // show the line and position
+//    cr(); type(source->addr, source->len);
+//    cr(); for (int i = 0; i < in; i++) emit(' '); putchar('^');
+}
+
 int run(int argc, char *argv[]) {
 
 #include "prims.inc"

@@ -50,14 +50,12 @@ byte *I;
 cell w;
 cell self;
 
-//  if (verbose) printf("Running from %u\n", COLD);
+// if (verbose) printf("Running from %u\n", COLD);
 I = abs(COLD);
 goto start;
 
-not_understood:
-    show_error("\x16message not understood", abs(HERE), abs(SOURCE));
-
 abort:
+    show_error((char*)I, abs(HERE), abs(SOURCE));
     I = abs(WARM);
 start:
     STATE = 0;
@@ -82,6 +80,7 @@ next:
 #define pop3 top = S[2], S += 3
 #define LOGICAL ? -1 : 0
 
+#define ABORT(msg)  I = (byte *)(msg); goto abort;
 #define NEXT        goto next;
 #define LIT         at(I)
 #define OFFSET      *(int8_t *)I
@@ -107,12 +106,11 @@ OP: +LOOP       w = *R, *R += top;
                 ` else BRANCH; pop; NEXT
 
 ---
-CODE NOP        NEXT
+OP: NOP        NEXT
 OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
-OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT }
-                ` show_error((char*)I, abs(HERE), abs(SOURCE));
-                ` goto abort;
+OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT } ABORT(I)
+OP: ABORT"      if (top) goto abort; w = *I++, I += w, pop; NEXT
 ---
 ---
 ---
@@ -125,9 +123,11 @@ OP: DODOES      push rel(aligned(I)); w = at(I - 1) >> 8;
                 ` if (w) I = abs(w); else EXIT
 OP: DOVALUE     push at(aligned(I)); EXIT
 OP: DODEFER     w = at(aligned(I)); I = m + w; NEXT
+
 OP: DOSELECTOR  w = find_method(AT(top - CELL), aligned(I));
-                ` if (!w) goto not_understood;
-                ` *--R = (cell)I, I = m + w, pop; NEXT
+                ` if (w) { *--R = (cell)I, I = m + w, pop; NEXT }
+                ` not_understood: ABORT("\x16message not understood")
+
 --- \ OP: DOOBJECT    push rel(aligned(I)) + CELL; EXIT
 ---
 
@@ -172,7 +172,7 @@ OP: IVAR        push self + LIT; I += CELL; NEXT
 
 30 OP! ( lit cond : op | lit )
 
-\ not needed for 0= 0< etc. so this frees up 6 slots, and be careful!
+\ not needed for 0= 0< etc. so this frees up 6 slots, but be careful!
 ` #define LITCOND(cond) top = (cond) LOGICAL; I += CELL; NEXT
 
 ---
@@ -194,7 +194,7 @@ OP: LITU>=      LITCOND((ucell)top >= (ucell)LIT)
 OP: LITU<=      LITCOND((ucell)top <= (ucell)LIT)
 
 40 OP! ( lit cond branch : op | lit | offset )
-\ not needed for 0= 0< etc. so this frees up 6 slots, and be careful!
+\ not needed for 0= 0< etc. so this frees up 6 slots, but be careful!
 
 ` #define LITIF(cond) w = LIT, I += CELL; if (cond) NOBRANCH; else BRANCH; pop; NEXT
 
@@ -254,6 +254,11 @@ CODE XOR        top = *S++ ^ top; NEXT
 CODE @          top = *(cell *)(m + top); NEXT
 CODE !          *(cell *)(m + top) = *S; pop2; NEXT
 CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
+---
+---
+---
+---
+---
 
 70 OP! ( conditionals )
 
@@ -390,6 +395,8 @@ CODE ACCEPT ( a n -- n )  top = accept(*S++, top); NEXT
 CODE ARGC ( -- n ) push argc; NEXT
 CODE ARGV ( n -- a n ) *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEXT
 
+CODE GETENV  ( name len -- value len )  top = get_env(S, top); NEXT
+CODE SETENV  ( value len name len -- )  set_env(S, top); S += 3, pop; NEXT
 
 ( ********** File I/O ********** )
 
@@ -432,18 +439,13 @@ CODE WRITE-LINE ( a u fid -- ior )
     ` top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
 
 
-\ Memory allocation (standard)
+\ Memory allocation
 CODE ALLOCATE ( n -- a ior )    *--S = rel(malloc(top)), top = *S ? 0 : -1; NEXT
 CODE RESIZE   ( a n -- a' ior ) *S = rel(realloc(abs(*S), top)), top = *S ? 0 : -1; NEXT
 CODE FREE     ( a -- ior )      if (top) free(abs(top)); top = 0; NEXT
 
 \ Allocate counted and null-terminate string
-: NEW-CSTR ( adr len -- c-str )
-    DUP $ 2 + ALLOCATE DROP
-    2DUP C!
-    2DUP + $ 0 SWAP 1+ C!
-    DUP>R 1+ SWAP MOVE R> ;
-
+CODE NEW-STRING ( adr len -- c-str ) top = rel(new_string(abs(*S++), top)); NEXT
 
 ( ********** Input source processig ********** )
 
@@ -469,7 +471,7 @@ CODE FREE     ( a -- ior )      if (top) free(abs(top)); top = 0; NEXT
     SOURCE-DEPTH $ 7 U> ABORT" nested too deep"
     $ 8 CELLS 'IN +!
     DUP SOURCE-FILE !
-    FILE? IF  $ 80 ALLOCATE DROP SOURCE-BUF !  NEW-CSTR SOURCE-NAME !  THEN
+    FILE? IF  $ 80 ALLOCATE DROP SOURCE-BUF !  NEW-STRING SOURCE-NAME !  THEN
     $ 0 SOURCE-LINE ! ;
 
 : SOURCE> ( -- )
@@ -488,7 +490,9 @@ CODE REFILL ( -- f )  push refill(SOURCE); NEXT
 
 \ ********** Numbers **********
 
-CODE .  ( n -- )  printf("%td ", top); pop; NEXT
+` #define dot(n)  printf(BASE == 16 ? "%tx " : "%td ", n)
+
+CODE .  ( n -- )  dot(top), pop; NEXT
 
 CODE -NUMBER  ( a -- a t, n f ) w = number(abs(top), --S, BASE);
 `   if (w) top = 0; else *S = top, top = -1; NEXT
@@ -509,6 +513,9 @@ CODE -FIND  ( str v -- str t | xt f )
 `       if (w) *S = w < 0 ? -w : w, top = 0;
 `       else top = -1; NEXT
 
+: -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
+: '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
+
 \ : bind ( sel class -- xt ) bind? not abort" message not understood" ;
 CODE BIND  ( sel class -- xt )
     ` top = find_method(top, *S++);
@@ -517,15 +524,12 @@ CODE BIND  ( sel class -- xt )
 CODE >NAME ( xt -- nfa )  top = xt_to_name(top); NEXT
 CODE NAME> ( nfa -- xt )  top = name_to_xt(top); NEXT
 
-: -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
-: '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
-
 CODE DEPTH ( -- n )  w = S0 - S; push w; NEXT
 CODE .S ( -- )
-`       w = S0 - S;  S[-1] = top;
-`       printf("[%td] ", w);
-`       for (int i = w - 2; i >= -1; i--)
-`           printf("%td (0x%tx) ", S[i], S[i]);
+`       w = S0 - S; if (w <= 0) { printf("empty "); NEXT }
+`       // printf("[%td] ", w);
+`       S[-1] = top;
+`       for (w -= 2; w >= -1; w--) dot(S[w]);
 `       NEXT
 
 CODE WORDS  ( -- )  words(M[CONTEXT + M[CONTEXT]]); NEXT
@@ -665,7 +669,7 @@ VARIABLE 'RECURSE
 : VARIABLE  CREATE $ 0 , ;
 
 \ | opc | I for does | data
-: DOES>   NOP R> M -  dA @ -  $ 8 LSHIFT $ 12 OR
+: DOES>   R> M -  dA @ -  $ 8 LSHIFT $ 12 OR
           PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) ! ;
 : >BODY   CELL+ ;
 

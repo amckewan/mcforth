@@ -54,11 +54,7 @@ struct source {
 // This is assumed for the memory layout in fo.c
 STATIC_ASSERT(sizeof(struct source) == 8*sizeof(cell), source_size);
 
-// misc.c
-char *new_string(const char *str, int len);
-char *new_counted_string(const char *str, int len);
-void fatal(const char *msg);
-void dump(int a, int n, int base);
+// string.c
 int compare(const char *a1, int n1, const char *a2, int n2);
 int search(cell *sp, cell top);
 
@@ -69,8 +65,6 @@ cell word(cell source_va, char c, cell here_va);
 
 // file.c
 FILE *open_file(const char *str, int len, const char *mode);
-cell open_on_path(cell *S, cell len, cell source_va);
 cell accept(cell addr_va, cell max);
 cell refill(cell source_va);
-void type(cell addr, cell len);
 void show_error(const char *msg, const char *here, const struct source *source);

@@ -17,34 +17,6 @@ FILE *open_file(const char *str, int len, const char *mode) {
     return file;
 }
 
-char *append_to_current(const char *current, char *name) {
-    char *slash = strrchr(current, '/');
-    if (slash) {
-        int pathlen = slash - current;
-        char *newname = malloc(pathlen + strlen(name));
-        memcpy(newname, current, pathlen);
-        strcpy(newname + pathlen, name + 1);
-        free(name);
-        return newname;
-    }
-    return name;
-}
-
-cell open_on_path(cell *S, cell len, cell source_va) {
-    char *filename = new_string(abs(*S), len);
-
-    // check for ./, open in current including file directory (like gforth)
-    if (!strncmp(filename, "./", 2)) {
-        struct source *source = abs(source_va);
-        if (isfile(source->file))
-            filename = append_to_current(abs(source->filename), filename);
-    }
-
-    FILE *file = fopen(filename, "r");
-    *S = rel(filename);
-    return (cell)file;
-}
-
 cell accept(cell addr_va, cell max) {
     char *line = readline(0);
     if (!line) return -1;

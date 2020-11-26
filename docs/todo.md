@@ -1,6 +1,5 @@
 # To-do list
 
-* move shared vars to fo.h, use them
 * path in forth
 * make source-name a counted string
 * move stuff from kernel to extend
@@ -24,6 +23,8 @@
 
 ## Do later (or never)
 
+* find alternative to readline
 * add require
 * improve documentation
 * view source
+* get .s to fully observe base (dot())
