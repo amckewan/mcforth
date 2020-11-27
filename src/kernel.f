@@ -43,11 +43,12 @@
 #define SOURCE M[5]
 #define CONTEXT 9
 
-cell *S, top;
-cell *R;
-cell *L;
-byte *I;
+register byte *I;
+register cell *S, top;
+register cell *R;
 cell w;
+
+cell *L;
 cell self;
 
 // if (verbose) printf("Running from %u\n", COLD);
