@@ -1,16 +1,32 @@
+# Virtual Machine
+
+The Forth virtual machine is a byte-code interpreter implemented in C.
+
+It can be built as either a 32-bit or 64-bit executable. The 64-bit version
+does not properly implement the double-number multiply and divide functions (e.g. um/mod) but is othewise functional. The default is 32 bits.
+
 # Memory
 
-A cell is 4 bytes. Becuase we need to reference addresses in a cell we must use a 32-bit compiler. TODO remove this restriction through some cleverness.
+A cell is 4 or 8 bytes and matches the 32/64 bit compiler so that a cell can hold an address.
 
-All forth addresses are offsets from the base of memory 'm'. These are converted to/from abolute addresses in the engine as required.
+All forth addresses are offsets from the base of memory 'm'.
+These are converted to/from abolute addresses in the engine as required.
 
-Since the dictionary contains no absolute addresses, it is relocatable which allows the executable to contain a copy of the dictionary.
+Since the dictionary contains no absolute addresses,
+it is relocatable which allows the executable to contain
+a copy of the dictionary.
 
 The return stack grows down from the top of memory.
 
-The data stack grows down in a separate area of memory. The top of the stack is cached in the variable 'top'. The next stack entry is S[0], then S[1], etc. The bottom of the stack (or maybe top since it groes down) is S0.
+The data stack grows down in a separate area of memory.
+The top of the stack is cached in the variable 'top'.
+The next stack entry is S[0], then S[1], etc.
+The bottom of the stack (or maybe top since it groes down) is S0.
 
-The first X cells of memory are used for variables at fixed offsets that are shared between Forth and C. Some of these are also known b the target compiler so must only be changed with caution.
+The first X cells of memory are used for variables at fixed offsets
+that are shared between Forth and C.
+Some of these are also known by the target compiler so must
+only be changed with caution.
 
 | offset | variable  | notes
 | -------| ----------| -----
@@ -28,7 +44,10 @@ The first X cells of memory are used for variables at fixed offsets that are sha
 |  F     |           | locals (6)
 
 
-# Forth registers
+# Forth Registers
+
+Each of the Forth registers is local variable in the run() function.
+They are only visible to the primatives defined in the kernel.
 
 Register | Description
 ---- | ----------
@@ -53,16 +72,16 @@ by COMPILER words that know what to do in each case.
 There are several types of operands:
 
 * Literals (cell bytes)
-* Addresses (cell bytes)
+* Addresses (cell bytes, offset from m)
 * Branch offsets (1 byte)
-* Strings (count + 1 bytes)
+* Strings (1-byte count + chars)
 
 Opcodes 60-FF have no operands and are always inlined.
 
 Page | Description | Example
 ---- | ----------  | -------
-0 | special functions | call, exit, loop, dovar
-1 | runtime | dovar, docreate
+0 | special functions | call, exit, abort"
+1 | runtime | docon, dovar
 2 | lit op | 5 +
 3 | lit cond | 5 <
 4 | lit cond branch | 5 < if
@@ -76,8 +95,8 @@ Page | Description | Example
 opcode | function | operands
 ------ | -------- | -----
 0 | exit
-1 | call | 16-bit address
-2 | call32 | 32-bit address
+1 | call | 16-bit offset, in cells, from m
+2 | callx | cell offset from m
 3 | branch | offset
 4 | do | offset
 5 | ?do | offset
@@ -96,9 +115,9 @@ F |
 
 opcode | function | operands
 ------ | -------- | -----
-10 | docon| op, value
+10 | docon| op, align, value
 11 | dovar | op, align, value
-12 | docreate | op, align, I for DOES>, data
+12 | dodoes | op, I for DOES>, data
 13 | dovalue | op, align, value
 14 | dodefer | op, align, xt
 15 | 
