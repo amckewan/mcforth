@@ -211,7 +211,7 @@ int run(int argc, char *argv[]) {
 #include "prims.inc"
 
     default:
-        printf("Invalid opcode 0x%02tX\n", I[-1]);
+        printf("Invalid opcode 0x%02X\n", I[-1]);
         goto abort;
     }
 }
