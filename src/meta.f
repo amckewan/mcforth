@@ -114,6 +114,6 @@ COMPILER : $ ; FORTH
 : ,A  dA @ - , ;
 
 HEX  8000 1000 0 FILL  8000 H' !
-{ include src/kernel.f }
+{ include ./kernel.f }
 PRUNE
 SAVE

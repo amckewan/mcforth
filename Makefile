@@ -22,12 +22,12 @@ forth.inc: fo rth extend src/*.f
 fo: prims.inc kernel.inc $(SOURCES) $(HEADERS)
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o $@
 
-prims.inc kernel.inc: meta.f src/kernel.f
-	./forth meta.f -e ciao
+prims.inc kernel.inc: src/meta.f src/kernel.f
+	./forth src/meta.f -e ciao
 	hexdump -C kernel.img > kernel.hex
 
 bootstrap:
-	gforth -e "4 CONSTANT CELL" cross.f -e ciao
+	gforth -e "4 CONSTANT CELL" src/cross.f -e ciao
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
 	./fo extend
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
@@ -38,11 +38,11 @@ asm: prims.inc kernel.inc $(SOURCES) $(HEADERS)
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) src/fo.c -S
 
 forth64:
-	gforth -e "8 CONSTANT CELL" cross.f -e ciao
+	gforth -e "8 CONSTANT CELL" src/cross.f -e ciao
 	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo64
 	./fo64 extend
 	$(CC64) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth64
-	./forth64 meta.f -e ciao
+	./forth64 src/meta.f -e ciao
 	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo64
 	./fo64 extend
 	hexdump -C kernel.img > kernel64.hex
