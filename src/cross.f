@@ -173,8 +173,8 @@ VARIABLE OP  ( next opcode )
 : WHILE     IF  2SWAP ;
 : REPEAT    AGAIN  THEN ;
 
-: DO        4 C,  >MARK  <MARK ;
-: ?DO       5 C,  >MARK  <MARK ;
+: ?DO       4 C,  >MARK  <MARK ;
+: DO        5 C,  >MARK  <MARK ;
 : LOOP      6 C,  <RESOLVE  >RESOLVE ;
 : +LOOP     7 C,  <RESOLVE  >RESOLVE ;
 

@@ -96,11 +96,9 @@ OP: EXIT        EXIT
 OP: CALL        w = *(uint16_t *)I; *--R = (cell)I + 2; I = m + CELLS(w); NEXT
 OP: CALLX       w = LIT; *--R = (cell)I + CELL; I = m + w; NEXT
 OP: BRANCH      BRANCH; NEXT
-OP: DO          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop; NOBRANCH; NEXT
-OP: ?DO         if (top == *S) BRANCH;
-                ` else *--R = (cell)I + OFFSET,
-                `      *--R = *S, *--R = top - *S, NOBRANCH;
-                ` S++, pop; NEXT
+OP: ?DO         if (top == *S) { pop2, BRANCH; NEXT }
+OP: DO          *--R = (cell)I + OFFSET, *--R = *S, *--R = top - *S++, pop;
+                ` NOBRANCH; NEXT
 OP: LOOP        if ((++ *R) == 0) NOBRANCH, R += 3; else BRANCH; NEXT
 OP: +LOOP       w = *R, *R += top;
                 ` if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
@@ -111,7 +109,6 @@ OP: NOP        NEXT
 OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
 OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT } ABORT(I)
-OP: ABORT"      if (top) goto abort; w = *I++, I += w, pop; NEXT
 ---
 ---
 ---
