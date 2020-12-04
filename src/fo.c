@@ -40,6 +40,24 @@ int match(const char *name, const char *str, int len) {
     return 1;
 }
 
+// SEARCH-WORDLIST ( c-addr u wid -- 0 | xt 1 | xt -1 )
+cell search_wordlist(cell name, cell len, cell wid) {
+    cell link = AT(wid);
+    while (link) {
+        if ((m[link + CELL] & 63) == len
+              && match((char*)m + name, (char*)m + link + CELL + 1, len)) {
+            cell xt = aligned(link + CELL + 1 + len);
+            if (m[link + CELL] & 0x80) // headless
+                xt = AT(xt);
+            if (m[link + CELL] & 0x40) // immediate
+                xt = -xt;
+            return xt;
+        }
+        link = AT(link);
+    }
+    return 0;
+}
+
 cell find(cell name, cell link) {
     //printf("find '"); type(name+1, m[name]); printf("' link %tX\n", link);
     // return xt if found, else zero

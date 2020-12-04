@@ -2,8 +2,10 @@
 
 The Forth virtual machine is a byte-code interpreter implemented in C.
 
-It can be built as either a 32-bit or 64-bit executable. The 64-bit version
-does not properly implement the double-number multiply and divide functions (e.g. um/mod) but is othewise functional. The default is 32 bits.
+It can be built as either a 32-bit or 64-bit executable.
+The 64-bit version does not properly implement the double-number
+multiply and divide functions (e.g. um/mod) but is otherwise functional.
+The default is 32 bits.
 
 # Memory
 

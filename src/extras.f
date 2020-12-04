@@ -37,12 +37,12 @@ typical
             THEN
           THEN ?DUP 0= IF EXIT THEN
         REPEAT 2DROP
-    REFILL 0= UNTIL  DROP ;
+    REFILL 0= UNTIL  DROP ; IMMEDIATE
 
-: [IF]  0= IF  [ELSE]  THEN ;
-: [THEN] ;
+: [IF]  0= IF  [COMPILE] [ELSE]  THEN ; IMMEDIATE
+: [THEN] ; IMMEDIATE
 
-: DEFINED ( -- f )  1 -' NIP NOT ;
+: DEFINED ( -- f )  BL WORD FIND NIP ;
 
 \ My needs are simpler than require, e.g.
 \ need locals from opt/locals.f

@@ -1,9 +1,12 @@
+:noname CR BYE ; 1 CELLS !
+
 include rth
 
 \ Process command-line arguments
 : doargs
     1 begin dup argc < while
         dup >r argv
+
         over c@ '-' = if  1 /string
             over c@ 'e' = if
                 r> 1+ >r  r@ argc < if r@ argv evaluate then

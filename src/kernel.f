@@ -33,6 +33,7 @@
 4 +ORIGIN CONSTANT STATE
 5 +ORIGIN CONSTANT 'IN
 9 +ORIGIN CONSTANT CONTEXT
+A +ORIGIN CONSTANT FORTH-WORDLIST
 
 ``
 #define COLD M[0]
@@ -517,8 +518,19 @@ CODE FIND  ( str -- xt flag | str 0 )
 `       else if (w < 0) *--S = -w, top = 1;
 `       else push 0; NEXT
 
-: -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
-: '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
+CODE SEARCH-WORDLIST  ( c-addr u wid -- 0 | xt 1 | xt -1 )
+    ` w = search_wordlist(S[1], S[0], top);
+    ` if (w > 0) *++S = w, top = -1;
+    ` else if (w < 0) *++S = -w, top = 1;
+    ` else S += 2, top = 0; NEXT
+
+: FIND  ( c-addr -- c-addr 0 | xt 1 | xt -1 )
+    DUP COUNT FORTH-WORDLIST SEARCH-WORDLIST
+    DUP IF  ROT DROP  THEN ;
+
+: '  ( --- xt )  BL WORD FIND 0= ABORT" ?" ;
+\ : -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
+\ : '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
 
 \ : bind ( sel class -- xt ) bind? not abort" message not understood" ;
 CODE BIND  ( sel class -- xt )
@@ -620,6 +632,7 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
 : ?STACK  DEPTH 0< ABORT" stack?" ;
 
+0 [IF]
 : INTERPRET1  ( -- )
     BEGIN  STATE @
         IF  $ 6 -'
@@ -630,7 +643,7 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
         THEN
     AGAIN ;
 
-: INTERPRET  ( -- )
+: INTERPRET2  ( -- )
      BEGIN  STATE @
         IF  $ 6 -'
             IF  FIND ?DUP
@@ -642,6 +655,18 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
         ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE  ?STACK  THEN
         THEN
      AGAIN ;
+[THEN]
+
+: INTERPRET  ( -- )
+    BEGIN  BL WORD  DUP C@ WHILE
+        STATE @
+        IF  FIND ?DUP
+            IF  0< IF  COMPILE,  ELSE  EXECUTE  THEN
+            ELSE  NUMBER [COMPILE] LITERAL
+            THEN
+        ELSE  FIND IF  EXECUTE ?STACK  ELSE  NUMBER  THEN
+        THEN
+    REPEAT DROP ;
 
 CODE R0!  R = R0; NEXT
 
