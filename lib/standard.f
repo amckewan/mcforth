@@ -25,4 +25,4 @@
 \ : xFIND  2 -FIND IF 1 -FIND NOT ELSE 1 THEN ;
 
 \ Change from a variable so CREATE IMMEDIATE DOES> works
-: CREATE  HEADER $12 , ;
+\ : CREATE  HEADER $12 , ;

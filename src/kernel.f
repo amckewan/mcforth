@@ -558,6 +558,9 @@ CODE ALIGNED  top = aligned(top); NEXT
 
 : OP, ( opc -- )  ?CODE @ HERE ?CODE 2!  C, ;
 
+: LATEST ( -- op/0 )    ?CODE @ DUP IF C@ THEN ;
+: PATCH  ( op -- )      ?CODE @ C! ;
+
 : LITERAL  $ 20 OP, , ; IMMEDIATE
 
 0 [IF]

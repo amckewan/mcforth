@@ -9,30 +9,36 @@
 
 : [COMPILE] ' COMPILE, ; IMMEDIATE
 
-( Conditionals )
+( Conditionals ) HEX
 : <MARK     HERE  -OPT ;
 : <RESOLVE  <MARK  - C, ;
 : >MARK     <MARK  0 C, ;
 : >RESOLVE  <MARK  OVER -  SWAP C! ;
 
-: IF        $58 C, >MARK              ; IMMEDIATE
+: IF        58 C, >MARK               ; IMMEDIATE
 : THEN      >RESOLVE                  ; IMMEDIATE
 : ELSE      3 C, >MARK  SWAP >RESOLVE ; IMMEDIATE
 
-: BEGIN     <MARK           ; IMMEDIATE
-: AGAIN       3 C, <RESOLVE ; IMMEDIATE
-: UNTIL     $58 C, <RESOLVE ; IMMEDIATE
-: WHILE     [COMPILE] IF  SWAP              ; IMMEDIATE
+: CONDITION ( -- )  LATEST
+    DUP        70 80 WITHIN IF ( cond )      20 - PATCH  ELSE
+    DUP F7 AND 33 38 WITHIN IF ( lit-cond )  10 + PATCH  ELSE
+    DROP 58 OP, ( 0<>IF ) THEN THEN ;
+
+: IF        CONDITION  >MARK ; IMMEDIATE
+
+: BEGIN     <MARK ; IMMEDIATE
+: AGAIN     3 C, <RESOLVE ; IMMEDIATE
+: UNTIL     CONDITION <RESOLVE ; IMMEDIATE
+: WHILE     [COMPILE] IF  SWAP ; IMMEDIATE
 : REPEAT    [COMPILE] AGAIN  [COMPILE] THEN ; IMMEDIATE
 
 : ?DO       4 C,  >MARK     <MARK    ; IMMEDIATE
 : DO        5 C,  >MARK     <MARK    ; IMMEDIATE
 : LOOP      6 C,  <RESOLVE  >RESOLVE ; IMMEDIATE
 : +LOOP     7 C,  <RESOLVE  >RESOLVE ; IMMEDIATE
-
 DECIMAL
 
-: S,  ( a n -- )  BEGIN DUP WHILE >R COUNT C, R> 1- REPEAT 2DROP ;
+: S,        0 ?DO  COUNT C,  LOOP DROP ;
 : ,"        '"' PARSE  DUP C, S,  -OPT ;
 
 : S"        $A C, ," ; IMMEDIATE
