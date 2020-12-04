@@ -25,15 +25,16 @@
 
 ( COLD )  0 ,  ( WARM ) 0 ,  ( H ) 0 ,  ( BASE ) #10 ,
 ( STATE ) 0 ,  ( 'IN )  0 ,
-( NULL ) 0 , 0 , 8009 , ( NOP R>DROP EXIT )
-( CONTEXT ) 1 ,  0 ,  HERE 0 , 2001 ,  HERE SWAP ,A 2001 ,  ,A
+( FORTH ) HERE DUP 0 , 0 ,
+( CURRENT ) ,A  ( CONTEXT ) ,A  0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 
 2 +ORIGIN CONSTANT H
 3 +ORIGIN CONSTANT BASE
 4 +ORIGIN CONSTANT STATE
 5 +ORIGIN CONSTANT 'IN
+6 +ORIGIN CONSTANT FORTH-WORDLIST
+8 +ORIGIN CONSTANT CURRENT
 9 +ORIGIN CONSTANT CONTEXT
-A +ORIGIN CONSTANT FORTH-WORDLIST
 
 ``
 #define COLD M[0]
@@ -42,6 +43,8 @@ A +ORIGIN CONSTANT FORTH-WORDLIST
 #define BASE M[3]
 #define STATE M[4]
 #define SOURCE M[5]
+#define FORTH 6
+#define CURRENT 8
 #define CONTEXT 9
 
 register byte *I;
@@ -61,7 +64,7 @@ abort:
     I = abs(WARM);
 start:
     STATE = 0;
-    M[CONTEXT] = 1;
+//    M[CURRENT] = M[CONTEXT] = CELLS(FORTH);
     S = S0;
     R = R0;
 next:
@@ -387,7 +390,8 @@ CODE TYPE  ( a n -- )   type(*S, top); pop2; NEXT
 CODE COMPARE  top = compare(abs(S[2]), S[1], abs(*S), top); S += 3; NEXT
 CODE SEARCH   top = search(S++, top); NEXT
 
-CODE BYE  return 0;
+CODE (BYE)  return top;
+: BYE $ 0 (BYE) ;
 
 CODE ACCEPT ( a n -- n )  top = accept(*S++, top); NEXT
 
@@ -507,22 +511,17 @@ CODE PARSE-NAME ( -- a n )  push parse_name(SOURCE, --S); NEXT
 CODE WORD  ( char -- addr )
 `   top = word(SOURCE, top, HERE); NEXT
 
-CODE -FIND  ( str v -- str t | xt f )
-`       w = find(*S, M[CONTEXT + top]); // search v
-`       if (w) *S = w < 0 ? -w : w, top = 0;
-`       else top = -1; NEXT
-
-CODE FIND  ( str -- xt flag | str 0 )
-`       w = find(top, M[CONTEXT + 1]); // search FORTH only
-`       if (w > 0) *--S = w, top = -1;
-`       else if (w < 0) *--S = -w, top = 1;
-`       else push 0; NEXT
-
 CODE SEARCH-WORDLIST  ( c-addr u wid -- 0 | xt 1 | xt -1 )
     ` w = search_wordlist(S[1], S[0], top);
     ` if (w > 0) *++S = w, top = -1;
     ` else if (w < 0) *++S = -w, top = 1;
     ` else S += 2, top = 0; NEXT
+
+CODE xFIND  ( str -- xt flag | str 0 )
+`       w = find(top, CELLS(CONTEXT)); // search FORTH only
+`       if (w > 0) *--S = w, top = -1;
+`       else if (w < 0) *--S = -w, top = 1;
+`       else push 0; NEXT
 
 : FIND  ( c-addr -- c-addr 0 | xt 1 | xt -1 )
     DUP COUNT FORTH-WORDLIST SEARCH-WORDLIST
@@ -548,7 +547,7 @@ CODE .S ( -- )
 `       for (w -= 2; w >= -1; w--) dot(S[w]);
 `       NEXT
 
-CODE WORDS  ( -- )  words(M[CONTEXT + M[CONTEXT]]); NEXT
+CODE WORDS  ( -- )  words(M[CONTEXT]); NEXT
 CODE DUMP  ( a n -- )  dump(*S++, top, BASE); pop; NEXT
 CODE VERBOSE  push (byte *)&verbose - m; NEXT
 
@@ -693,11 +692,11 @@ TAG TAG
 ( ********** Defining Words ********** )
 
 VARIABLE WARNING
-: WARN  WARNING @ IF  >IN @  BL WORD CONTEXT @ -FIND 0= IF
+: WARN  WARNING @ IF  >IN @  BL WORD FIND IF
     HERE COUNT TYPE ."  redefined " THEN  DROP >IN !  THEN ;
 
-: LAST ( -- link )  CONTEXT @ CELLS  CONTEXT + ;
-: PREVIOUS ( -- nfa count )  LAST @ CELL+  DUP C@ ;
+\ : LAST ( -- link )  CURRENT ;
+: PREVIOUS ( -- nfa count )  CURRENT @ @ CELL+  DUP C@ ;
 
 : SMUDGE     PREVIOUS  $ 20 OR   SWAP C! ;
 : REVEAL     PREVIOUS  $ DF AND  SWAP C! ;
@@ -705,7 +704,7 @@ VARIABLE WARNING
 VARIABLE 'RECURSE
 
 : LINK,   ALIGN HERE  OVER @ ,  SWAP ! ;
-: HEADER  WARN  LAST LINK,  BL WORD C@ 1+ ALLOT  ALIGN  -OPT ;
+: HEADER  WARN  CURRENT @ LINK,  BL WORD C@ 1+ ALLOT  ALIGN  -OPT ;
 
 : CONSTANT  HEADER  $ 10 , , ;
 : CREATE    HEADER  $ 11 , ;

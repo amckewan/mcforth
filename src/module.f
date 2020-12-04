@@ -20,9 +20,13 @@ external
 module
 ~
 
-: internal  context cell+ @ ;
-: external  align here ;
-: module    ! ;
+\ : internal  context cell+ @ ;
+\ : external  align here ;
+\ : module    ! ;
+
+: internal ;
+: external ;
+: module ;
 
 \ But this requires all external words together
 \ How about we elevate selective words (from Hoffmann modules)

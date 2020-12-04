@@ -1,6 +1,6 @@
 # mcforth makefile
 
-all: test
+all: bootstrap
 
 CC = clang -m32
 CC64 = clang -m64
@@ -28,12 +28,14 @@ prims.inc kernel.inc: src/meta.f src/kernel.f
 
 bootstrap:
 	gforth -e "4 CONSTANT CELL" src/cross.f -e ciao
+	hexdump -C kernel.img > kernel.hex
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
 	./fo extend
+	hexdump -C forth.img > forth.hex
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
 	./forth test/suite.f -e "cr bye"
-	rm kernel.inc
-	$(MAKE) test
+#	rm kernel.inc
+#	$(MAKE) test
 
 asm: prims.inc kernel.inc $(SOURCES) $(HEADERS)
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) src/fo.c -S

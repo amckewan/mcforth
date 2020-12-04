@@ -103,21 +103,15 @@ S" see.info" open-info
 : EXIT  0 C, ;
 
 \ Create Headers in Target Image
-CREATE CONTEXT  1 H, 6 +ORIGIN ( NULL) DUP H, ( FORTH ) H, ( COMPILER )
-: FORTH     1 CONTEXT ! ; FORTH
-: COMPILER  2 CONTEXT ! ;
-
-: PRUNE  ( store here and context for target )
-    HERE 2 +ORIGIN T!  CONTEXT CELL+ 2@  A +ORIGIN T!  B +ORIGIN T! ;
-
-: HASH   ( voc -- thread )  CELLS CONTEXT + ;
-
 VARIABLE LAST
-: HEADER   ( -- )
-    ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
-    HERE LAST !  BL WORD COUNT  DUP C, S,  ALIGN ;
+: DONE  ( store here and context for target )
+    HERE 2 +ORIGIN T!  LAST @ 6 +ORIGIN T! ;
 
-: PREVIOUS ( -- nfa count )  LAST @ DUP TC@ ;
+: HEADER   ( -- )
+    ALIGN  HERE  LAST  DUP @ ,  !
+    BL WORD COUNT  DUP C, S,  ALIGN ;
+
+: PREVIOUS ( -- nfa count )  LAST @ CELL +  DUP TC@ ;
 
 VARIABLE STATE-T
 : ?EXEC  STATE-T @ 0= ABORT" cannot execute target word!" ;
@@ -216,5 +210,5 @@ VARIABLE OP  ( next opcode )
 
 include ./kernel.f
 
-PRUNE
+DONE
 SAVE

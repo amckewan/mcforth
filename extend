@@ -1,4 +1,3 @@
-:noname CR BYE ; 1 CELLS !
 
 include rth
 
@@ -27,3 +26,5 @@ include rth
 save forth.inc
 save-image forth.img
 bye
+
+\ :noname CR 1 (BYE) ; 1 CELLS !

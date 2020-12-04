@@ -38,12 +38,9 @@ only be changed with caution.
 |  3     | BASE      |
 |  4     | STATE     |
 |  5     | 'IN       | points to current input source
-|  6-8   |           | NULL word to end each vocabulary
-|  9     | CONTEXT   | current vocabulary
-|  A     |           | forth (1)
-|  B-C   |           | compiler (2)
-|  D-E   |           | class (4)
-|  F     |           | locals (6)
+|  6-7   | FORTH-WORDLIST | Forth wordlist
+|  8     | CURRENT   | wordlist for new definitions
+|  9-11  | CONTEXT   | search order wordlists (zero terminated)
 
 
 # Forth Registers

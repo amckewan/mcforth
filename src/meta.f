@@ -113,7 +113,7 @@ MARKER EMPTY
 : forget SMUDGE ;
 : ,A  dA @ - , ;
 
-HEX  8000 1000 0 FILL  8000 H' !
+HEX  8000 2000 0 FILL  8000 H' !
 { include ./kernel.f }
 PRUNE
 SAVE

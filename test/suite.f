@@ -1,7 +1,7 @@
 .( Testing 1,2,3... ) CR
 
 \ exit on error
-: BYE CR BYE ; ' BYE 1 CELLS !
+:NONAME CR 1 (BYE) ; 1 CELLS !
 
 \ need standard stuff
 include lib/standard.f

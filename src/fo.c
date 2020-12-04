@@ -157,9 +157,8 @@ void dotid(cell nfa) {
 }
 
 void words(cell link) {
-    while (link) {
+    while ((link = AT(link))) {
         dotid(link + CELL);
-        link = AT(link);
     }
 }
 
