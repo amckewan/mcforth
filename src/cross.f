@@ -210,6 +210,7 @@ VARIABLE OP  ( next opcode )
 
 : ;_  [COMPILE] ; ; IMMEDIATE
 : IMMEDIATE  PREVIOUS 40 OR SWAP TC! ;
+: [COMPILE] ;
 : ;   ?CSP EXIT [ ;
 : :   TARGET-CREATE !CSP ] ;_
 

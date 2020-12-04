@@ -596,8 +596,8 @@ CODE ALIGNED  top = aligned(top); NEXT
 : COMPILE,  ( xt -- )
     DUP INLINE? IF INLINE EXIT THEN
 
-    DUP C@ $ 10 = IF ( constant ) CELL+ @      \\ LITERAL  EXIT THEN
-    DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - \\ LITERAL  EXIT THEN
+    DUP C@ $ 10 = IF ( constant ) CELL+ @      [COMPILE] LITERAL  EXIT THEN
+    DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - [COMPILE] LITERAL  EXIT THEN
     DUP C@ $ 13 = IF ( value )    CELL+ dA @ - $ 28 OP, ,  EXIT THEN
 
     \ inline lit op exit (e.g. HERE, >IN)
@@ -620,7 +620,7 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 : INTERPRET1  ( -- )
     BEGIN  STATE @
         IF  $ 6 -'
-            IF  $ 1 -FIND IF  NUMBER \\ LITERAL  ELSE  COMPILE,  THEN
+            IF  $ 1 -FIND IF  NUMBER [COMPILE] LITERAL  ELSE  COMPILE,  THEN
             ELSE  EXECUTE
             THEN
         ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE  ?STACK  THEN
@@ -632,7 +632,7 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
         IF  $ 6 -'
             IF  FIND ?DUP
                 IF  0< IF  COMPILE,  ELSE  EXECUTE  THEN
-                ELSE  NUMBER \\ LITERAL
+                ELSE  NUMBER [COMPILE] LITERAL
                 THEN
             ELSE  EXECUTE
             THEN
@@ -692,8 +692,8 @@ VARIABLE 'RECURSE
 
 : [  $ 0 STATE ! ; IMMEDIATE
 : EXIT  $ 0 OP, ; IMMEDIATE
-T: ;  \\ EXIT \\ [ REVEAL ; IMMEDIATE forget
-: \\  $ 2 -' ABORT" ?" COMPILE, ; IMMEDIATE
+T: ;  [COMPILE] EXIT [COMPILE] [ REVEAL ; IMMEDIATE forget
+\ : \\  $ 2 -' ABORT" ?" COMPILE, ; IMMEDIATE
 : RECURSE  'RECURSE @ COMPILE, ; IMMEDIATE
 
 : ]  $ -1 STATE ! ;

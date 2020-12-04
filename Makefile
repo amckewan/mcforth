@@ -1,6 +1,6 @@
 # mcforth makefile
 
-all: bootstrap
+all: test
 
 CC = clang -m32
 CC64 = clang -m64
@@ -32,8 +32,8 @@ bootstrap:
 	./fo extend
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
 	./forth test/suite.f -e "cr bye"
-#	rm kernel.inc
-#	$(MAKE) test
+	rm kernel.inc
+	$(MAKE) test
 
 asm: prims.inc kernel.inc $(SOURCES) $(HEADERS)
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) src/fo.c -S

@@ -60,7 +60,7 @@ S" see.info"  OPEN-INFO
 
 : ?COMMENT  ( allow Forth comment after OP: or CODE )
     >IN @  PARSE-NAME S" (" COMPARE
-    IF  >IN !  ELSE  DROP  \\ (  THEN ;
+    IF  >IN !  ELSE  DROP  [COMPILE] (  THEN ;
 
 : C-COMMENT  S" /* " WRITE  PARSE-NAME WRITE  S"  */ " WRITE ;
 
@@ -73,7 +73,7 @@ VARIABLE OP  ( next opcode )
     ?COMMENT ` ( copy rest of line )  1 OP +! ;
 : ---  1 OP +! ;
 
-: CODE  >IN @ HEADER >IN !  OP @ OP,  \\ EXIT  OP: ;
+: CODE  >IN @ HEADER >IN !  OP @ OP,  [COMPILE] EXIT  OP: ;
 
 ( misc. stuff )
 : C" ( -- a )  HERE dA @ -  [CHAR] " PARSE S,  0 C, ; \ null-terminated string
@@ -94,8 +94,8 @@ MARKER EMPTY
 
          : {   dA @  HERE  H' 2@ H !  dA !  H' 2! ;
          : }   { ;
-COMPILER : }   H' @ ,  PREVIOUS  80 XOR  SWAP C!  { ;
-FORTH    \ : forget   SMUDGE ;
+\ COMPILER : }   H' @ ,  PREVIOUS  80 XOR  SWAP C!  { ;
+\ FORTH    \ : forget   SMUDGE ;
          \ : RECOVER   -2 ALLOT ;
          \ : ADR>CALL ( a - n)   dA @ - U2/ ;
 
@@ -108,7 +108,7 @@ FORTH    \ : forget   SMUDGE ;
     THERE 2 +ORIGIN 8000 + !  { EMPTY ;
 
 \ for compatibility with cross.fs
-COMPILER : $ ; FORTH
+: $ ; IMMEDIATE
 : T: : ;
 : forget SMUDGE ;
 : ,A  dA @ - , ;
