@@ -1,4 +1,34 @@
-( the rest of forth )
+5 5 + BASE !
+: DECIMAL   10 BASE ! ;
+: HEX       16 BASE ! ;
+
+: IMMEDIATE  PREVIOUS  $40 OR  SWAP C! ;
+
+: \         SOURCE >IN ! DROP ; IMMEDIATE
+: (         ')' PARSE 2DROP ; IMMEDIATE
+
+: [COMPILE] ' COMPILE, ; IMMEDIATE
+
+( Conditionals )
+: <MARK     HERE  -OPT ;
+: <RESOLVE  <MARK  - C, ;
+: >MARK     <MARK  0 C, ;
+: >RESOLVE  <MARK  OVER -  SWAP C! ;
+
+: IF        $58 C, >MARK              ; IMMEDIATE
+: THEN      >RESOLVE                  ; IMMEDIATE
+: ELSE      3 C, >MARK  SWAP >RESOLVE ; IMMEDIATE
+
+: BEGIN     <MARK           ; IMMEDIATE
+: AGAIN       3 C, <RESOLVE ; IMMEDIATE
+: UNTIL     $58 C, <RESOLVE ; IMMEDIATE
+: WHILE     [COMPILE] IF  SWAP              ; IMMEDIATE
+: REPEAT    [COMPILE] AGAIN  [COMPILE] THEN ; IMMEDIATE
+
+: ?DO       4 C,  >MARK     <MARK    ; IMMEDIATE
+: DO        5 C,  >MARK     <MARK    ; IMMEDIATE
+: LOOP      6 C,  <RESOLVE  >RESOLVE ; IMMEDIATE
+: +LOOP     7 C,  <RESOLVE  >RESOLVE ; IMMEDIATE
 
 DECIMAL
 
@@ -9,31 +39,18 @@ DECIMAL
 : ."        $B C, ," ; IMMEDIATE
 : ABORT"    $C C, ," ; IMMEDIATE
 
--1 CONSTANT TRUE
- 0 CONSTANT FALSE
-
-: ON        TRUE  SWAP ! ;
-: OFF       FALSE SWAP ! ;
-
-: TUCK      SWAP OVER ;
 : -ROT      ROT ROT ;
 
 : 2OVER     3 PICK 3 PICK ;
 : 2SWAP     ROT >R ROT R> ;
-: 2>R       SWAP >R >R ;
-: 2R>       R> R> SWAP ;
-: 2R@       R> R> 2DUP >R >R SWAP ;
 
 : NOT       0= ;
-: 0<>       0= NOT ;
-: <>        = NOT ;
 
 : CHAR      BL WORD 1+ C@ ;
 : [CHAR]    CHAR [COMPILE] LITERAL ; IMMEDIATE
 : [']       '    [COMPILE] LITERAL ; IMMEDIATE
 
 : BLANK  BL FILL ;
-: ERASE  0 FILL ;
 : PLACE  ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;
 
 : S=  COMPARE 0= ;
@@ -61,7 +78,7 @@ DECIMAL
     0< IF  [COMPILE] LITERAL  ['] COMPILE,  THEN  COMPILE, ; IMMEDIATE
 
 : EVALUATE ( a n -- )
-    -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;
+    -1 >SOURCE  >IN CELL+ 2!  0 >IN !  INTERPRET  SOURCE> ;
 
 : MARKER  ALIGN HERE  CONTEXT CELL+ 2@ , ,  CREATE ,
     DOES> @  DUP H !  2@ CONTEXT CELL+ 2!  ( FORTH) ;
@@ -76,7 +93,7 @@ DECIMAL
 CREATE SBUF 300 ALLOT
 VARIABLE #SBUF
 : STASH ( a n -- a' n )  DUP 300 U> ABORT" too big for stash"
-    DUP #SBUF @ + 300 > IF  #SBUF OFF ( wrap ) THEN
+    DUP #SBUF @ + 300 > IF  0 #SBUF ! ( wrap ) THEN
     #SBUF @  OVER #SBUF +!  SBUF + SWAP  ( a a' n )
     DUP >R OVER >R  MOVE  R> R> ;
 \ : S"  [CHAR] " PARSE STASH ;

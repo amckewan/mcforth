@@ -1,6 +1,8 @@
 ( useful extras )
 
-: .(   ')' PARSE TYPE ; IMMEDIATE
+: ON        TRUE  SWAP ! ;
+: OFF       FALSE SWAP ! ;
+
 
 ( Multi-line comments )
 
