@@ -8,7 +8,7 @@ include lib/standard.f
 
 include test/tester.f
 VERBOSE ON
-: FAILED \\ \ ; ( to mark tests that fail )
+: FAILED [COMPILE] \ ; ( to mark tests that fail )
 
 include test/core.fr
 include test/coreexttest.fth
@@ -16,7 +16,7 @@ include test/coreplustest.fth
 include test/value.f
 include test/strings.f
 include test/stringtest.fth
-include test/localstest.f
+\ include test/localstest.f
 include ./pathtest.f
 
 \ gforth tests

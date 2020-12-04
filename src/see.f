@@ -56,7 +56,7 @@ external
 
 : see ' (see) ;
 
-: see:  here ] 1 parse evaluate \\ exit \\ [ (see) ;
+: see:  here ] 1 parse evaluate postpone exit postpone [ (see) ;
 
 module
 base !

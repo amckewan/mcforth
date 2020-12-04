@@ -1,12 +1,10 @@
-: FORTH     1 CONTEXT ! ;
-: COMPILER  2 CONTEXT ! ;
 
-COMPILER
-: \         SOURCE >IN ! DROP ;
-: (         ')' PARSE 2DROP ;
-FORTH
-: \         \\ \ ;
-: (         \\ ( ;
+: IMMEDIATE  PREVIOUS  $40 OR   SWAP C! ;
+
+: \         SOURCE >IN ! DROP ; IMMEDIATE
+: (         ')' PARSE 2DROP ; IMMEDIATE
+
+: [COMPILE] ' COMPILE, ; IMMEDIATE
 
 ( This is enough to load the compiler, yet keep it optional. )
 
@@ -19,19 +17,17 @@ FORTH
 : >MARK     <MARK  0 C, ;
 : >RESOLVE  <MARK  OVER -  SWAP C! ;
 
-COMPILER
-: IF        $58 C, >MARK ;
-: THEN      >RESOLVE ;
-: ELSE      3 C, >MARK  SWAP >RESOLVE ;
+: IF        $58 C, >MARK              ; IMMEDIATE
+: THEN      >RESOLVE                  ; IMMEDIATE
+: ELSE      3 C, >MARK  SWAP >RESOLVE ; IMMEDIATE
 
-: BEGIN     <MARK ;
-: AGAIN       3 C, <RESOLVE ;
-: UNTIL     $58 C, <RESOLVE ;
-: WHILE     \\ IF  SWAP ;
-: REPEAT    \\ AGAIN  \\ THEN ;
+: BEGIN     <MARK             ; IMMEDIATE
+: AGAIN       3 C, <RESOLVE   ; IMMEDIATE
+: UNTIL     $58 C, <RESOLVE   ; IMMEDIATE
+: WHILE     [COMPILE] IF  SWAP       ; IMMEDIATE
+: REPEAT    [COMPILE] AGAIN  [COMPILE] THEN ; IMMEDIATE
 
-: ?DO       4 C,  >MARK  <MARK ;
-: DO        5 C,  >MARK  <MARK ;
-: LOOP      6 C,  <RESOLVE  >RESOLVE ;
-: +LOOP     7 C,  <RESOLVE  >RESOLVE ;
-FORTH
+: ?DO       4 C,  >MARK  <MARK       ; IMMEDIATE
+: DO        5 C,  >MARK  <MARK       ; IMMEDIATE
+: LOOP      6 C,  <RESOLVE  >RESOLVE ; IMMEDIATE
+: +LOOP     7 C,  <RESOLVE  >RESOLVE ; IMMEDIATE

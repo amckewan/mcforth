@@ -16,13 +16,13 @@
 : DEFER@  >BODY @ ;
 : DEFER!  >BODY ! ;
 
-: IMMEDIATE ( create a compiler synonym )
-    2 CELLS CONTEXT + LINK,
-    PREVIOUS 1+ ALIGNED
-    2DUP HERE OVER ALLOT SWAP MOVE
-    + COMPILE, \\ EXIT ;
+\ : xIMMEDIATE ( create a compiler synonym )
+\     2 CELLS CONTEXT + LINK,
+\     PREVIOUS 1+ ALIGNED
+\     2DUP HERE OVER ALLOT SWAP MOVE
+\     + COMPILE, \\ EXIT ;
 
-: FIND  2 -FIND IF 1 -FIND NOT ELSE 1 THEN ;
+\ : xFIND  2 -FIND IF 1 -FIND NOT ELSE 1 THEN ;
 
 \ Change from a variable so CREATE IMMEDIATE DOES> works
 : CREATE  HEADER $12 , ;

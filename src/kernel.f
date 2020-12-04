@@ -558,9 +558,7 @@ CODE ALIGNED  top = aligned(top); NEXT
 
 : OP, ( opc -- )  ?CODE @ HERE ?CODE 2!  C, ;
 
-COMPILER
-: LITERAL  $ 20 OP, , ;
-FORTH
+: LITERAL  $ 20 OP, , ; IMMEDIATE
 
 0 [IF]
 \ forth.img, 10644 without this, 11024 with it. 12728 with literals
@@ -619,7 +617,7 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
 : ?STACK  DEPTH 0< ABORT" stack?" ;
 
-: INTERPRET  ( -- )
+: INTERPRET1  ( -- )
     BEGIN  STATE @
         IF  $ 6 -'
             IF  $ 1 -FIND IF  NUMBER \\ LITERAL  ELSE  COMPILE,  THEN
@@ -628,6 +626,19 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
         ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE  ?STACK  THEN
         THEN
     AGAIN ;
+
+: INTERPRET  ( -- )
+     BEGIN  STATE @
+        IF  $ 6 -'
+            IF  FIND ?DUP
+                IF  0< IF  COMPILE,  ELSE  EXECUTE  THEN
+                ELSE  NUMBER \\ LITERAL
+                THEN
+            ELSE  EXECUTE
+            THEN
+        ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE  ?STACK  THEN
+        THEN
+     AGAIN ;
 
 CODE R0!  R = R0; NEXT
 
@@ -660,9 +671,6 @@ VARIABLE WARNING
 : LAST ( -- link )  CONTEXT @ CELLS  CONTEXT + ;
 : PREVIOUS ( -- nfa count )  LAST @ CELL+  DUP C@ ;
 
-: IMM ; IMMEDIATE
-
-: IMMEDIATE  PREVIOUS  $ 40 OR   SWAP C! ;
 : SMUDGE     PREVIOUS  $ 20 OR   SWAP C! ;
 : REVEAL     PREVIOUS  $ DF AND  SWAP C! ;
 
@@ -682,13 +690,11 @@ VARIABLE 'RECURSE
 
 \ Be careful from here on...
 
-COMPILER
-: [  $ 0 STATE ! ;
-: EXIT  $ 0 OP, ;
-T: ;  \\ EXIT \\ [ REVEAL ; forget
-: \\  $ 2 -' ABORT" ?" COMPILE, ;
-: RECURSE  'RECURSE @ COMPILE, ;
-FORTH
+: [  $ 0 STATE ! ; IMMEDIATE
+: EXIT  $ 0 OP, ; IMMEDIATE
+T: ;  \\ EXIT \\ [ REVEAL ; IMMEDIATE forget
+: \\  $ 2 -' ABORT" ?" COMPILE, ; IMMEDIATE
+: RECURSE  'RECURSE @ COMPILE, ; IMMEDIATE
 
 : ]  $ -1 STATE ! ;
 : :NONAME  ALIGN HERE  DUP 'RECURSE !  ] ;

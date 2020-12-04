@@ -4,11 +4,10 @@ DECIMAL
 
 : S,  ( a n -- )  BEGIN DUP WHILE >R COUNT C, R> 1- REPEAT 2DROP ;
 : ,"        '"' PARSE  DUP C, S,  -OPT ;
-COMPILER
-: S"        $A C, ," ;
-: ."        $B C, ," ;
-: ABORT"    $C C, ," ;
-FORTH
+
+: S"        $A C, ," ; IMMEDIATE
+: ."        $B C, ," ; IMMEDIATE
+: ABORT"    $C C, ," ; IMMEDIATE
 
 -1 CONSTANT TRUE
  0 CONSTANT FALSE
@@ -25,15 +24,13 @@ FORTH
 : 2R>       R> R> SWAP ;
 : 2R@       R> R> 2DUP >R >R SWAP ;
 
-: NOT  0= ;
-: 0<>  0= NOT ;
-: <>   = NOT ;
+: NOT       0= ;
+: 0<>       0= NOT ;
+: <>        = NOT ;
 
-: CHAR  BL WORD 1+ C@ ;
-COMPILER
-: [CHAR]  CHAR \\ LITERAL ;
-: [']     '    \\ LITERAL ;
-FORTH
+: CHAR      BL WORD 1+ C@ ;
+: [CHAR]    CHAR [COMPILE] LITERAL ; IMMEDIATE
+: [']       '    [COMPILE] LITERAL ; IMMEDIATE
 
 : BLANK  BL FILL ;
 : ERASE  0 FILL ;
@@ -57,28 +54,23 @@ FORTH
 
 : \S        BEGIN REFILL 0= UNTIL ;
 
-COMPILER
-: POSTPONE  2 -' IF  1 -FIND ABORT" ?" \\ LITERAL
-    [ FORTH ' COMPILE, COMPILER ] LITERAL  THEN  COMPILE, ;
-FORTH
+\ : POSTPONE  2 -' IF  1 -FIND ABORT" ?" [COMPILE] LITERAL
+\     [ FORTH ' COMPILE, COMPILER ] LITERAL  THEN  COMPILE, ; IMMEDIATE
+
+: POSTPONE  BL WORD FIND  DUP 0= ABORT" ?"
+    0< IF  [COMPILE] LITERAL  ['] COMPILE,  THEN  COMPILE, ; IMMEDIATE
 
 : EVALUATE ( a n -- )
     -1 >SOURCE  >IN CELL+ 2!  >IN OFF  INTERPRET  SOURCE> ;
 
 : MARKER  ALIGN HERE  CONTEXT CELL+ 2@ , ,  CREATE ,
-    DOES> @  DUP H !  2@ CONTEXT CELL+ 2!  FORTH ;
+    DOES> @  DUP H !  2@ CONTEXT CELL+ 2!  ( FORTH) ;
 
 : VALUE  HEADER  $13 , , ;
-: TO  ' >BODY ! ;
-COMPILER
-: TO  ' >BODY \\ LITERAL POSTPONE ! ;
-FORTH
+: TO  ' >BODY  STATE @ IF POSTPONE LITERAL POSTPONE ! ELSE ! THEN ; IMMEDIATE
 
 : DEFER  HEADER  $14 , CELL , ( abort ) ;
-: IS  ' >BODY ! ;
-COMPILER
-: IS  \\ TO ;
-FORTH
+: IS  POSTPONE TO ; IMMEDIATE
 
 \ Interpreter string literals
 CREATE SBUF 300 ALLOT
@@ -87,7 +79,11 @@ VARIABLE #SBUF
     DUP #SBUF @ + 300 > IF  #SBUF OFF ( wrap ) THEN
     #SBUF @  OVER #SBUF +!  SBUF + SWAP  ( a a' n )
     DUP >R OVER >R  MOVE  R> R> ;
-: S"  [CHAR] " PARSE STASH ;
+\ : S"  [CHAR] " PARSE STASH ;
+
+\ state-smart version
+: S"  STATE @ IF [COMPILE] S" ELSE [CHAR] " PARSE STASH THEN ; IMMEDIATE
+
 
 \ Pictured numeric output
 \ Adapted from Wil Baden's ThisForth

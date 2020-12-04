@@ -1,9 +1,6 @@
 ( useful extras )
 
-COMPILER
-: .(  ')' PARSE TYPE  ;
-FORTH
-: .(  \\ .( ;
+: .(   ')' PARSE TYPE ; IMMEDIATE
 
 ( Multi-line comments )
 
@@ -47,5 +44,5 @@ typical
 
 \ My needs are simpler than require, e.g.
 \ need locals from opt/locals.f
-: need  defined if \\ \ then ;
+: need  defined if [COMPILE] \ then ;
 : from  include ; ( sugar )
