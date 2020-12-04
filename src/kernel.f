@@ -511,6 +511,12 @@ CODE -FIND  ( str v -- str t | xt f )
 `       if (w) *S = w < 0 ? -w : w, top = 0;
 `       else top = -1; NEXT
 
+CODE FIND  ( str -- xt flag | str 0 )
+`       w = find(top, M[CONTEXT + 1]); // search FORTH only
+`       if (w > 0) *--S = w, top = -1;
+`       else if (w < 0) *--S = -w, top = 1;
+`       else push 0; NEXT
+
 : -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
 : '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
 
@@ -654,6 +660,9 @@ VARIABLE WARNING
 : LAST ( -- link )  CONTEXT @ CELLS  CONTEXT + ;
 : PREVIOUS ( -- nfa count )  LAST @ CELL+  DUP C@ ;
 
+: IMM ; IMMEDIATE
+
+: IMMEDIATE  PREVIOUS  $ 40 OR   SWAP C! ;
 : SMUDGE     PREVIOUS  $ 20 OR   SWAP C! ;
 : REVEAL     PREVIOUS  $ DF AND  SWAP C! ;
 

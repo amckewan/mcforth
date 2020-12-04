@@ -51,8 +51,8 @@ cell find(cell name, cell link) {
             cell xt = aligned(link + CELL + 1 + len);
             if (m[link + CELL] & 0x80) // headless
                 xt = *(cell *)(m + xt);
-            //if (m[link + CELL] & 0x40) // immediate
-            //    xt = -xt;
+            if (m[link + CELL] & 0x40) // immediate
+                xt = -xt;
             //printf("found xt=%tX\n", xt);
             return xt;
         }

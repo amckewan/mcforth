@@ -112,9 +112,12 @@ CREATE CONTEXT  1 H, 6 +ORIGIN ( NULL) DUP H, ( FORTH ) H, ( COMPILER )
 
 : HASH   ( voc -- thread )  CELLS CONTEXT + ;
 
+VARIABLE LAST
 : HEADER   ( -- )
     ALIGN  HERE  CONTEXT @ HASH  DUP @ ,  !
-    BL WORD COUNT DUP  C, S,  ALIGN ;
+    HERE LAST !  BL WORD COUNT  DUP C, S,  ALIGN ;
+
+: PREVIOUS ( -- nfa count )  LAST @ DUP TC@ ;
 
 VARIABLE STATE-T
 : ?EXEC  STATE-T @ 0= ABORT" cannot execute target word!" ;
@@ -146,9 +149,7 @@ VARIABLE OP  ( next opcode )
     ?COMMENT ` ( copy rest of line )  1 OP +! ;
 : ---  1 OP +! ;
 
-: (PRIM)   OP @ C,  EXIT  OP: ;
-: PRIM   >IN @ HEADER        >IN ! (PRIM) ;  ( in target only )
-: CODE   >IN @ TARGET-CREATE >IN ! (PRIM) ;  ( in host and target)
+: CODE   >IN @ TARGET-CREATE >IN !  OP @ C,  EXIT  OP: ;
 
 \ Target Literals
 : LITERAL  ( n -- )  ?EXEC  20 C,  , ;
@@ -208,6 +209,7 @@ VARIABLE OP  ( next opcode )
 : T:  HEADER  ] ;  \ to create words with no host header
 
 : ;_  [COMPILE] ; ; IMMEDIATE
+: IMMEDIATE  PREVIOUS 40 OR SWAP TC! ;
 : ;   ?CSP EXIT [ ;
 : :   TARGET-CREATE !CSP ] ;_
 
