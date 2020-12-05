@@ -49,11 +49,11 @@
 
 register byte *I;
 register cell *S, top;
-register cell *R;
+cell *R;
 cell w;
 
 cell *L;
-cell self;
+//cell self;
 
 // if (verbose) printf("Running from %u\n", COLD);
 I = abs(COLD);
@@ -126,9 +126,9 @@ OP: DODOES      push rel(aligned(I)); w = at(I - 1) >> 8;
 OP: DOVALUE     push at(aligned(I)); EXIT
 OP: DODEFER     w = at(aligned(I)); I = m + w; NEXT
 
-OP: DOSELECTOR  w = find_method(AT(top - CELL), aligned(I));
-                ` if (w) { *--R = (cell)I, I = m + w, pop; NEXT }
-                ` not_understood: ABORT("\x16message not understood")
+--- \ OP: DOSELECTOR  w = find_method(AT(top - CELL), aligned(I));
+\                 ` if (w) { *--R = (cell)I, I = m + w, pop; NEXT }
+\                 ` not_understood: ABORT("\x16message not understood")
 
 --- \ OP: DOOBJECT    push rel(aligned(I)) + CELL; EXIT
 ---
@@ -147,8 +147,8 @@ OP: }L          R = L + 1, L = (cell *)*L; NEXT
 OP: L@          w = *I++, push L[-w]; NEXT
 OP: L!          w = *I++, L[-w] = top, pop; NEXT
 
-OP: ENTERM      *--R = self, self = top, pop; NEXT
-OP: EXITM       self = *R++; NEXT
+\ OP: ENTERM      *--R = self, self = top, pop; NEXT
+\ OP: EXITM       self = *R++; NEXT
 ---
 ---
 
@@ -166,7 +166,7 @@ OP: LITXOR      top ^= LIT, I += CELL; NEXT
 OP: LIT@        push AT(LIT); I += CELL; NEXT
 OP: LIT!        AT(LIT)  = top, pop; I += CELL; NEXT
 OP: LIT+!       AT(LIT) += top, pop; I += CELL; NEXT
-OP: IVAR        push self + LIT; I += CELL; NEXT
+\ OP: IVAR        push self + LIT; I += CELL; NEXT
 ---
 ---
 ---
@@ -537,9 +537,9 @@ CODE SEARCH-WORDLIST  ( c-addr u wid -- 0 | xt 1 | xt -1 )
 
 : '  ( --- xt )  BL WORD FIND 0= ABORT" ?" ;
 
-CODE BIND  ( sel class -- xt )
-    ` top = find_method(top, *S++);
-    ` if (!top) goto not_understood; NEXT;
+\ CODE BIND  ( sel class -- xt )
+\     ` top = find_method(top, *S++);
+\     ` if (!top) goto not_understood; NEXT;
 
 CODE >NAME ( xt -- nfa )  top = xt_to_name(top); NEXT
 CODE NAME> ( nfa -- xt )  top = name_to_xt(top); NEXT

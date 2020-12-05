@@ -82,7 +82,7 @@ cell find(cell name, cell link) {
 
 #define THREADS 8 // # of method threads in the class
 cell find_method(cell class, cell selector) {
-    cell link = class + selector & CELLS(THREADS - 1);
+    cell link = class + (selector & CELLS(THREADS - 1));
     while ((link = AT(link))) {
         if (AT(link + CELL) == selector) {
             return link + 2 * CELL;
@@ -210,7 +210,7 @@ void show_error(const char *msg, const char *here, const struct source *source) 
     if (col == source->len) col++;
     putchar('\n');
     if (source->file != SOURCE_CONSOLE && source->file != SOURCE_EVALUATE)
-        printf("%s:%td:%d: ", abs(source->filename+1), source->line, col);
+        printf("%s:%td:%d: ", (char*)abs(source->filename+1), source->line, col);
     int n = *here & 31;
     while (n--) putchar(*++here);
     putchar(' ');
@@ -249,7 +249,8 @@ void load_image(const char *filename) {
         printf("can't open image %s\n", filename);
         return;
     }
-    fread(M, 1, sizeof M, f);
+    int x = fread(M, 1, sizeof M, f);
+    (void)x;
     fclose(f);
 }
 
