@@ -284,6 +284,8 @@ OP: U<=   top = ((ucell)*S++ <= (ucell)top) LOGICAL; NEXT
 
 80 OP! ( nothing special after this )
 
+CODE EXECUTE    *--R = (cell)I, I = m + top, pop; NEXT
+
 CODE DUP        *--S = top; NEXT
 CODE DROP       pop; NEXT
 CODE SWAP       w = top; top = *S; *S = w; NEXT
@@ -505,6 +507,8 @@ CODE -NUMBER  ( a -- a t, n f ) w = number(abs(top), --S, BASE);
 
 CODE >NUMBER  top = to_number(S, top, BASE); NEXT
 
+\ ********** Parsing **********
+
 20 CONSTANT BL
 
 CODE PARSE    ( c -- a n )  top = parse(SOURCE, top, --S); NEXT
@@ -512,6 +516,8 @@ CODE PARSE-NAME ( -- a n )  push parse_name(SOURCE, --S); NEXT
 
 CODE WORD  ( char -- addr )
 `   top = word(SOURCE, top, HERE); NEXT
+
+\ ********** Dictionary search **********
 
 CODE SEARCH-WORDLIST  ( c-addr u wid -- 0 | xt 1 | xt -1 )
     ` w = search_wordlist(S[1], S[0], top);
@@ -567,40 +573,70 @@ CODE ALIGNED  top = aligned(top); NEXT
 
 : OP, ( opc -- )  ?CODE @ HERE ?CODE 2!  C, ;
 
-: LATEST ( -- op/0 )    ?CODE @ DUP IF C@ THEN ;
-: PATCH  ( op -- )      ?CODE @ C! ;
-
 : LITERAL  $ 20 OP, , ; IMMEDIATE
 
-\ Inline primatives >= $60
-: INLINE?  ( xt -- n t | f )
+: LATEST ( -- op | 0 )  ?CODE @ DUP IF C@ THEN ;
+: PATCH  ( op -- )      ?CODE @ C! ;
+: REMOVE ( -- )         $ 0 ?CODE 2@  H !  ?CODE 2! ;
+
+: LIT?  ( -- f )  ?CODE @ DUP IF  C@ $ 20 =  THEN ;
+: LIT@  ( -- n )  ?CODE @ $ 1 + @ ;
+: LIT!  ( n -- )  ?CODE @ $ 1 + ! ;
+
+: BINARY ( op -- ) \ e.g. lit +
+    LIT? IF  LIT@ REMOVE
+        LIT? IF  LIT@ SWAP ROT ( n1 n2 op )
+            HERE !  HERE EXECUTE  LIT!
+        ELSE
+            SWAP $ 40 XOR OP, ,
+        THEN
+    ELSE  OP,
+    THEN ;
+
+: MEMORY  ( op -- ) \ e.g lit @
+    LIT? IF  $ 40 XOR PATCH  ELSE  OP,  THEN ;
+
+: DON'T  ( op -- )  \ invert last conditional op
+    LATEST  DUP $ 70 $ 80 WITHIN  OVER $ F7 AND $ 33 $ 38 WITHIN OR
+    IF  $ 8 XOR PATCH DROP  ELSE  DROP OP,  THEN ;
+
+: PACK ( opc -- ) \ peephole optimizer
+    dup $ 70 = if DON'T exit then
+    dup $ 68 $ 6B within if  memory exit  then
+    dup $ 61 $ 80 within if  binary exit  then
+    op,
+;
+
+: INLINE?  ( xt -- n t | f ) \ count ops >= $60
     DUP BEGIN  DUP C@ WHILE
         COUNT $ 60 < IF  2DROP $ 0 EXIT  THEN
     REPEAT SWAP - $ -1 ;
 
-: INLINE ( xt n -- ) $ 0 ?DO  COUNT OP,  LOOP DROP ;
+: INLINE ( xt n -- ) $ 0 ?DO  COUNT PACK  LOOP DROP ;
 
 : COMPILE,  ( xt -- )
+    \ inline primatives
     DUP INLINE? IF INLINE EXIT THEN
 
+    \ inline constant etc.
     DUP C@ $ 10 = IF ( constant ) CELL+ @      [COMPILE] LITERAL  EXIT THEN
     DUP C@ $ 11 = IF ( variable ) CELL+ dA @ - [COMPILE] LITERAL  EXIT THEN
-    DUP C@ $ 13 = IF ( value )    CELL+ dA @ - $ 28 OP, ,  EXIT THEN
+    DUP C@ $ 13 = IF ( value )    CELL+ dA @ - $ 28 OP, ,         EXIT THEN
 
-    \ inline lit op exit (e.g. HERE, >IN)
+    \ inline lit op exit (e.g. 1+, HERE)
     \ Not worth it, only a few words get optimized
-    \ DUP COUNT $ E0 AND $ 20 = SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
-
-\ No need yet to support far calls (> 256K dictionary)
-\    DUP $ 10000 CELLS U< NOT IF  $ 2 OP, dA @ - ,  EXIT THEN
+    DUP COUNT $ E0 AND $ 20 = SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
 
 \ Optional check for bad behavior!
 \    DUP CELL 1- AND ABORT" xt not aligned"
-    $ 1 OP, dA @ - CELL / W, ;
+
+    \ compile short call in first 64k cells
+    DUP $ 10000 CELLS U< IF  $ 1 OP, dA @ - CELL / W,  EXIT THEN
+
+    \ default to far call
+    $ 2 OP, dA @ - , ;
 
 ( ********** Interpreter ********** )
-
-CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
 : ?STACK  DEPTH 0< ABORT" stack?" ;
 
