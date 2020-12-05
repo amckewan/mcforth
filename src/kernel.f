@@ -23,10 +23,10 @@
 
 \ Variables shared with C code at fixed offsets
 
-( COLD )  0 ,  ( WARM ) 0 ,  ( H ) 0 ,  ( BASE ) #10 ,
-( STATE ) 0 ,  ( 'IN )  0 ,
-( FORTH ) HERE DUP 0 , 0 ,
-( CURRENT ) ,A  ( CONTEXT ) ,A  0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
+( COLD ) 0 ,  ( WARM ) 0 ,
+( H ) 0 ,  ( BASE ) #10 ,  ( STATE ) 0 ,  ( 'IN ) 0 ,
+( FORTH ) HERE 0 , 0 ,
+( CURRENT ) DUP ,A  ( CONTEXT ) ,A  0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 
 2 +ORIGIN CONSTANT H
 3 +ORIGIN CONSTANT BASE
@@ -64,7 +64,7 @@ abort:
     I = abs(WARM);
 start:
     STATE = 0;
-//    M[CURRENT] = M[CONTEXT] = CELLS(FORTH);
+    M[CURRENT] = M[CONTEXT] = CELLS(FORTH);
     S = S0;
     R = R0;
 next:
@@ -282,14 +282,7 @@ OP: <=   top = (*S++ <= top) LOGICAL; NEXT
 OP: U>=   top = ((ucell)*S++ >= (ucell)top) LOGICAL; NEXT
 OP: U<=   top = ((ucell)*S++ <= (ucell)top) LOGICAL; NEXT
 
-80 OP! ( nothing special after this, except for R>DROP )
-
-CODE R>DROP     ++R; NEXT // don't move
-CODE DUP>R      *--R = top; NEXT
-
-CODE >R         *--R = top, pop; NEXT
-CODE R>         push *R++; NEXT
-CODE R@         push *R  ; NEXT
+80 OP! ( nothing special after this )
 
 CODE DUP        *--S = top; NEXT
 CODE DROP       pop; NEXT
@@ -299,6 +292,13 @@ CODE ROT        w = S[1], S[1] = *S, *S = top, top = w; NEXT
 CODE NIP        S++; NEXT
 CODE ?DUP       if (top) *--S = top; NEXT
 CODE PICK       top = S[top]; NEXT
+
+CODE >R         *--R = top, pop; NEXT
+CODE R>         push *R++; NEXT
+CODE R@         push *R  ; NEXT
+
+CODE R>DROP     ++R; NEXT
+CODE DUP>R      *--R = top; NEXT
 
 CODE I          push R[0] + R[1]; NEXT
 CODE J          push R[3] + R[4]; NEXT
@@ -324,10 +324,12 @@ CODE WITHIN
 `   S++;
 `   NEXT
 
+` #define CELLBITS (CELL * 8)
+
 CODE M*  ( n1 n2 -- d ) {
 `   int64_t d = (int64_t)*S * (int64_t)top;
 `   *S = d ;
-`   top = d >> 32;
+`   top = d >> CELLBITS;
 `   NEXT }
 
 CODE UM* ( u1 u2 -- ud ) {
@@ -335,11 +337,11 @@ CODE UM* ( u1 u2 -- ud ) {
 `   uint64_t u2 = (ucell)top;
 `   uint64_t ud = u1 * u2;
 `   *S = ud ;
-`   top = ud >> 32;
+`   top = ud >> CELLBITS;
 `   NEXT }
 
 CODE UM/MOD  ( ud u1 -- rem quot ) {
-`   uint64_t ud = ((uint64_t)*S << 32) | (ucell)S[1];
+`   uint64_t ud = ((uint64_t)*S << CELLBITS) | (ucell)S[1];
 `   uint64_t u = (ucell)top;
 `   ucell quot = ud / u;
 `   ucell rem = ud % u;
@@ -348,7 +350,7 @@ CODE UM/MOD  ( ud u1 -- rem quot ) {
 `   NEXT }
 
 CODE SM/REM  ( d n -- rem quot ) {
-`   int64_t d = (((uint64_t)*S) << 32) | ((ucell) S[1]);
+`   int64_t d = (((uint64_t)*S) << CELLBITS) | ((ucell) S[1]);
 `   int32_t quot = d / top;
 `   int32_t rem = d % top;
 `   *++S = rem;
@@ -517,21 +519,18 @@ CODE SEARCH-WORDLIST  ( c-addr u wid -- 0 | xt 1 | xt -1 )
     ` else if (w < 0) *++S = -w, top = 1;
     ` else S += 2, top = 0; NEXT
 
-CODE xFIND  ( str -- xt flag | str 0 )
-`       w = find(top, CELLS(CONTEXT)); // search FORTH only
-`       if (w > 0) *--S = w, top = -1;
-`       else if (w < 0) *--S = -w, top = 1;
-`       else push 0; NEXT
+\ CODE xFIND  ( str -- xt flag | str 0 )
+\ `       w = find(top, CELLS(CONTEXT)); // search FORTH only
+\ `       if (w > 0) *--S = w, top = -1;
+\ `       else if (w < 0) *--S = -w, top = 1;
+\ `       else push 0; NEXT
 
 : FIND  ( c-addr -- c-addr 0 | xt 1 | xt -1 )
     DUP COUNT FORTH-WORDLIST SEARCH-WORDLIST
     DUP IF  ROT DROP  THEN ;
 
 : '  ( --- xt )  BL WORD FIND 0= ABORT" ?" ;
-\ : -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
-\ : '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
 
-\ : bind ( sel class -- xt ) bind? not abort" message not understood" ;
 CODE BIND  ( sel class -- xt )
     ` top = find_method(top, *S++);
     ` if (!top) goto not_understood; NEXT;
@@ -541,15 +540,14 @@ CODE NAME> ( nfa -- xt )  top = name_to_xt(top); NEXT
 
 CODE DEPTH ( -- n )  w = S0 - S; push w; NEXT
 CODE .S ( -- )
-`       w = S0 - S; if (w <= 0) { printf("empty "); NEXT }
-`       // printf("[%td] ", w);
-`       S[-1] = top;
-`       for (w -= 2; w >= -1; w--) dot(S[w]);
-`       NEXT
+    ` w = S0 - S; if (w <= 0) { printf("empty "); NEXT }
+    ` S[-1] = top;
+    ` for (w -= 2; w >= -1; w--) dot(S[w]);
+    ` NEXT
 
 CODE WORDS  ( -- )  words(M[CONTEXT]); NEXT
 CODE DUMP  ( a n -- )  dump(*S++, top, BASE); pop; NEXT
-CODE VERBOSE  push (byte *)&verbose - m; NEXT
+CODE VERBOSE  push rel(&verbose); NEXT
 
 ( ********** Compiler ********** )
 
@@ -574,38 +572,13 @@ CODE ALIGNED  top = aligned(top); NEXT
 
 : LITERAL  $ 20 OP, , ; IMMEDIATE
 
-0 [IF]
-\ forth.img, 10644 without this, 11024 with it. 12728 with literals
-\ Inline primatives and literals.
-\ Perhaps revisit this some day.
-\ Inlining binary ops is ok but as soon as we inline LIT@
-\ strange things start to happen.
-\ Technically we could also inline calls and branches, which doesn't
-\ leave much that can't be inlined. We would just get big and fat.
-: INLINE?  ( xt -- n t | f )
-    DUP BEGIN  DUP C@ WHILE  COUNT
-        DUP $ 60 < IF
-            $ E0 AND $ 20 = NOT IF  2DROP $ 0 EXIT  THEN
-\            $ 20 $ 2B WITHIN NOT IF  2DROP $ 0 EXIT  THEN
-            \ dup 1- c@ $ 29 > if source-line @ . source-name @ $ 10 type cr then
-            CELL+ DUP
-        THEN DROP
-    REPEAT SWAP - $ -1 ;
-
-: INLINE ( xt n -- )
-    OVER + SWAP  BEGIN 2DUP U> WHILE
-        COUNT  DUP OP,  $ E0 AND $ 20 = ( lit ) IF  DUP @ , CELL+  THEN
-    REPEAT 2DROP ;
-[ELSE]
-\ Inline just primatives >= $60
+\ Inline primatives >= $60
 : INLINE?  ( xt -- n t | f )
     DUP BEGIN  DUP C@ WHILE
         COUNT $ 60 < IF  2DROP $ 0 EXIT  THEN
     REPEAT SWAP - $ -1 ;
 
-: INLINE ( xt n -- )
-    OVER + SWAP BEGIN  2DUP U> WHILE  COUNT OP, REPEAT  2DROP ;
-[THEN]
+: INLINE ( xt n -- ) $ 0 ?DO  COUNT OP,  LOOP DROP ;
 
 : COMPILE,  ( xt -- )
     DUP INLINE? IF INLINE EXIT THEN
@@ -630,31 +603,6 @@ CODE ALIGNED  top = aligned(top); NEXT
 CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
 : ?STACK  DEPTH 0< ABORT" stack?" ;
-
-0 [IF]
-: INTERPRET1  ( -- )
-    BEGIN  STATE @
-        IF  $ 6 -'
-            IF  $ 1 -FIND IF  NUMBER [COMPILE] LITERAL  ELSE  COMPILE,  THEN
-            ELSE  EXECUTE
-            THEN
-        ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE  ?STACK  THEN
-        THEN
-    AGAIN ;
-
-: INTERPRET2  ( -- )
-     BEGIN  STATE @
-        IF  $ 6 -'
-            IF  FIND ?DUP
-                IF  0< IF  COMPILE,  ELSE  EXECUTE  THEN
-                ELSE  NUMBER [COMPILE] LITERAL
-                THEN
-            ELSE  EXECUTE
-            THEN
-        ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE  ?STACK  THEN
-        THEN
-     AGAIN ;
-[THEN]
 
 : INTERPRET  ( -- )
     BEGIN  BL WORD  DUP C@ WHILE
@@ -720,7 +668,6 @@ VARIABLE 'RECURSE
 : [  $ 0 STATE ! ; IMMEDIATE
 : EXIT  $ 0 OP, ; IMMEDIATE
 T: ;  [COMPILE] EXIT [COMPILE] [ REVEAL ; IMMEDIATE forget
-\ : \\  $ 2 -' ABORT" ?" COMPILE, ; IMMEDIATE
 : RECURSE  'RECURSE @ COMPILE, ; IMMEDIATE
 
 : ]  $ -1 STATE ! ;

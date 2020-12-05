@@ -124,9 +124,9 @@ VARIABLE CSP
    >IN @ HEADER >IN !  CREATE  HERE H,
    DOES>  ?EXEC  @ COMPILE, ;
 
-: H. . ;
-: '-T  ' >BODY @ ;
-: HAS ( n -- )  '-T  SWAP +ORIGIN T! ;
+: H.  . ;
+: T'  ' >BODY @ ;
+: HAS ( n -- )  T' SWAP +ORIGIN T! ;
 
 \ Generate primatives
 : ?COMMENT  ( allow Forth comment after OP: etc. )
@@ -149,7 +149,7 @@ VARIABLE OP  ( next opcode )
 : LITERAL  ( n -- )  ?EXEC  20 C,  , ;
 : $   BL WORD NUMBER DROP LITERAL ;
 
-\ Define Meta Branching Constructs
+\ Target branching constructs
 : ?CONDITION  INVERT ABORT" unbalanced" ;
 : MARK      ( -- here )     ?EXEC  HERE  ;
 : >MARK     ( -- f addr )   TRUE  MARK   0 C, ;
@@ -181,11 +181,11 @@ VARIABLE OP  ( next opcode )
 : ."      B C,  ," ;
 : ABORT"  C C,  ," ;
 
-: \\ ;
 : { ;
 : } ;
 : forget ;
 : ,A  , ;
+: [COMPILE] ;
 
 \ : CELL+ CELL + ;
 \ : CELLS CELL * ;
@@ -202,9 +202,8 @@ VARIABLE OP  ( next opcode )
 
 : T:  HEADER  ] ;  \ to create words with no host header
 
-: ;_  [COMPILE] ; ; IMMEDIATE
+: ;_  POSTPONE ; ; IMMEDIATE
 : IMMEDIATE  PREVIOUS 40 OR SWAP TC! ;
-: [COMPILE] ;
 : ;   ?CSP EXIT [ ;
 : :   TARGET-CREATE !CSP ] ;_
 

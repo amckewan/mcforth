@@ -1,6 +1,6 @@
 # mcforth makefile
 
-all: bootstrap
+all: test
 
 CC = clang -m32
 CC64 = clang -m64
@@ -34,7 +34,7 @@ bootstrap:
 	hexdump -C forth.img > forth.hex
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
 	./forth test/suite.f -e "cr bye"
-#	rm kernel.inc
+	rm kernel.inc
 #	$(MAKE) test
 
 asm: prims.inc kernel.inc $(SOURCES) $(HEADERS)
