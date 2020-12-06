@@ -6,6 +6,8 @@ We have two choices:
 1. Just unlink the private headers
 2. Save the memory by putting them in another location
 
+Alternately we can just use vocabularies.
+
 Let's try the super simple model from Dewey Val Schorre FD 2/5
 
 internal
@@ -20,13 +22,9 @@ external
 module
 ~
 
-\ : internal  context cell+ @ ;
-\ : external  align here ;
-\ : module    ! ;
-
-: internal ;
-: external ;
-: module ;
+: internal  current @ @ ;
+: external  align here ;
+: module    ! ;
 
 \ But this requires all external words together
 \ How about we elevate selective words (from Hoffmann modules)
