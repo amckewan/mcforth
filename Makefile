@@ -1,6 +1,6 @@
 # mcforth makefile
 
-all: test2
+all: test
 
 CELL = 4
 
@@ -13,18 +13,18 @@ endif
 
 SOURCES = src/fo.c src/string.c src/parse.c src/file.c
 HEADERS = src/fo.h
-INCLUDES = -I.
-LIBS = -ledit
+# use libedit to avoid GPL
+LIBS = -lreadline
 
 forth: forth.inc $(SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o $@
+	$(CC) $(CFLAGS) $(SOURCES) $(LIBS) -o $@
 
 forth.inc: fo rth extend src/*.f
 	./fo extend
 	hexdump -C forth.img > forth.hex
 
 fo: prims.inc kernel.inc $(SOURCES) $(HEADERS)
-	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o $@
+	$(CC) -DKERNEL $(CFLAGS) $(SOURCES) $(LIBS) -o $@
 
 prims.inc kernel.inc: src/meta.f src/kernel.f
 	./forth src/meta.f -e ciao
@@ -33,24 +33,24 @@ prims.inc kernel.inc: src/meta.f src/kernel.f
 bootstrap:
 	gforth -e "$(CELL) CONSTANT CELL" src/cross.f -e ciao
 	hexdump -C kernel.img > kernel.hex
-	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
+	$(CC) -DKERNEL $(CFLAGS) $(SOURCES) $(LIBS) -o fo
 	./fo extend
 	hexdump -C forth.img > forth.hex
-	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
+	$(CC) $(CFLAGS) $(SOURCES) $(LIBS) -o forth
 	rm kernel.inc
 	$(MAKE) test
 
 asm: prims.inc kernel.inc $(SOURCES) $(HEADERS)
-	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) src/fo.c -S
+	$(CC) -DKERNEL $(CFLAGS) src/fo.c -S
 
 run: forth
 	@./forth
 
 test: forth test/*
-	@./forth test/suite.f -e "cr bye"
+	@./forth -e exit-on-error test/suite.f -e "cr bye"
 
 test2:
-	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
+	$(CC) -DKERNEL $(CFLAGS) $(SOURCES) $(LIBS) -o fo
 
 bench: forth
 	make -C bench

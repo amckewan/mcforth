@@ -1,4 +1,4 @@
-\ McForth Kernel
+\ Forth Kernel
 \
 \ Copyright (c) 2020 Andrew McKewan
 \
@@ -47,13 +47,20 @@
 #define CURRENT 8
 #define CONTEXT 9
 
-register byte *I;
-register cell *S, top;
+byte *I;
+cell *S, top;
 cell *R;
 cell w;
 
+#define LOCALS 0
+#if LOCALS
 cell *L;
-//cell self;
+#endif
+
+#define OBJECTS 0
+#if OBJECTS
+cell self;
+#endif
 
 // if (verbose) printf("Running from %u\n", COLD);
 I = abs(COLD);
@@ -121,17 +128,20 @@ OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT } ABORT(I)
 
 OP: DOCON       push at(aligned(I)); EXIT
 OP: DOVAR       push rel(aligned(I)); EXIT
-OP: DODOES      push rel(aligned(I)); w = at(I - 1) >> 8;
-                ` if (w) I = abs(w); else EXIT
+OP: DODOES      push rel(aligned(I)); I = abs(at(I - 1) >> 8); NEXT
 OP: DOVALUE     push at(aligned(I)); EXIT
 OP: DODEFER     w = at(aligned(I)); I = m + w; NEXT
 
---- \ OP: DOSELECTOR  w = find_method(AT(top - CELL), aligned(I));
+\ OP: DOSELECTOR  w = find_method(AT(top - CELL), aligned(I));
 \                 ` if (w) { *--R = (cell)I, I = m + w, pop; NEXT }
 \                 ` not_understood: ABORT("\x16message not understood")
+\ CODE BIND  ( sel class -- xt )
+\     ` top = find_method(top, *S++);
+\     ` if (!top) goto not_understood; NEXT;
+\ OP: DOOBJECT    push rel(aligned(I)) + CELL; EXIT
 
---- \ OP: DOOBJECT    push rel(aligned(I)) + CELL; EXIT
----
+
+18 OP!
 
 \ Local frame
 \ L --> old L
@@ -139,6 +149,7 @@ OP: DODEFER     w = at(aligned(I)); I = m + w; NEXT
 \       local#2
 \       local#n
 
+` #if LOCALS
 OP: L{          *--R = (cell)L, L = R;
                 ` w = *I++; while (w--) *--R = 0;
                 ` w = *I++; while (w--) *--R = top, pop;
@@ -146,11 +157,10 @@ OP: L{          *--R = (cell)L, L = R;
 OP: }L          R = L + 1, L = (cell *)*L; NEXT
 OP: L@          w = *I++, push L[-w]; NEXT
 OP: L!          w = *I++, L[-w] = top, pop; NEXT
+` #endif
 
 \ OP: ENTERM      *--R = self, self = top, pop; NEXT
 \ OP: EXITM       self = *R++; NEXT
----
----
 
 20 OP! ( lit op )
 
@@ -167,14 +177,11 @@ OP: LIT@        push AT(LIT); I += CELL; NEXT
 OP: LIT!        AT(LIT)  = top, pop; I += CELL; NEXT
 OP: LIT+!       AT(LIT) += top, pop; I += CELL; NEXT
 \ OP: IVAR        push self + LIT; I += CELL; NEXT
----
----
----
----
 
 30 OP! ( lit cond : op | lit )
 
 \ not needed for 0= 0< etc. so this frees up 6 slots, but be careful!
+\ compile, assumes these are literals corresponding to 7x ops
 ` #define LITCOND(cond) top = (cond) LOGICAL; I += CELL; NEXT
 
 ---
@@ -244,7 +251,7 @@ OP: U<=IF    IF2((ucell)*S <= (ucell)top)
 
 60 OP! ( binary/memory ops )
 
----
+OP: NOP         NEXT
 CODE +          top = *S++ + top; NEXT
 CODE -          top = *S++ - top; NEXT
 CODE *          top = *S++ * top; NEXT
@@ -537,10 +544,6 @@ CODE SEARCH-WORDLIST  ( c-addr u wid -- 0 | xt 1 | xt -1 )
 
 : '  ( --- xt )  BL WORD FIND 0= ABORT" ?" ;
 
-\ CODE BIND  ( sel class -- xt )
-\     ` top = find_method(top, *S++);
-\     ` if (!top) goto not_understood; NEXT;
-
 CODE >NAME ( xt -- nfa )  top = xt_to_name(top); NEXT
 CODE NAME> ( nfa -- xt )  top = name_to_xt(top); NEXT
 
@@ -564,9 +567,9 @@ VARIABLE ?CODE 0 ,
 
 : HERE   H @  ;
 : ALLOT  H +! ;
-: ,   H @ !  CELL H +! ;
-: C,  H @ C!  $ 1 H +! ;
-: W,  H @ W!  $ 2 H +! ;
+: ,   HERE !  CELL H +! ;
+: C,  HERE C!  $ 1 H +! ;
+: W,  HERE W!  $ 2 H +! ;
 
 CODE ALIGNED  top = aligned(top); NEXT
 : ALIGN  BEGIN HERE DUP ALIGNED < WHILE $ 0 C, REPEAT ;
@@ -596,16 +599,19 @@ CODE ALIGNED  top = aligned(top); NEXT
 : MEMORY  ( op -- ) \ e.g lit @
     LIT? IF  $ 40 XOR PATCH  ELSE  OP,  THEN ;
 
-: DON'T  ( op -- )  \ invert last conditional op
+: NOT,  ( op -- )  \ invert last conditional op
     LATEST  DUP $ 70 $ 80 WITHIN  OVER $ F7 AND $ 33 $ 38 WITHIN OR
     IF  $ 8 XOR PATCH DROP  ELSE  DROP OP,  THEN ;
 
 : PACK ( opc -- ) \ peephole optimizer
-    dup $ 70 = if DON'T exit then
-    dup $ 68 $ 6B within if  memory exit  then
-    dup $ 61 $ 80 within if  binary exit  then
-    op,
-;
+    DUP $ 60 $ 80 WITHIN
+    IF  DUP $ 68 $ 6B WITHIN IF  MEMORY EXIT  THEN
+        DUP $ 70 =           IF  NOT,   EXIT  THEN
+        BINARY EXIT
+    THEN OP, ;
+
+: LITOP ( xt -- )
+    COUNT  SWAP @ [COMPILE] LITERAL  $ 40 XOR PACK ;
 
 : INLINE?  ( xt -- n t | f ) \ count ops >= $60
     DUP BEGIN  DUP C@ WHILE
@@ -624,8 +630,7 @@ CODE ALIGNED  top = aligned(top); NEXT
     DUP C@ $ 13 = IF ( value )    CELL+ dA @ - $ 28 OP, ,         EXIT THEN
 
     \ inline lit op exit (e.g. 1+, HERE)
-    \ Not worth it, only a few words get optimized
-    DUP COUNT $ E0 AND $ 20 = SWAP CELL+ C@ 0= AND IF  COUNT OP, @ , EXIT  THEN
+    DUP COUNT $ 20 $ 40 WITHIN  SWAP CELL+ C@ 0= AND IF  LITOP EXIT  THEN
 
 \ Optional check for bad behavior!
 \    DUP CELL 1- AND ABORT" xt not aligned"
@@ -672,7 +677,6 @@ TAG TAG
     TAG COUNT TYPE  QUIT ;
 0 HAS COLD
 
-
 ( ********** Defining Words ********** )
 
 VARIABLE WARNING
@@ -708,4 +712,4 @@ T: ;  [COMPILE] EXIT [COMPILE] [ REVEAL ; IMMEDIATE forget
 
 : ]  $ -1 STATE ! ;
 : :NONAME  ALIGN HERE  DUP 'RECURSE !  ] ;
-T: :  HEADER SMUDGE  :NONAME DROP ;
+: :  HEADER SMUDGE  :NONAME DROP ;

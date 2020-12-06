@@ -45,9 +45,15 @@ VARIABLE SEER
         NEWLINE
     10 +LOOP  CLOSE  BASE ! ;
 
+: .INFO ( op )
+    BASE @ DECIMAL
+    SWAP . ." opcodes "
+    H' 2@ SWAP - . ." bytes"
+    BASE ! ;
+
 : SAVE  ( -- )
     CLOSE  CLOSE-INFO
-    CR ." Saving " BASE @ DECIMAL H' 2@ SWAP - . BASE ! ." bytes..."
+    CR ." Saving..."
     S" kernel.img" SAVE-IMAGE
     S" kernel.inc" SAVE-DICT
     ." done " ;
@@ -112,4 +118,5 @@ MARKER EMPTY
 HEX  8000 2000 0 FILL  8000 H' !
 { include ./kernel.f }
 PRUNE
+CR OP @ .INFO
 SAVE

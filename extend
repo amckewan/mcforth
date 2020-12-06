@@ -4,11 +4,10 @@ include rth
 \ Process command-line arguments
 : doargs
     1 begin dup argc < while
-        dup >r argv
-
+        dup>r argv
         over c@ '-' = if  1 /string
             over c@ 'e' = if
-                r> 1+ >r  r@ argc < if r@ argv evaluate then
+                r> 1+ dup>r argc < if r@ argv evaluate then
             then
             2drop
         else
@@ -21,10 +20,8 @@ include rth
     SOURCE-STACK 'IN !
     doargs
     TAG COUNT TYPE QUIT ;
-0 !
+0 ! ( cold )
 
 save forth.inc
 save-image forth.img
 bye
-
-\ :noname CR 1 (BYE) ; 1 CELLS !

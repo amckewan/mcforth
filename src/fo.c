@@ -225,7 +225,7 @@ void show_error(const char *msg, const char *here, const struct source *source) 
 
 int run(int argc, char *argv[]) {
 
-#include "prims.inc"
+#include "../prims.inc"
 
     default:
         printf("Invalid opcode 0x%02X\n", I[-1]);
@@ -236,9 +236,9 @@ int run(int argc, char *argv[]) {
 // Initial dictionary
 byte dict[] = {
 #ifdef KERNEL
-    #include "kernel.inc"
+    #include "../kernel.inc"
 #else
-    #include "forth.inc"
+    #include "../forth.inc"
 #endif
 };
 

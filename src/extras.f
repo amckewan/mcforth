@@ -1,5 +1,8 @@
 ( useful extras )
 
+:NONAME  CR 1 (BYE) ;
+: EXIT-ON-ERROR  LITERAL 1 CELLS ! ;
+
 : ON        TRUE  SWAP ! ;
 : OFF       FALSE SWAP ! ;
 
