@@ -1,49 +1,69 @@
-# FORTH and COMPILER
+# Compiler and Interpreter
 
-## Optimizing Compiler
+This section describes the compiler and interpreter as well as building
+from source.
 
-## Meta Compiler
+This is a traditional model, with an INTERPRET loop that looks up each word
+and compiles or executes it depending on STATE and the IMMEDIATE bit.
 
-cross.f kernel.f --[gforth]--> bootstrap.inc
-
-bootstrap.inc --[cc]--> bootstrap
-
-
-meta.f kernel.f --> fo rth --> kernel.inc
-
-
-kernel.inc --[cc]--> fo
-
-extend --[fo]--> forth.inc
-
-forth.inc --> cc -> forth
-
-./fo rth meta.f kernel.f -e ciao
+There is no support for double or floating point literals.
 
 ## Search Order
 
-There are two vocabularies, FORTH and COMPILER.
+Currently just FORTH, but can be extended to support the standard
+search-order words.
 
-## Extended Search Order
+## Optimizing Compiler
 
-For Objects (and perhaps others) it would be nice to have an "extra"
-vocabulary that is searched first. This is a simple extension rather
-than going to the super-general multi-wordlist solution.
+While originally using the cmForth dual-wordlist model, McForth now uses
+a traditional immediate-flag model. One consequence is that the optimizing
+compiler is now contained in more complex COMPILE, rather than being
+distributed among words in the COMPILER vocabulary.
 
-Interpreting: CONTEXT, FORTH
-Compiling: COMPILER, CONTEXT, FORTH
+COMPILE, performs the following optimizations:
 
-Need to add CURRENT replacing what is now CONTEXT
+* inline primatives
+* inline defining words (constant, variable)
+* combine binary operators (e.g. +) that follow literals
+* combine branches with preceeding conditional operations
+* compile short call if possible
+* (todo) tail-call optimization
 
-We could have the extra wordlist chain to FORTH like was done
-in Fig Forth. This means the interpreter does not have to change much.
+## Meta Compiler
 
-For the general solution, CONTEXT is now an array of X entries (standars says at least 8).
-FIND searches them in order. We mark the end of the current order with a NULL.
+The meta compiler is used to compile the Forth kernel. It compiles
+the kernel into a separate area of memory. The implementation was adapted
+from cmForth and is quit simple because the host and target have exactly
+the same model (dictionary structure, primatives, etc.).
 
-COMPILER still has it's special place which is searched first when compiling.
+The metacompiler produces two files, both of which are included in
+fo.c which is compiled to produce the forth executable.
+
+* prims.inc has the C code for all the primatives
+* kernel.inc is the dictionary image for the kernel
+
+The output of this step is the executable `fo`. This can be run, like ThisForth,
+as `fo rth` for the full forth system.
+
+We can also (and typically do) build an extended binary by running `fo extend`.
+This saves the dicationary image as forth.inc, which can be included in fo.c
+and compiled to product the forth executable.
+
+The cross compiler allows us to bootstrap from gforth.
+
+    gforth + cross.f + kernel.f --> prims.inc kernel.inc + fo.c --> fo
+    fo + extend --> forth.inc + fo.c --> forth
+
+Now we use forth to compile itself. This one is faster since it
+uses the optimizing compiler to compile the kernel.
+
+    forth + meta.f + kernel.f --> prims.inc kernel.inc + fo.c --> fo
+    fo + extend --> forth.inc + fo.c --> forth
+
 
 ## Local Variables
+
+This needs a new solution.
 
 If we do locals we also need an additional vocabulary in the search order.
 This one is transient so it could be added to either FORTH or COMPILER and then removed

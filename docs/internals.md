@@ -12,7 +12,7 @@ The default is 32 bits.
 A cell is 4 or 8 bytes and matches the 32/64 bit compiler so that a cell can hold an address.
 
 All forth addresses are offsets from the base of memory 'm'.
-These are converted to/from abolute addresses in the engine as required.
+These are converted to/from abolute addresses in the kernel as required.
 
 Since the dictionary contains no absolute addresses,
 it is relocatable which allows the executable to contain
@@ -25,7 +25,7 @@ The top of the stack is cached in the variable 'top'.
 The next stack entry is S[0], then S[1], etc.
 The bottom of the stack (or maybe top since it groes down) is S0.
 
-The first X cells of memory are used for variables at fixed offsets
+The first few cells of memory are used for variables at fixed offsets
 that are shared between Forth and C.
 Some of these are also known by the target compiler so must
 only be changed with caution.
@@ -33,19 +33,18 @@ only be changed with caution.
 | offset | variable  | notes
 | -------| ----------| -----
 |  0     |           | cold-start xt
-|  1     |           | warm start (abort)
+|  1     |           | warm start (quit)
 |  2     | H         | dictionary pointer
-|  3     | BASE      |
-|  4     | STATE     |
+|  3     | BASE      | number base
+|  4     | STATE     | interpret/compile flag
 |  5     | 'IN       | points to current input source
-|  6-7   | FORTH-WORDLIST | Forth wordlist
+|  6-7   | FORTH-WORDLIST | Forth wordlist + voc link
 |  8     | CURRENT   | wordlist for new definitions
-|  9-11  | CONTEXT   | search order wordlists (zero terminated)
-
+|  9-17  | CONTEXT   | search order wordlists (8 cells + zero terminator)
 
 # Forth Registers
 
-Each of the Forth registers is local variable in the run() function.
+The Forth registers are local variable in the run() function.
 They are only visible to the primatives defined in the kernel.
 
 Register | Description
@@ -53,10 +52,14 @@ Register | Description
 I    | Instruction pointer
 S    | Stack pointer
 R    | Return-stack pointer
-L    | Local frame pointer
+L    | Local frame pointer (optional)
 top  | Top of stack
-self | Object pointer
+self | Object pointer (optional)
 w    | Scratch register
+
+The optional registers can be conditionally compile to support
+local variable and objects respectively. Including them impacts
+the C compiler optimization and can slow down the engine.
 
 # Opcodes
 
@@ -64,10 +67,10 @@ The opcodes are organized into 16 pages of 16 opcodes each.
 
 The first 8 pages have specific assignments known to the compiler and optimizers.
 Many of these opcodes have arguments following such as literals or
-branch offsets. The remaining pages are for other CODE words in no particular order.
+branch offsets.
+The remaining 8 pages are for other CODE words in no particular order.
 
-Opcodes 00-5F have operands and will not be automatically inlined. They are used
-by COMPILER words that know what to do in each case.
+Opcodes 00-5F have operands and will not be automatically inlined.
 There are several types of operands:
 
 * Literals (cell bytes)
@@ -88,7 +91,6 @@ Page | Description | Example
 6 | op | +
 7 | cond | <
 
-
 ## Page 0: Special Functions
 
 opcode | function | operands
@@ -102,7 +104,7 @@ opcode | function | operands
 6 | loop | offset
 7 | +loop | offset
 8 |
-9 | nop
+9 |
 A | s" | counted string
 B | ." | counted string
 C | abort" | counted string

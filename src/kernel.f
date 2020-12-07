@@ -119,7 +119,7 @@ OP: +LOOP       w = *R, *R += top;
                 ` else BRANCH; pop; NEXT
 
 ---
-OP: NOP        NEXT
+---
 OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
 OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT } ABORT(I)
