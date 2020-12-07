@@ -26,13 +26,18 @@
 ( COLD )  0 ,  ( WARM ) 0 ,  ( H ) 0 ,  ( BASE ) #10 ,
 ( STATE ) 0 ,  ( 'IN )  0 ,
 ( NULL ) 0 , 0 , 8009 , ( NOP R>DROP EXIT )
-( CONTEXT ) 1 ,  0 ,  HERE 0 , 2001 ,  HERE SWAP ,A 2001 ,  ,A
+( CONTEXT ) 1 ,  0 , 0 ,
+( HANDLER ) 0 , 8 ,
+( TIB ) 0 , 0 ,
+( MSG ) 0 ,
 
 2 +ORIGIN CONSTANT H
 3 +ORIGIN CONSTANT BASE
 4 +ORIGIN CONSTANT STATE
 5 +ORIGIN CONSTANT 'IN
 9 +ORIGIN CONSTANT CONTEXT
+0E +ORIGIN CONSTANT #TIB
+10 +ORIGIN CONSTANT MSG
 
 ``
 #define COLD M[0]
@@ -42,6 +47,10 @@
 #define STATE M[4]
 #define SOURCE M[5]
 #define CONTEXT 9
+#define HANDLER M[12]
+#define RESUME M[13]
+#define TIB 14
+#define MSG M[16]
 
 register byte *I;
 register cell *S, top;
@@ -84,6 +93,10 @@ next:
 #define BRANCH      I += OFFSET
 #define NOBRANCH    I += 1
 #define EXIT        I = (byte *)*R++; NEXT
+
+#define THROW       R = (cell*) HANDLER, \
+                    HANDLER = *R++, S = (cell*) *R++, I = (byte*) *R++
+
 ``
 
 0 OP! ( special functions )
@@ -100,11 +113,12 @@ OP: +LOOP       w = *R, *R += top;
                 ` if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
                 ` else BRANCH; pop; NEXT
 
----
-OP: NOP        NEXT
+OP: RESUME      HANDLER = *R++, R++, I = (byte*) *R++, push 0;
+OP: NOP         NEXT
 OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
-OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT } ABORT(I)
+OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT } //ABORT(I)
+                ` MSG = rel(I), THROW, top = -2; NEXT
 
 10 OP! ( runtime for defining words )
 
@@ -567,7 +581,7 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
 : INTERPRET  ( -- )
     BEGIN  STATE @
-        IF  $ 6 -'
+        IF  $ 2 -'
             IF  $ 1 -FIND IF  NUMBER \\ LITERAL  ELSE  COMPILE,  THEN
             ELSE  EXECUTE
             THEN
@@ -577,9 +591,21 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
 CODE R0!  R = R0; NEXT
 
-: QUIT  R0!
+CODE CATCH  ( xt -- ex# | 0 )
+    ` *--R = (cell) I, *--R = (cell) S, *--R = HANDLER, HANDLER = (cell) R,
+    ` *--R = (cell) &RESUME, I = m + top, pop; NEXT
+
+CODE THROW  ( n -- )
+    ` if (top) THROW; else pop; NEXT
+
+: xQUIT  R0!
     BEGIN  SOURCE-DEPTH 0> WHILE  SOURCE>  REPEAT
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
+
+: QUIT  R0!
+    BEGIN  SOURCE-DEPTH 0> WHILE  SOURCE>  REPEAT
+    BEGIN  CR QUERY  ['] INTERPRET CATCH
+        ?DUP IF ."  error " . ELSE ."  ok" THEN  AGAIN ;
 1 HAS QUIT
 
 : INCLUDED  ( str len -- )

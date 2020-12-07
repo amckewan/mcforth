@@ -32,7 +32,7 @@ FORTH
 : CHAR  BL WORD 1+ C@ ;
 COMPILER
 : [CHAR]  CHAR \\ LITERAL ;
-: [']     '    \\ LITERAL ;
+: [']     ' dA @ - \\ LITERAL ;
 FORTH
 
 : BLANK  BL FILL ;

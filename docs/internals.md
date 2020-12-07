@@ -173,3 +173,67 @@ Conditional branch (e.g. `< if`)
 70  | 71  | 72  | 73  | 74  | 75  | 76  | 77  |     | 78  | 79  | 7A  | 7B  | 7C  | 7D  | 7E  | 7F
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
 0=  | 0<  | 0>  | =   | <   | >   | U<  | U>  |     | 0<> | 0>= | 0<= | <>  | >=  | <=  | U>= | U<=
+
+# CATCH and THROW
+
+
+               return addr (I after CATCH)
+               saved S
+    handler -> old handler
+               resume xt (at origin)
+
+catch/throw make source-stack disappear
+
+CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
+
+variable handler
+OP: RESUME
+    HANDLER = *R++, R++, I = (byte*) *R++, push 0; NEXT
+
+CODE CATCH  ( xt -- ex# | 0 )
+    ` *--R = (cell) I,
+    ` *--R = (cell) S,
+    ` *--R = HANDLER,
+    ` HANDLER = (cell) R,
+    ` *--R = (cell) m + RESUME,
+    ` I = m + top, pop; NEXT
+
+CODE THROW  ( n -- )
+    ` if (top) R = (cell*) HANDLER, HANDLER = *R++, S = *R++, I = (byte*) *R++;
+    ` else pop; NEXT
+
+code )catch
+    HANDLER = *R++, R++, push 0; NEXT ( or EXIT )
+: catch
+    catch( execute )catch ;
+
+
+: interpret  begin 1 -' if number else execute then again;
+
+: ]  begin  2 -' if  1 -find if number \\ literal else compile, then
+       else execute then again ;
+
+: evaluate ( adr len -- )
+    #tib 2@ 2>r  >in 2@ 2>r
+    #tib 2!  -1 0 >in 2!
+    ['] interpret catch
+    2r> >in 2!  2r> #tib 2!
+    throw ;
+
+\ but more clumsy with 6 items in source
+>in  in and source id
+#tib  len and addr
+'file  filename and line#
+
+
+: included ( adr len -- )
+    read throw evaluate ;
+
+: query  tib dup 80 accept #tib 2!  0 >in ! ;
+
+: quit r0!
+    begin
+        query ['] interpret catch 0= if ."  ok" then
+    again ;
+
+OP: abort"    MSG = abs(I), push(-2), throw...

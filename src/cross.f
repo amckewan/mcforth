@@ -128,8 +128,8 @@ VARIABLE CSP
    DOES>  ?EXEC  @ COMPILE, ;
 
 : H. . ;
-: '-T  ' >BODY @ ;
-: HAS ( n -- )  '-T  SWAP +ORIGIN T! ;
+: T'  ' >BODY @ ;
+: HAS ( n -- )  T' SWAP +ORIGIN T! ;
 
 \ Generate primatives
 : ?COMMENT  ( allow Forth comment after OP: etc. )
@@ -153,6 +153,7 @@ VARIABLE OP  ( next opcode )
 \ Target Literals
 : LITERAL  ( n -- )  ?EXEC  20 C,  , ;
 : $   BL WORD NUMBER DROP LITERAL ;
+: [']  T' LITERAL ;
 
 \ Define Meta Branching Constructs
 : ?CONDITION  INVERT ABORT" unbalanced" ;
