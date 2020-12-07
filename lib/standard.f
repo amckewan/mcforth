@@ -6,12 +6,13 @@
 : CHAR+ 1+ ;
 : DABS ;
 
-: FM/MOD SM/REM ; \ wrong behavior
-\ F83
-\ CODE /MOD   ( num den -- rem quot )
-\ BX  POP    AX  POP    CWD    BX CX MOV    DX CX  XOR
-\ 0>=  IF    BX  IDIV    2PUSH    THEN
-\ BX  IDIV   BX DX  ADD    AX  DEC    2PUSH   END-CODE
+( fm/mod adapted from standard implementation )
+: FM/MOD  ( d n -- rem quot )
+    DUP>R SM/REM
+    ( if the remainder is not zero and has a different sign than the divisor )
+    OVER DUP SWAP R@ XOR 0< AND IF
+        1- SWAP R@ + SWAP
+    THEN  R>DROP ;
 
 : DEFER@  >BODY @ ;
 : DEFER!  >BODY ! ;

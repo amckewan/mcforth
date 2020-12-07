@@ -14,7 +14,8 @@ endif
 SOURCES = src/fo.c src/string.c src/parse.c src/file.c
 HEADERS = src/fo.h
 # use libedit to avoid GPL
-LIBS = -lreadline
+#LIBS = -lreadline
+LIBS = -ledit
 
 forth: forth.inc $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(SOURCES) $(LIBS) -o $@
@@ -49,14 +50,11 @@ run: forth
 test: forth test/*
 	@./forth -e exit-on-error test/suite.f -e "cr bye"
 
-test2:
-	$(CC) -DKERNEL $(CFLAGS) $(SOURCES) $(LIBS) -o fo
-
 bench: forth
 	make -C bench
 
 checkans: forth
-	./forth /usr/share/gforth/0.7.3/test/checkans.fs -e bye
+	./forth lib/standard.f /usr/share/gforth/0.7.3/test/checkans.fs -e bye
 
 clean:
 	@rm -f fo forth *.inc *.img *.hex *.info *.s

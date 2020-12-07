@@ -64,16 +64,19 @@ cell self;
 
 // if (verbose) printf("Running from %u\n", COLD);
 I = abs(COLD);
+S = S0;
 goto start;
 
-abort:
+abortq:
     show_error((char*)I, abs(HERE), abs(SOURCE));
+abort:
+    S = S0;
+quit:
     I = abs(WARM);
 start:
+    R = R0;
     STATE = 0;
     M[CURRENT] = M[CONTEXT] = CELLS(FORTH);
-    S = S0;
-    R = R0;
 next:
 #if 0
     if (verbose > -1) {
@@ -92,7 +95,7 @@ next:
 #define pop3 top = S[2], S += 3
 #define LOGICAL ? -1 : 0
 
-#define ABORT(msg)  I = (byte *)(msg); goto abort;
+#define ABORT(msg)  I = (byte *)(msg); goto abortq;
 #define NEXT        goto next;
 #define LIT         at(I)
 #define OFFSET      *(int8_t *)I
@@ -656,25 +659,26 @@ CODE ALIGNED  top = aligned(top); NEXT
         THEN
     REPEAT DROP ;
 
-CODE R0!  R = R0; NEXT
-
-: QUIT  R0!
-    BEGIN  SOURCE-DEPTH 0> WHILE  SOURCE>  REPEAT
-    BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
-1 HAS QUIT
-
 : INCLUDED  ( str len -- )
     2DUP R/O OPEN-FILE ABORT" file not found"
     >SOURCE  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
 
 : INCLUDE  PARSE-NAME INCLUDED ;
 
+CODE QUIT   goto quit;
+CODE ABORT  goto abort;
+
 TAG TAG
+
+: WARM
+    BEGIN  SOURCE-DEPTH 0> WHILE  SOURCE>  REPEAT
+    BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
+1 HAS WARM
 
 : COLD
     SOURCE-STACK 'IN !
     ARGC $ 1 ?DO  I ARGV INCLUDED  LOOP
-    TAG COUNT TYPE  QUIT ;
+    TAG COUNT TYPE  WARM ;
 0 HAS COLD
 
 ( ********** Defining Words ********** )

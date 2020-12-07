@@ -70,15 +70,15 @@
 \     REFILL and SOURCE-ID from the user input device which are not possible
 \     when testing from a file such as this one
 \     UNUSED (partially tested) as the value returned is system dependent
-\     Obsolescent words #TIB CONVERT EXPECT QUERY SPAN TIB as they DEFINED been
+\     Obsolescent words #TIB CONVERT EXPECT QUERY SPAN TIB as they have been
 \     removed from the Forth 2012 standard
 
-\ Results from words that output to the user output device DEFINED to visually
+\ Results from words that output to the user output device have to visually
 \ checked for correctness. These are .R U.R .(
 
 \ -----------------------------------------------------------------------------
 \ Assumptions & dependencies:
-\     - tester.fr (or ttester.fs), errorreport.fth and utilities.fth DEFINED been
+\     - tester.fr (or ttester.fs), errorreport.fth and utilities.fth have been
 \       included prior to this file
 \     - the Core word set available
 \ -----------------------------------------------------------------------------
@@ -401,7 +401,7 @@ T{ -1  2  1 QD6 -> 2 3 4 5 6 7 6 }T
 T{  2 -1  1 QD6 -> -1 0 1 3 }T
 
 \ -----------------------------------------------------------------------------
-DEFINED BBFFER: [IF]
+DEFINED BUFFER: [IF]
 TESTING BUFFER:
 
 T{ 8 BUFFER: BUF:TEST -> }T
