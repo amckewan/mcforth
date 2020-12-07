@@ -68,3 +68,4 @@ FILE *open_file(const char *str, int len, const char *mode);
 cell accept(cell addr_va, cell max);
 cell refill(cell source_va);
 void show_error(const char *msg, const char *here, const struct source *source);
+cell readall(cell *S);

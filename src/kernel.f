@@ -48,10 +48,6 @@ register cell *S, top;
 register cell *R;
 cell w;
 
-cell *L;
-cell self;
-
-// if (verbose) printf("Running from %u\n", COLD);
 I = abs(COLD);
 goto start;
 
@@ -109,9 +105,6 @@ OP: NOP        NEXT
 OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
 OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT } ABORT(I)
----
----
----
 
 10 OP! ( runtime for defining words )
 
@@ -121,32 +114,6 @@ OP: DODOES      push rel(aligned(I)); w = at(I - 1) >> 8;
                 ` if (w) I = abs(w); else EXIT
 OP: DOVALUE     push at(aligned(I)); EXIT
 OP: DODEFER     w = at(aligned(I)); I = m + w; NEXT
-
-OP: DOSELECTOR  w = find_method(AT(top - CELL), aligned(I));
-                ` if (w) { *--R = (cell)I, I = m + w, pop; NEXT }
-                ` not_understood: ABORT("\x16message not understood")
-
---- \ OP: DOOBJECT    push rel(aligned(I)) + CELL; EXIT
----
-
-\ Local frame
-\ L --> old L
-\       local#1
-\       local#2
-\       local#n
-
-OP: L{          *--R = (cell)L, L = R;
-                ` w = *I++; while (w--) *--R = 0;
-                ` w = *I++; while (w--) *--R = top, pop;
-                ` NEXT
-OP: }L          R = L + 1, L = (cell *)*L; NEXT
-OP: L@          w = *I++, push L[-w]; NEXT
-OP: L!          w = *I++, L[-w] = top, pop; NEXT
-
-OP: ENTERM      *--R = self, self = top, pop; NEXT
-OP: EXITM       self = *R++; NEXT
----
----
 
 20 OP! ( lit op )
 
@@ -162,15 +129,9 @@ OP: LITXOR      top ^= LIT, I += CELL; NEXT
 OP: LIT@        push AT(LIT); I += CELL; NEXT
 OP: LIT!        AT(LIT)  = top, pop; I += CELL; NEXT
 OP: LIT+!       AT(LIT) += top, pop; I += CELL; NEXT
-OP: IVAR        push self + LIT; I += CELL; NEXT
----
----
----
----
 
 30 OP! ( lit cond : op | lit )
 
-\ not needed for 0= 0< etc. so this frees up 6 slots, but be careful!
 ` #define LITCOND(cond) top = (cond) LOGICAL; I += CELL; NEXT
 
 ---
@@ -192,7 +153,6 @@ OP: LITU>=      LITCOND((ucell)top >= (ucell)LIT)
 OP: LITU<=      LITCOND((ucell)top <= (ucell)LIT)
 
 40 OP! ( lit cond branch : op | lit | offset )
-\ not needed for 0= 0< etc. so this frees up 6 slots, but be careful!
 
 ` #define LITIF(cond) w = LIT, I += CELL; if (cond) NOBRANCH; else BRANCH; pop; NEXT
 
@@ -252,11 +212,6 @@ CODE XOR        top = *S++ ^ top; NEXT
 CODE @          top = *(cell *)(m + top); NEXT
 CODE !          *(cell *)(m + top) = *S; pop2; NEXT
 CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
----
----
----
----
----
 
 70 OP! ( conditionals )
 
@@ -436,6 +391,8 @@ CODE WRITE-LINE ( a u fid -- ior )
     ` if (w == *S) *S = 1, w = fwrite("\n", 1, 1, (FILE*)top);
     ` top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
 
+( read whole file into memory )
+CODE READ  ( name len -- addr len ior )  push(readall(S)); NEXT
 
 \ Memory allocation
 CODE ALLOCATE ( n -- a ior )    *--S = rel(malloc(top)), top = *S ? 0 : -1; NEXT
@@ -513,11 +470,6 @@ CODE -FIND  ( str v -- str t | xt f )
 
 : -'  ( n - h t, a f )  $ 20 WORD SWAP -FIND ;
 : '   ( -- a )   CONTEXT @ -' ABORT" ?" ;
-
-\ : bind ( sel class -- xt ) bind? not abort" message not understood" ;
-CODE BIND  ( sel class -- xt )
-    ` top = find_method(top, *S++);
-    ` if (!top) goto not_understood; NEXT;
 
 CODE >NAME ( xt -- nfa )  top = xt_to_name(top); NEXT
 CODE NAME> ( nfa -- xt )  top = name_to_xt(top); NEXT

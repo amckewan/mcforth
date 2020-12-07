@@ -17,6 +17,20 @@ FILE *open_file(const char *str, int len, const char *mode) {
     return file;
 }
 
+cell readall(cell *S) {
+    FILE *file = open_file(abs(S[1]), *S, "r");
+    if (!file) return -1;
+    fseek(file, 0, SEEK_END);
+    int size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    uint8_t *buf = malloc(size);
+    size_t len = fread(buf, 1, size, file);
+    fclose(file);
+    S[1] = rel(buf);
+    S[0] = len;
+    return 0;
+}
+
 cell accept(cell addr_va, cell max) {
     char *line = readline(0);
     if (!line) return -1;
