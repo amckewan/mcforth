@@ -27,6 +27,8 @@
 ( H ) 0 ,  ( BASE ) #10 ,  ( STATE ) 0 ,  ( 'IN ) 0 ,
 ( FORTH ) HERE 0 , 0 ,
 ( CURRENT ) DUP ,A  ( CONTEXT ) ,A  0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
+( HANDLER) 0 , 8 ,
+( MSG ) 0 ,
 
 2 +ORIGIN CONSTANT H
 3 +ORIGIN CONSTANT BASE
@@ -35,6 +37,8 @@
 6 +ORIGIN CONSTANT FORTH-WORDLIST
 8 +ORIGIN CONSTANT CURRENT
 9 +ORIGIN CONSTANT CONTEXT
+12 +ORIGIN CONSTANT HANDLER
+14 +ORIGIN CONSTANT MSG
 
 ``
 #define COLD M[0]
@@ -46,6 +50,9 @@
 #define FORTH 6
 #define CURRENT 8
 #define CONTEXT 9
+#define HANDLER M[0x12]
+#define RESUME M[0x13]
+#define MSG M[0x14]
 
 byte *I;
 cell *S, top;
@@ -68,7 +75,7 @@ S = S0;
 goto start;
 
 abortq:
-    show_error((char*)I, abs(HERE), abs(SOURCE));
+    show_error(-2, (char*)I, abs(HERE), abs(SOURCE));
 abort:
     S = S0;
 quit:
@@ -102,6 +109,9 @@ next:
 #define BRANCH      I += OFFSET
 #define NOBRANCH    I += 1
 #define EXIT        I = (byte *)*R++; NEXT
+
+#define THROW       R = (cell*) HANDLER, \
+                    HANDLER = *R++, S = (cell*) *R++, I = (byte*) *R++
 ``
 
 0 OP! ( special functions )
@@ -118,14 +128,13 @@ OP: +LOOP       w = *R, *R += top;
                 ` if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
                 ` else BRANCH; pop; NEXT
 
----
+OP: RESUME      HANDLER = *R++, R++, I = (byte*) *R++, push 0; NEXT
 ---
 OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
-OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT } ABORT(I)
----
----
----
+OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT } //ABORT(I)
+                ` if (!HANDLER) goto abortq;
+                ` MSG = rel(I), THROW, top = -2; NEXT
 
 10 OP! ( runtime for defining words )
 
@@ -336,12 +345,10 @@ CODE WITHIN
 `   S++;
 `   NEXT
 
-` #define CELLBITS (CELL * 8)
-
 CODE M*  ( n1 n2 -- d ) {
 `   int64_t d = (int64_t)*S * (int64_t)top;
 `   *S = d ;
-`   top = d >> CELLBITS;
+`   top = d >> 32;
 `   NEXT }
 
 CODE UM* ( u1 u2 -- ud ) {
@@ -349,11 +356,11 @@ CODE UM* ( u1 u2 -- ud ) {
 `   uint64_t u2 = (ucell)top;
 `   uint64_t ud = u1 * u2;
 `   *S = ud ;
-`   top = ud >> CELLBITS;
+`   top = ud >> 32;
 `   NEXT }
 
 CODE UM/MOD  ( ud u1 -- rem quot ) {
-`   uint64_t ud = ((uint64_t)*S << CELLBITS) | (ucell)S[1];
+`   uint64_t ud = ((uint64_t)*S << 32) | (ucell)S[1];
 `   uint64_t u = (ucell)top;
 `   ucell quot = ud / u;
 `   ucell rem = ud % u;
@@ -362,7 +369,7 @@ CODE UM/MOD  ( ud u1 -- rem quot ) {
 `   NEXT }
 
 CODE SM/REM  ( d n -- rem quot ) {
-`   int64_t d = (((uint64_t)*S) << CELLBITS) | ((ucell) S[1]);
+`   int64_t d = (((uint64_t)*S) << 32) | ((ucell) S[1]);
 `   int32_t quot = d / top;
 `   int32_t rem = d % top;
 `   *++S = rem;
@@ -501,9 +508,6 @@ CODE NEW-STRING ( adr len -- c-str ) top = rel(new_string(abs(*S++), top)); NEXT
     $ -8 CELLS 'IN +! ;
 
 CODE REFILL ( -- f )  push refill(SOURCE); NEXT
-
-80 BUFFER TIB
-: QUERY  $ 0 SOURCE-FILE !  TIB SOURCE-BUF !  REFILL 0= IF BYE THEN ;
 
 \ ********** Numbers **********
 
@@ -658,6 +662,28 @@ CODE ALIGNED  top = aligned(top); NEXT
         ELSE  FIND IF  EXECUTE ?STACK  ELSE  NUMBER  THEN
         THEN
     REPEAT DROP ;
+
+CODE CATCH  ( xt -- ex# | 0 )
+    ` *--R = (cell) I, *--R = (cell) S, *--R = HANDLER, HANDLER = (cell) R,
+    ` *--R = (cell) &RESUME, I = m + top, pop; NEXT
+
+CODE THROW  ( n -- )
+    ` if (top) THROW; else pop; NEXT
+
+CODE RESET  R = R0; NEXT
+
+80 BUFFER TIB
+: QUERY  $ 0 SOURCE-FILE !  TIB SOURCE-BUF !  REFILL 0= IF BYE THEN ;
+
+CODE ERROR ( n -- )
+    ` show_error(top, (top == -2) ? abs(MSG) : 0, abs(HERE), abs(SOURCE));
+    ` STATE = 0, S = S0; NEXT
+
+: (QUIT)
+    RESET  $ 0 STATE !
+    BEGIN  CR QUERY  ['] INTERPRET CATCH
+           ?DUP IF ERROR ELSE STATE @ 0= IF ."  ok" THEN THEN
+    AGAIN ;
 
 : INCLUDED  ( str len -- )
     2DUP R/O OPEN-FILE ABORT" file not found"

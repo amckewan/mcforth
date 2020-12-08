@@ -29,7 +29,7 @@ cell name_to_xt(cell nfa) {
 cell xt_to_name(cell cfa) {
     cell nfa = cfa - CELL;
     // including smudge bit makes mishits less likely
-    while (nfa > cfa - 32 && aligned(nfa + (m[nfa] & 127) + 1) != cfa) nfa -= CELL;
+    while (nfa > cfa - 32 && aligned(nfa + (m[nfa] & 63) + 1) != cfa) nfa -= CELL;
     return nfa;
 }
 
@@ -205,7 +205,7 @@ void dump(int a, int n, int base) {
     }
 }
 
-void show_error(const char *msg, const char *here, const struct source *source) {
+void show_error(int code, const char *msg, const char *here, const struct source *source) {
     int col = source->in;
     if (col == source->len) col++;
     putchar('\n');
@@ -217,6 +217,8 @@ void show_error(const char *msg, const char *here, const struct source *source) 
     if (msg) {
         n = *msg++;
         while (n--) putchar(*msg++);
+    } else {
+        printf("Error %d", code);
     }
     // show the line and position
 //    cr(); type(source->addr, source->len);

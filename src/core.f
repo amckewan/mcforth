@@ -54,7 +54,7 @@ DECIMAL
 
 : CHAR      BL WORD 1+ C@ ;
 : [CHAR]    CHAR [COMPILE] LITERAL ; IMMEDIATE
-: [']       ' [COMPILE] LITERAL ; IMMEDIATE
+: [']       ' dA @ - [COMPILE] LITERAL ; IMMEDIATE
 
 : BLANK  BL FILL ;
 : PLACE  ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;

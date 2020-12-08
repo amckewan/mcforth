@@ -4,6 +4,8 @@
 
 VARIABLE H'  HEX 8000 ,
 
+: .dA HERE . dA @ . ;
+
 : +ORIGIN  ( n -- ta )  CELL * ;
 
 \ ========== Save target ==========

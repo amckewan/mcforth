@@ -148,6 +148,7 @@ VARIABLE OP  ( next opcode )
 \ Target Literals
 : LITERAL  ( n -- )  ?EXEC  20 C,  , ;
 : $   BL WORD NUMBER DROP LITERAL ;
+: [']  T' LITERAL ;
 
 \ Target branching constructs
 : ?CONDITION  INVERT ABORT" unbalanced" ;
