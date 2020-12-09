@@ -535,15 +535,10 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
 
 : ?STACK  DEPTH 0< ABORT" stack?" ;
 
-: INTERPRET  ( -- )
-    BEGIN  STATE @
-        IF  $ 2 -'
-            IF  $ 1 -FIND IF  NUMBER \\ LITERAL  ELSE  COMPILE,  THEN
-            ELSE  EXECUTE
-            THEN
-        ELSE  $ 1 -' IF  NUMBER  ELSE  EXECUTE  ?STACK  THEN
-        THEN
-    AGAIN ;
+: ]  BEGIN  $ 2 -' IF  $ 1 -FIND IF  NUMBER \\ LITERAL  ELSE  COMPILE,  THEN
+        ELSE  EXECUTE  THEN AGAIN ;
+
+: INTERPRET  BEGIN  $ 1 -' IF  NUMBER  ELSE  EXECUTE ?STACK  THEN  AGAIN ;
 
 CODE RESET  R = R0; NEXT
 
@@ -580,9 +575,12 @@ VARIABLE WARNING
 : PREVIOUS ( -- nfa count )  LAST @ CELL+  DUP C@ ;
 
 : SMUDGE     PREVIOUS  $ 20 OR   SWAP C! ;
-: REVEAL     PREVIOUS  $ DF AND  SWAP C! ;
+\ : REVEAL     PREVIOUS  $ DF AND  SWAP C! ;
+COMPILER
+: RECURSIVE  PREVIOUS  $ DF AND  SWAP C! ;
+FORTH
 
-VARIABLE 'RECURSE
+\ VARIABLE 'RECURSE ( or just don't use it in :noname, duh )
 
 : LINK,   ALIGN HERE  OVER @ ,  SWAP ! ;
 : HEADER  WARN  LAST LINK,  BL WORD C@ 1+ ALLOT  ALIGN  -OPT ;
@@ -599,13 +597,10 @@ VARIABLE 'RECURSE
 \ Be careful from here on...
 
 COMPILER
-: [  $ 0 STATE ! ;
+: [  R>DROP ;
 : EXIT  $ 0 OP, ;
-T: ;  \\ EXIT \\ [ REVEAL ; forget
+T: ;  \\ EXIT \\ RECURSIVE  R>DROP ; forget
 : \\  $ 2 -' ABORT" ?" COMPILE, ;
-: RECURSE  'RECURSE @ COMPILE, ;
+\ : RECURSE  'RECURSE @ COMPILE, ;
 FORTH
-
-: ]  $ -1 STATE ! ;
-: :NONAME  ALIGN HERE  DUP 'RECURSE !  ] ;
-T: :  HEADER SMUDGE  :NONAME DROP ;
+T: :  HEADER SMUDGE  ] ;
