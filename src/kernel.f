@@ -60,8 +60,9 @@ cell w;
 I = abs(COLD);
 goto start;
 
-abort:
+abortq:
     show_error((char*)I, abs(HERE), abs(SOURCE));
+abort:
     I = abs(WARM);
 start:
     STATE = 0;
@@ -86,7 +87,6 @@ next:
 #define pop3 top = S[2], S += 3
 #define LOGICAL ? -1 : 0
 
-#define ABORT(msg)  I = (byte *)(msg); goto abort;
 #define NEXT        goto next;
 #define LIT         at(I)
 #define OFFSET      *(int8_t *)I
@@ -117,8 +117,10 @@ OP: RESUME      HANDLER = *R++, R++, I = (byte*) *R++, push 0;
 OP: NOP         NEXT
 OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
-OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT } //ABORT(I)
-                ` MSG = rel(I), THROW, top = -2; NEXT
+\ OP: ABORT"      if (top) goto abort; w = *I++, I += w, pop; NEXT
+OP: ABORT"      if (!top) w = *I++, I += w, pop;
+                ` else if (HANDLER == 0) goto abortq;
+                ` else MSG = rel(I), THROW, top = -2; NEXT
 
 10 OP! ( runtime for defining words )
 
@@ -405,9 +407,6 @@ CODE WRITE-LINE ( a u fid -- ior )
     ` if (w == *S) *S = 1, w = fwrite("\n", 1, 1, (FILE*)top);
     ` top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
 
-( read whole file into memory )
-CODE READ  ( name len -- addr len ior )  push(readall(S)); NEXT
-
 \ Memory allocation
 CODE ALLOCATE ( n -- a ior )    *--S = rel(malloc(top)), top = *S ? 0 : -1; NEXT
 CODE RESIZE   ( a n -- a' ior ) *S = rel(realloc(abs(*S), top)), top = *S ? 0 : -1; NEXT
@@ -423,7 +422,11 @@ CODE NEW-STRING ( adr len -- c-str ) top = rel(new_string(abs(*S++), top)); NEXT
 
 : CELLS  CELL * ;
 
-: >IN           'IN @ ;
+: >IN   'IN @ ;
+: FILE  'IN @ $ 4 CELLS + ;
+: #TIB  'IN @ $ 1 CELLS + ;
+: 'TIB  'IN @ $ 2 CELLS + ;
+
 : SOURCE-BUF    >IN $ 2 CELLS + ;
 : SOURCE-FILE   >IN $ 3 CELLS + ;
 : SOURCE-NAME   >IN $ 4 CELLS + ;
@@ -450,6 +453,17 @@ CODE NEW-STRING ( adr len -- c-str ) top = rel(new_string(abs(*S++), top)); NEXT
         SOURCE-BUF  @ FREE DROP
         SOURCE-NAME @ FREE DROP
     THEN
+    $ -8 CELLS 'IN +! ;
+
+: >SOURCE-v2 ( adr len filename -- )
+    SOURCE-DEPTH $ 7 U> ABORT" nested too deep"
+    $ 8 CELLS 'IN +!
+( concession ) $ -1 SOURCE-FILE !
+    FILE !  #TIB 2!  $ 0 >IN ! ;
+
+: SOURCE>-v2 ( -- )
+    SOURCE-DEPTH $ 1 < ABORT" trying to pop empty source"
+    FILE @ IF  FILE @ FREE DROP  'TIB @ FREE DROP  THEN
     $ -8 CELLS 'IN +! ;
 
 CODE REFILL ( -- f )  push refill(SOURCE); NEXT
@@ -589,20 +603,22 @@ CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
         THEN
     AGAIN ;
 
-CODE R0!  R = R0; NEXT
+CODE RESET  R = R0, HANDLER = 0; NEXT
 
 CODE CATCH  ( xt -- ex# | 0 )
     ` *--R = (cell) I, *--R = (cell) S, *--R = HANDLER, HANDLER = (cell) R,
     ` *--R = (cell) &RESUME, I = m + top, pop; NEXT
 
-CODE THROW  ( n -- )
-    ` if (top) THROW; else pop; NEXT
+CODE THROW  ( n -- )  if (!top) pop;
+    ` else if (HANDLER == 0) goto abort; else THROW; NEXT
 
-: xQUIT  R0!
+\    ` if (top) THROW; else pop; NEXT
+
+: QUIT  RESET
     BEGIN  SOURCE-DEPTH 0> WHILE  SOURCE>  REPEAT
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
 
-: QUIT  R0!
+: xQUIT  RESET
     BEGIN  SOURCE-DEPTH 0> WHILE  SOURCE>  REPEAT
     BEGIN  CR QUERY  ['] INTERPRET CATCH
         ?DUP IF ."  error " . ELSE ."  ok" THEN  AGAIN ;
@@ -612,7 +628,17 @@ CODE THROW  ( n -- )
     2DUP R/O OPEN-FILE ABORT" file not found"
     >SOURCE  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
 
-: INCLUDE  PARSE-NAME INCLUDED ;
+( read whole file into memory )
+CODE READ  ( name len -- addr len ior )  push(readall(S)); NEXT
+
+CODE 2SWAP  w = S[0], S[0] = S[2], S[2] = w, w = S[1], S[1] = top, top = w; NEXT
+
+: INCLUDED-v2  ( str len -- )
+    2DUP READ ABORT" can't read file"  2SWAP NEW-STRING
+\ 2dup count type . cr
+    >SOURCE-v2  INTERPRET  SOURCE>-v2 ;
+
+: INCLUDE  PARSE-NAME INCLUDED-v2 ;
 
 TAG TAG
 

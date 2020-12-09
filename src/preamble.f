@@ -2,7 +2,7 @@
 : COMPILER  2 CONTEXT ! ;
 
 COMPILER
-: \         SOURCE >IN ! DROP ;
+: \         #10 PARSE 2DROP ;
 : (         ')' PARSE 2DROP ;
 FORTH
 : \         \\ \ ;

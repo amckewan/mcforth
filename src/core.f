@@ -20,7 +20,7 @@ FORTH
 : -ROT      ROT ROT ;
 
 : 2OVER     3 PICK 3 PICK ;
-: 2SWAP     ROT >R ROT R> ;
+\ : 2SWAP     ROT >R ROT R> ;
 : 2>R       SWAP >R >R ;
 : 2R>       R> R> SWAP ;
 : 2R@       R> R> 2DUP >R >R SWAP ;
