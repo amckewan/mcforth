@@ -54,7 +54,7 @@ static int refill_tib(struct source *source) {
 }
 
 static int refill_file(struct source *source) {
-    if (verbose) printf(">>> %s:%td\n", abs(source->filename), source->line+1);
+    if (verbose) printf(">>> %s:%td\n", (char*)abs(source->filename), source->line+1);
     char *buf = abs(source->addr);
     if (!fgets(buf, MAXLINE, source->file)) {
         source->len = 0;

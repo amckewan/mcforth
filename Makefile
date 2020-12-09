@@ -2,9 +2,9 @@
 
 all: test
 
-CC = clang -m32
-CC64 = clang -m64
-CFLAGS = -Wall -Werror
+CC = gcc -m32
+CC64 = gcc -m64
+#CFLAGS = -Wall -Werror
 CFLAGS += -Ofast
 
 SOURCES = src/fo.c src/string.c src/parse.c src/file.c

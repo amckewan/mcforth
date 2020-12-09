@@ -195,7 +195,7 @@ void show_error(const char *msg, const char *here, const struct source *source) 
 //    if (source->file != SOURCE_CONSOLE && source->file != SOURCE_EVALUATE)
     if (source->filename) {
         cell col, line = source_position(source, &col);
-        printf("%s:%td:%d: ", abs(source->filename+1), line, col);
+        printf("%s:%td:%d: ", (char*)abs(source->filename+1), line, col);
     }
     int n = *here & 31;
     while (n--) putchar(*++here);
@@ -235,7 +235,8 @@ void load_image(const char *filename) {
         printf("can't open image %s\n", filename);
         return;
     }
-    fread(M, 1, sizeof M, f);
+    int x = fread(M, 1, sizeof M, f);
+    (void)x;
     fclose(f);
 }
 
