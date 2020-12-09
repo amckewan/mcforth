@@ -30,7 +30,7 @@
 
 2 +ORIGIN CONSTANT H
 3 +ORIGIN CONSTANT BASE
-4 +ORIGIN CONSTANT STATE
+\ 4 +ORIGIN CONSTANT STATE
 5 +ORIGIN CONSTANT 'IN
 9 +ORIGIN CONSTANT CONTEXT
 
@@ -39,7 +39,7 @@
 #define WARM M[1]
 #define HERE M[2]
 #define BASE M[3]
-#define STATE M[4]
+//#define STATE M[4]
 #define SOURCE M[5]
 #define CONTEXT 9
 
@@ -55,7 +55,7 @@ abort:
     show_error((char*)I, abs(HERE), abs(SOURCE));
     I = abs(WARM);
 start:
-    STATE = 0;
+//    STATE = 0;
     M[CONTEXT] = 1;
     S = S0;
     R = R0;
@@ -544,7 +544,7 @@ CODE RESET  R = R0; NEXT
 
 : QUIT  RESET
     BEGIN  SOURCE-DEPTH WHILE  SOURCE>  REPEAT
-    BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
+    BEGIN  CR QUERY  INTERPRET ."  ok"  AGAIN ;
 1 HAS QUIT
 
 ( read whole file into memory )

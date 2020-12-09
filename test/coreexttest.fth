@@ -499,10 +499,10 @@ VARIABLE NN2
 T{ NN1 @ EXECUTE -> 1234 }T
 T{ NN2 @ EXECUTE -> 9876 }T
 
-T{ :NONAME ( n -- 0,1,..n ) DUP IF DUP >R 1- RECURSE R> THEN ;
-   CONSTANT RN1 -> }T
-T{ 0 RN1 EXECUTE -> 0 }T
-T{ 4 RN1 EXECUTE -> 0 1 2 3 4 }T
+\ T{ :NONAME ( n -- 0,1,..n ) DUP IF DUP >R 1- RECURSE R> THEN ;
+\    CONSTANT RN1 -> }T
+\ T{ 0 RN1 EXECUTE -> 0 }T
+\ T{ 4 RN1 EXECUTE -> 0 1 2 3 4 }T
 
 DEFINED CASE [IF]
 :NONAME  ( n -- n1 )    \ Multiple RECURSEs in one definition

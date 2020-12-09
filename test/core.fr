@@ -656,10 +656,10 @@ FAILED { GT2STRING FIND -> ' GT2 1 }
 { : GT7 POSTPONE GT6 ; -> }
 FAILED { GT7 -> 345 }
 
-{ : GT8 STATE @ ; IMMEDIATE -> }
-{ GT8 -> 0 }
-{ : GT9 GT8 LITERAL ; -> }
-{ GT9 0= -> <FALSE> }
+\ { : GT8 STATE @ ; IMMEDIATE -> }
+\ { GT8 -> 0 }
+\ { : GT9 GT8 LITERAL ; -> }
+\ { GT9 0= -> <FALSE> }
 
 \ ------------------------------------------------------------------------
 TESTING IF ELSE THEN BEGIN WHILE REPEAT UNTIL RECURSE
@@ -748,7 +748,7 @@ TESTING DEFINING WORDS: : ; CONSTANT VARIABLE CREATE DOES> >BODY
 { 123 V1 ! -> }
 { V1 @ -> 123 }
 
-{ : NOP : POSTPONE ; ; -> }
+{ : NOP CREATE DOES> DROP ; -> }
 { NOP NOP1 NOP NOP2 -> }
 { NOP1 -> }
 { NOP2 -> }
@@ -783,10 +783,10 @@ TESTING EVALUATE
 { GE3 EVALUATE -> }
 { GE4 -> 345 }
 
-{ : GE6 GE1 GE5 ; -> }         ( TEST EVALUATE IN COMPILE STATE )
-{ GE6 -> 123 }
-{ : GE7 GE2 GE5 ; -> }
-{ GE7 -> 124 }
+\ { : GE6 GE1 GE5 ; -> }         ( TEST EVALUATE IN COMPILE STATE )
+\ { GE6 -> 123 }
+\ { : GE7 GE2 GE5 ; -> }
+\ { GE7 -> 124 }
 
 \ ------------------------------------------------------------------------
 0 [IF]

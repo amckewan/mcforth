@@ -26,3 +26,7 @@
 
 \ Change from a variable so CREATE IMMEDIATE DOES> works
 : CREATE  HEADER $12 , ;
+
+COMPILER
+: RECURSE  PREVIOUS $1F AND + 1+ ALIGNED COMPILE, ;
+FORTH
