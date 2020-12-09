@@ -19,8 +19,6 @@ FORTH
 : TUCK      SWAP OVER ;
 : -ROT      ROT ROT ;
 
-: 2OVER     3 PICK 3 PICK ;
-\ : 2SWAP     ROT >R ROT R> ;
 : 2>R       SWAP >R >R ;
 : 2R>       R> R> SWAP ;
 : 2R@       R> R> 2DUP >R >R SWAP ;
@@ -39,7 +37,6 @@ FORTH
 : ERASE  0 FILL ;
 : PLACE  ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;
 
-: S=  COMPARE 0= ;
 : /STRING  ROT OVER +  -ROT - ;
 : -TRAILING  ( a n -- a n' )
     BEGIN  DUP WHILE  2DUP + 1- C@ BL = WHILE  1-  REPEAT THEN ;

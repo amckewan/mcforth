@@ -56,3 +56,23 @@ cell word(cell source_va, char c, cell here_va) {
     return here_va;
 }
 
+cell source_position(const struct source *source, cell *column) {
+    const char *src = abs(source->addr);
+    const char *end = src + source->in;
+    // if we've just parsed the last word on a line, >in could
+    // now point to the beginning of the next line, so we
+    // need to back up one.
+    if (end > src && end[-1] == '\n') end--;
+
+    int line = 1;
+    int col = 1;
+    while (src < end) {
+        if (*src++ == '\n') {
+            line++;
+            col = 0;
+        }
+        col++;
+    }
+    if (column) *column = col;
+    return line;
+}

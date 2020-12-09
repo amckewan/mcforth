@@ -192,8 +192,11 @@ void show_error(const char *msg, const char *here, const struct source *source) 
     int col = source->in;
     if (col == source->len) col++;
     putchar('\n');
-    if (source->file != SOURCE_CONSOLE && source->file != SOURCE_EVALUATE)
-        printf("%s:%td:%d: ", abs(source->filename+1), source->line, col);
+//    if (source->file != SOURCE_CONSOLE && source->file != SOURCE_EVALUATE)
+    if (source->filename) {
+        cell col, line = source_position(source, &col);
+        printf("%s:%td:%d: ", abs(source->filename+1), line, col);
+    }
     int n = *here & 31;
     while (n--) putchar(*++here);
     putchar(' ');

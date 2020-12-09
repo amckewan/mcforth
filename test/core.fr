@@ -789,6 +789,7 @@ TESTING EVALUATE
 { GE7 -> 124 }
 
 \ ------------------------------------------------------------------------
+0 [IF]
 TESTING SOURCE >IN WORD
 
 : GS1 S" SOURCE" 2DUP EVALUATE
@@ -814,6 +815,7 @@ DROP -> 0 }            \ BLANK LINE RETURN ZERO-LENGTH STRING
 : GS4 SOURCE >IN ! DROP ;
 { GS4 123 456
 -> }
+[THEN]
 
 \ ------------------------------------------------------------------------
 TESTING <# # #S #> HOLD SIGN BASE >NUMBER HEX DECIMAL

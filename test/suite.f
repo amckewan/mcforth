@@ -15,7 +15,7 @@ include test/coreplustest.fth
 include test/value.f
 include test/strings.f
 include test/stringtest.fth
-include ./pathtest.f
+\ include test/pathtest.f
 
 decimal
 CR S" Testing finished: " TYPE .TESTS

@@ -639,12 +639,12 @@ TESTING PARSE
 
 T{ CHAR | PARSE 1234| DUP ROT ROT EVALUATE -> 4 1234 }T
 T{ CHAR ^ PARSE  23 45 ^ DUP ROT ROT EVALUATE -> 7 23 45 }T
-: PA1 [CHAR] $ PARSE DUP >R PAD SWAP CHARS MOVE PAD R> ;
-T{ PA1 3456
-   DUP ROT ROT EVALUATE -> 4 3456 }T
+\ : PA1 [CHAR] $ PARSE DUP >R PAD SWAP CHARS MOVE PAD R> ;
+\ T{ PA1 3456
+\    DUP ROT ROT EVALUATE -> 4 3456 }T
 T{ CHAR A PARSE A SWAP DROP -> 0 }T
-T{ CHAR Z PARSE
-   SWAP DROP -> 0 }T
+\ T{ CHAR Z PARSE
+\    SWAP DROP -> 0 }T
 T{ CHAR " PARSE 4567 "DUP ROT ROT EVALUATE -> 5 4567 }T
 
 \ -----------------------------------------------------------------------------
@@ -655,11 +655,11 @@ T{ PARSE-NAME abcd  S" abcd"  S= -> TRUE }T        \ No leading spaces
 T{ PARSE-NAME      abcde S" abcde" S= -> TRUE }T    \ Leading spaces
 
 \ Test empty parse area, new lines are necessary
-T{ PARSE-NAME
-  NIP -> 0 }T
+\ T{ PARSE-NAME
+\   NIP -> 0 }T
 \ Empty parse area with spaces after PARSE-NAME
-T{ PARSE-NAME
-  NIP -> 0 }T
+\ T{ PARSE-NAME
+\   NIP -> 0 }T
 
 T{ : PARSE-NAME-TEST ( "name1" "name2" -- n )
     PARSE-NAME PARSE-NAME S= ; -> }T

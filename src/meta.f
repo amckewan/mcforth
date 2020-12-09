@@ -18,11 +18,12 @@ VARIABLE OUT
 CREATE EOL 1 C, 0A C,
 : NEWLINE   EOL COUNT WRITE ;
 
-: `   1 PARSE WRITE  NEWLINE ;
+: `   #10 PARSE WRITE  NEWLINE ;
 : ``  BEGIN  REFILL 0= ABORT" missing ``"
         PARSE-NAME S" ``" COMPARE WHILE
         SOURCE WRITE  NEWLINE
       REPEAT ;
+: ``  '`' PARSE WRITE ;
 
 ( write decompiler information )
 VARIABLE SEER
@@ -114,6 +115,6 @@ COMPILER : $ ; FORTH
 : ,A  dA @ - , ;
 
 HEX  8000 1000 0 FILL  8000 H' !
-{ include ./kernel.f }
+{ include src/kernel.f }
 PRUNE
 SAVE

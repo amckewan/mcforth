@@ -97,7 +97,7 @@ next:
 #define THROW       R = (cell*) HANDLER, \
                     HANDLER = *R++, S = (cell*) *R++, I = (byte*) *R++
 
-``
+`
 
 0 OP! ( special functions )
 
@@ -272,24 +272,21 @@ CODE J          push R[3] + R[4]; NEXT
 CODE LEAVE      I = (byte*)R[2];
 CODE UNLOOP     R += 3; NEXT
 
-: 2DUP      OVER OVER ;
-: 2DROP     DROP DROP ;
+CODE 2DUP   w = *S, *--S = top, *--S = w; NEXT
+CODE 2DROP  top = S[1], S += 2; NEXT
+CODE 2SWAP  w = S[0], S[0] = S[2], S[2] = w, w = S[1], S[1] = top, top = w; NEXT
+CODE 2OVER  w = S[2], *--S = top, *--S = w, top = S[3]; NEXT
 
 CODE INVERT  top = ~top; NEXT
 CODE NEGATE  top = -top; NEXT
 CODE LSHIFT  top = *S++ << top; NEXT
 CODE RSHIFT  top = ((ucell)*S++) >> top; NEXT
 
+` #define LOWER(u1,u2)  ((ucell)(u1) < (ucell)(u2))
+CODE WITHIN  w = *S++, top = LOWER(*S - w, top - w) LOGICAL; S++; NEXT
+
 CODE MOD   top = *S++ % top;  NEXT
 CODE UMOD  top = (ucell)*S++ % (ucell)top;  NEXT
-
-` #define LOWER(u1,u2)  ((ucell)(u1) < (ucell)(u2))
-
-CODE WITHIN
-`   w = *S++,
-`   top = LOWER(*S - w, top - w) LOGICAL;
-`   S++;
-`   NEXT
 
 CODE M*  ( n1 n2 -- d ) {
 `   int64_t d = (int64_t)*S * (int64_t)top;
@@ -430,7 +427,10 @@ CODE NEW-STRING ( adr len -- c-str ) top = rel(new_string(abs(*S++), top)); NEXT
 : SOURCE-BUF    >IN $ 2 CELLS + ;
 : SOURCE-FILE   >IN $ 3 CELLS + ;
 : SOURCE-NAME   >IN $ 4 CELLS + ;
-: SOURCE-LINE   >IN $ 5 CELLS + ;
+\ : SOURCE-LINE   >IN $ 5 CELLS + ;
+
+CODE SOURCE-POS ( -- col line )
+    ` *--S = top, top = source_position(abs(SOURCE), --S); NEXT
 
 : SOURCE        >IN CELL+ 2@ ;
 : SOURCE-ID     SOURCE-FILE @ ;
@@ -444,7 +444,7 @@ CODE NEW-STRING ( adr len -- c-str ) top = rel(new_string(abs(*S++), top)); NEXT
     $ 8 CELLS 'IN +!
     DUP SOURCE-FILE !
     FILE? IF  $ 80 ALLOCATE DROP SOURCE-BUF !  NEW-STRING SOURCE-NAME !  THEN
-    $ 0 SOURCE-LINE ! ;
+    ( $ 0 SOURCE-LINE ! ) ;
 
 : SOURCE> ( -- )
     SOURCE-DEPTH $ 1 < ABORT" trying to pop empty source"
@@ -536,29 +536,6 @@ COMPILER
 : LITERAL  $ 20 OP, , ;
 FORTH
 
-0 [IF]
-\ forth.img, 10644 without this, 11024 with it. 12728 with literals
-\ Inline primatives and literals.
-\ Perhaps revisit this some day.
-\ Inlining binary ops is ok but as soon as we inline LIT@
-\ strange things start to happen.
-\ Technically we could also inline calls and branches, which doesn't
-\ leave much that can't be inlined. We would just get big and fat.
-: INLINE?  ( xt -- n t | f )
-    DUP BEGIN  DUP C@ WHILE  COUNT
-        DUP $ 60 < IF
-            $ E0 AND $ 20 = NOT IF  2DROP $ 0 EXIT  THEN
-\            $ 20 $ 2B WITHIN NOT IF  2DROP $ 0 EXIT  THEN
-            \ dup 1- c@ $ 29 > if source-line @ . source-name @ $ 10 type cr then
-            CELL+ DUP
-        THEN DROP
-    REPEAT SWAP - $ -1 ;
-
-: INLINE ( xt n -- )
-    OVER + SWAP  BEGIN 2DUP U> WHILE
-        COUNT  DUP OP,  $ E0 AND $ 20 = ( lit ) IF  DUP @ , CELL+  THEN
-    REPEAT 2DROP ;
-[ELSE]
 \ Inline just primatives >= $60
 : INLINE?  ( xt -- n t | f )
     DUP BEGIN  DUP C@ WHILE
@@ -567,7 +544,6 @@ FORTH
 
 : INLINE ( xt n -- )
     OVER + SWAP BEGIN  2DUP U> WHILE  COUNT OP, REPEAT  2DROP ;
-[THEN]
 
 : COMPILE,  ( xt -- )
     DUP INLINE? IF INLINE EXIT THEN
@@ -624,21 +600,19 @@ CODE THROW  ( n -- )  if (!top) pop;
         ?DUP IF ."  error " . ELSE ."  ok" THEN  AGAIN ;
 1 HAS QUIT
 
-: INCLUDED  ( str len -- )
+: INCLUDED-v1  ( str len -- )
     2DUP R/O OPEN-FILE ABORT" file not found"
     >SOURCE  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
 
 ( read whole file into memory )
 CODE READ  ( name len -- addr len ior )  push(readall(S)); NEXT
 
-CODE 2SWAP  w = S[0], S[0] = S[2], S[2] = w, w = S[1], S[1] = top, top = w; NEXT
-
-: INCLUDED-v2  ( str len -- )
+: INCLUDED  ( str len -- )
     2DUP READ ABORT" can't read file"  2SWAP NEW-STRING
 \ 2dup count type . cr
     >SOURCE-v2  INTERPRET  SOURCE>-v2 ;
 
-: INCLUDE  PARSE-NAME INCLUDED-v2 ;
+: INCLUDE  PARSE-NAME INCLUDED ;
 
 TAG TAG
 

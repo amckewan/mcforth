@@ -31,9 +31,10 @@
 
 DECIMAL
 
+.S CR
 TESTING DO +LOOP with run-time increment, negative increment, infinite loop
 \ Contributed by Reinhold Straub
-
+.S CR
 VARIABLE ITERATIONS
 VARIABLE INCREMENT
 : GD7 ( LIMIT START INCREMENT -- )
@@ -46,7 +47,7 @@ VARIABLE INCREMENT
       INCREMENT @
    +LOOP ITERATIONS @
 ;
-
+.S CR
 T{  4  4 -1 GD7 -> 4 1 }T
 T{  1  4 -1 GD7 -> 4 3 2 1 4 }T
 T{  4  1 -1 GD7 -> 1 0 -1 -2 -3 -4 6 }T
@@ -181,10 +182,10 @@ T{ 0 MELSE -> 2 4 }T
 T{ -1 MELSE -> 1 3 5 }T
 
 \ ------------------------------------------------------------------------------
-TESTING manipulation of >IN in interpreter mode
+\ TESTING manipulation of >IN in interpreter mode
 
-T{ 12345 DEPTH OVER 9 < 34 AND + 3 + >IN ! -> 12345 2345 345 45 5 }T
-T{ 14145 8115 ?DUP 0= 34 AND >IN +! TUCK MOD 14 >IN ! GCD CALCULATION -> 15 }T
+\ T{ 12345 DEPTH OVER 9 < 34 AND + 3 + >IN ! -> 12345 2345 345 45 5 }T
+\ T{ 14145 8115 ?DUP 0= 34 AND >IN +! TUCK MOD 14 >IN ! GCD CALCULATION -> 15 }T
 
 \ ------------------------------------------------------------------------------
 TESTING IMMEDIATE with CONSTANT  VARIABLE and CREATE [ ... DOES> ]

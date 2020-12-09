@@ -62,6 +62,7 @@ int search(cell *sp, cell top);
 cell parse(cell source_va, char c, cell *start_addr);
 cell parse_name(cell source_va, cell *start_addr);
 cell word(cell source_va, char c, cell here_va);
+cell source_position(const struct source *source, cell *column);
 
 // file.c
 FILE *open_file(const char *str, int len, const char *mode);
