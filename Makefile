@@ -2,10 +2,12 @@
 
 all: test
 
-CC = gcc -m32
-CC64 = gcc -m64
-#CFLAGS = -Wall -Werror
-CFLAGS += -Ofast
+CC = gcc
+#CC = clang
+CFLAGS = -m32
+#CFLAGS += -Wall
+CFLAGS += -Werror
+CFLAGS += -O3
 
 SOURCES = src/fo.c src/string.c src/parse.c src/file.c
 HEADERS = src/fo.h
@@ -34,23 +36,8 @@ bootstrap:
 	rm kernel.inc
 	$(MAKE) test
 
-asm: prims.inc kernel.inc $(SOURCES) $(HEADERS)
+asm: Makefile prims.inc kernel.inc $(SOURCES) $(HEADERS)
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) src/fo.c -S
-
-forth64:
-	gforth -e "8 CONSTANT CELL" src/cross.f -e ciao
-	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo64
-	./fo64 extend
-	$(CC64) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth64
-	./forth64 src/meta.f -e ciao
-	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo64
-	./fo64 extend
-	hexdump -C kernel.img > kernel64.hex
-	$(CC64) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth64
-	@./forth64 test/suite.f -e "cr bye"
-
-asm64:
-	$(CC64) -DKERNEL $(CFLAGS) $(INCLUDES) src/fo.c -S
 
 run: forth
 	@./forth
@@ -58,17 +45,8 @@ run: forth
 test: forth test/*
 	@./forth test/suite.f -e "cr bye"
 
-ootest: forth
-	./forth test/ootest.f -e "cr bye"
-
-stringtest: forth
-	./forth test/stringtest.f -e "cr bye"
-
 bench: forth
 	make -C bench
-
-bench64: forth64
-	make -C bench FORTH=../forth64
 
 checkans: forth
 	./forth /usr/share/gforth/0.7.3/test/checkans.fs -e bye
