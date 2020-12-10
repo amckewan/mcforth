@@ -129,7 +129,7 @@ OP: +LOOP       w = *R, *R += top;
                 ` else BRANCH; pop; NEXT
 
 OP: RESUME      HANDLER = *R++, R++, I = (byte*) *R++, push 0; NEXT
----
+OP: JUMP        w = *(uint16_t *)I; I = m + CELLS(w); NEXT
 OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
 OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT } //ABORT(I)
@@ -648,6 +648,9 @@ CODE ALIGNED  top = aligned(top); NEXT
     \ default to far call
     $ 2 OP, dA @ - , ;
 
+( optimize tail calls )
+: EXIT  LATEST $ 1 = IF  $ 9 PATCH  ELSE  $ 0 OP,  THEN ; IMMEDIATE
+
 ( ********** Interpreter ********** )
 
 : ?STACK  DEPTH 0< ABORT" stack?" ;
@@ -736,7 +739,6 @@ VARIABLE 'RECURSE
 \ Be careful from here on...
 
 : [  $ 0 STATE ! ; IMMEDIATE
-: EXIT  $ 0 OP, ; IMMEDIATE
 T: ;  [COMPILE] EXIT [COMPILE] [ REVEAL ; IMMEDIATE forget
 : RECURSE  'RECURSE @ COMPILE, ; IMMEDIATE
 
