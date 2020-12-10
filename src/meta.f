@@ -102,19 +102,19 @@ FORTH    \ : forget   SMUDGE ;
 
 : SCAN ( a - a)   BEGIN  @  DUP 1 8000 WITHIN NOT UNTIL ;
 : TRIM ( a a - a)   DUP >R  dA @ -  SWAP !  R>
-   DUP CELL+  DUP C@  DF AND  SWAP C! ;
+   DUP CELL+  DUP C@  EF AND  SWAP C! ;
 : CLIP ( a)   DUP BEGIN  DUP SCAN  DUP WHILE  TRIM  REPEAT
    6 +ORIGIN 8000 + XOR  dA @ -  SWAP !  DUP @  SWAP dA @ +  ! ;
 : PRUNE   { CONTEXT CELL+  DUP CLIP  CELL+ CLIP
     THERE 2 +ORIGIN 8000 + !  { EMPTY ;
 
-\ for compatibility with cross.fs
+\ for compatibility with cross
 COMPILER : $ ; FORTH
-: T: : ;
-: forget SMUDGE ;
+: T:  : ;
+: forget  PREVIOUS 10 OR SWAP C! ;
 : ,A  dA @ - , ;
 
-HEX  8000 1000 0 FILL  8000 H' !
+HEX  8000 2000 0 FILL  8000 H' !
 { include src/kernel.f }
 PRUNE
 SAVE

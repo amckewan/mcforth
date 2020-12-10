@@ -4,7 +4,7 @@ FORTH HEX
 
 : LATEST ( -- op/0 )    ?CODE @ DUP IF C@ THEN ;
 : PATCH  ( op -- )      ?CODE @ C! ;
-: REMOVE ( -- )         0 ?CODE 2@  H !  ?CODE 2! ;
+: REMOVE ( -- )         0  ?CODE 2@  H !  ?CODE 2! ;
 
 : LIT?  ( -- f )  ?CODE @ DUP IF  C@ 20 =  THEN ;
 : LIT@  ( -- n )  ?CODE @ 1 + @ ;
@@ -21,25 +21,21 @@ FORTH HEX
     ELSE  OP,
     THEN ;
 
-: UNARY ( n binary-xt forth-xt -- )
-    CREATE , SWAP , ,  DOES> ( fxt n bxt )
-    LIT? IF    LIT@  SWAP 2@ EXECUTE  LIT!
-         ELSE  CELL+ 2@ \\ LITERAL EXECUTE  THEN ;
-
 COMPILER
+: EXIT  LATEST 1 = IF  8 PATCH  ELSE  0 OP,  THEN ;
+: ;     \\ EXIT  R>DROP  \\ RECURSIVE ;
+
 61 BINARY +     62 BINARY -     63 BINARY *     64 BINARY /
 65 BINARY AND   66 BINARY OR    67 BINARY XOR
 
-   1 ' + FORTH ' + COMPILER UNARY 1+
-   1 ' - FORTH ' - COMPILER UNARY 1-
-CELL ' + FORTH ' + COMPILER UNARY CELL+
-CELL ' * FORTH ' * COMPILER UNARY CELLS
+: 1+     1    \\ literal \\ + ;
+: 1-     1    \\ literal \\ - ;
+: CELL+  CELL \\ literal \\ + ;
+: CELLS  CELL \\ literal \\ * ;
 
-\ 70-72 and 78-7A not used for lit+op
+\ 70-72 and 78-7A not used for lit+cond
 73 BINARY =     74 BINARY <     75 BINARY >     76 BINARY U<      77 BINARY U>
-
-\ do we want any of these? or just use NOT?
-7B BINARY <>    \ 7C BINARY >=    7D BINARY <=   \ 7E BINARY U>=     7F BINARY U<=
+7B BINARY <>  \ 7C BINARY >=    7D BINARY <=    7E BINARY U>=     7F BINARY U<=
 
 : NOT  ( invert last conditional op )
     LATEST  DUP 70 80 WITHIN  OVER F7 AND 33 38 WITHIN OR
@@ -57,7 +53,6 @@ FORTH
     DUP        70 80 WITHIN IF ( cond )      20 - PATCH  ELSE
     DUP F7 AND 33 38 WITHIN IF ( lit-cond )  10 + PATCH  ELSE
     DROP 58 OP, ( 0<>IF ) THEN THEN ;
-
 COMPILER
 : IF        CONDITION  >MARK ;
 : UNTIL     CONDITION  <RESOLVE ;

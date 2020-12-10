@@ -33,7 +33,7 @@ include see.info
 
 : .operands ( a opc -- a' )
     \ case?
-    dup 1 = if drop .call exit then
+    dup 1 = over 8 = or if drop .call exit then
     dup 2 = if drop .callx exit then
     dup 3 8 within over 50 60 within or if drop .branch exit then
     dup 20 40 within if drop .lit exit then
@@ -51,7 +51,7 @@ external
         dup . dup count ( a a+1 op )
         dup .b dup .op .operands cr ( a a+1 )
         over c@ 12 = if  drop @ 8 rshift 0
-        else swap c@ dup 0= swap 10 18 within or  then
+        else swap c@  dup 0=  over 8 = or  swap 10 18 within or  then
     until drop ;
 
 : see ' (see) ;

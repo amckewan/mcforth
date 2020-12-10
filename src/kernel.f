@@ -99,7 +99,7 @@ OP: +LOOP       w = *R, *R += top;
                 ` if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
                 ` else BRANCH; pop; NEXT
 
----
+OP: JUMP        w = *(uint16_t *)I; I = m + CELLS(w); NEXT
 OP: NOP         NEXT
 OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
@@ -529,14 +529,14 @@ FORTH
 \    DUP CELL 1- AND ABORT" xt not aligned"
     $ 1 OP, dA @ - CELL / W, ;
 
-( ********** Interpreter ********** )
-
 CODE EXECUTE  *--R = (cell)I, I = m + top, pop; NEXT
-
-: ?STACK  DEPTH 0< ABORT" stack?" ;
 
 : ]  BEGIN  $ 2 -' IF  $ 1 -FIND IF  NUMBER \\ LITERAL  ELSE  COMPILE,  THEN
         ELSE  EXECUTE  THEN AGAIN ;
+
+( ********** Interpreter ********** )
+
+: ?STACK  DEPTH 0< ABORT" stack?" ;
 
 : INTERPRET  BEGIN  $ 1 -' IF  NUMBER  ELSE  EXECUTE ?STACK  THEN  AGAIN ;
 
@@ -599,7 +599,7 @@ FORTH
 COMPILER
 : [  R>DROP ;
 : EXIT  $ 0 OP, ;
-T: ;  \\ EXIT \\ RECURSIVE  R>DROP ; forget
+T: ;  \\ EXIT  R>DROP  \\ RECURSIVE ; forget
 : \\  $ 2 -' ABORT" ?" COMPILE, ;
 \ : RECURSE  'RECURSE @ COMPILE, ;
 FORTH

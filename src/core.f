@@ -52,8 +52,6 @@ FORTH
 
 : SPACES    0 MAX  0 ?DO  SPACE  LOOP ;
 
-: \S        BEGIN REFILL 0= UNTIL ;
-
 : :NONAME   ALIGN HERE ] ;
 
 COMPILER

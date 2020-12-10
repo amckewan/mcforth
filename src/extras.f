@@ -5,6 +5,8 @@ COMPILER
 FORTH
 : .(  \\ .( ;
 
+: \S  SOURCE >IN ! DROP ;
+
 ( Multi-line comments )
 
 : COMMENT  CHAR PARSE 2DROP ;
