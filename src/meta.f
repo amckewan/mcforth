@@ -105,7 +105,7 @@ MARKER EMPTY
 
 : SCAN ( a - a)   BEGIN  @  DUP 1 8000 WITHIN NOT UNTIL ;
 : TRIM ( a a - a)   DUP >R  dA @ -  SWAP !  R>
-    DUP CELL+  DUP C@  DF AND  SWAP C! ;
+    DUP CELL+  DUP C@  EF AND  SWAP C! ;
 : CLIP ( a)   DUP BEGIN  DUP SCAN  DUP WHILE  TRIM  REPEAT
     SWAP !  DUP @  SWAP dA @ +  ! ;
 : PRUNE   { FORTH-WORDLIST CLIP
@@ -114,7 +114,7 @@ MARKER EMPTY
 \ for compatibility with cross.fs
 : $ ; IMMEDIATE
 : T: : ;
-: forget SMUDGE ;
+: forget PREVIOUS 10 OR SWAP C! ;
 : ,A  dA @ - , ;
 
 HEX  8000 2000 0 FILL  8000 H' !
