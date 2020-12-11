@@ -71,19 +71,16 @@ cell self;
 
 // if (verbose) printf("Running from %u\n", COLD);
 I = abs(COLD);
-S = S0;
 goto start;
 
-abortq:
-    show_error(-2, (char*)I, abs(HERE), abs(SOURCE));
 abort:
-    S = S0;
-quit:
+    show_error(top, MSG ? abs(MSG) : 0, abs(HERE), abs(SOURCE));
     I = abs(WARM);
 start:
-    R = R0;
     STATE = 0;
     M[CURRENT] = M[CONTEXT] = CELLS(FORTH);
+    S = S0;
+    R = R0;
 next:
 #if 0
     if (verbose > -1) {
@@ -102,7 +99,6 @@ next:
 #define pop3 top = S[2], S += 3
 #define LOGICAL ? -1 : 0
 
-#define ABORT(msg)  I = (byte *)(msg); goto abortq;
 #define NEXT        goto next;
 #define LIT         at(I)
 #define OFFSET      *(int8_t *)I
@@ -132,9 +128,8 @@ OP: RESUME      HANDLER = *R++, R++, I = (byte*) *R++, push 0; NEXT
 OP: JUMP        w = *(uint16_t *)I; I = m + CELLS(w); NEXT
 OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
-OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT } //ABORT(I)
-                ` if (!HANDLER) goto abortq;
-                ` MSG = rel(I), THROW, top = -2; NEXT
+OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT }
+                ` top = -2, MSG = rel(I); if (!HANDLER) goto abort; THROW; NEXT
 
 10 OP! ( runtime for defining words )
 
@@ -473,6 +468,8 @@ CODE NEW-STRING ( adr len -- c-str ) top = rel(new_string(abs(*S++), top)); NEXT
 
 ( ********** Input source processig ********** )
 
+8 CELLS CONSTANT #SOURCE ( size of each source entry )
+
 \ 8 entries * 8 cells per entry
 40 CELLS BUFFER SOURCE-STACK
 
@@ -487,13 +484,13 @@ CODE NEW-STRING ( adr len -- c-str ) top = rel(new_string(abs(*S++), top)); NEXT
 : SOURCE        >IN CELL+ 2@ ;
 : SOURCE-ID     SOURCE-FILE @ ;
 
-: SOURCE-DEPTH  >IN SOURCE-STACK -  $ 5 RSHIFT ( 32 /) ;
+: SOURCE-DEPTH  >IN SOURCE-STACK -  #SOURCE / ;
 
-: FILE? ( source-id -- f )  1+ $ 2 U< NOT ;
+: FILE? ( source-id -- f )  1+ $ 1 U> ;
 
 : >SOURCE ( filename len fileid | -1 -- )
     SOURCE-DEPTH $ 7 U> ABORT" nested too deep"
-    $ 8 CELLS 'IN +!
+    #SOURCE 'IN +!
     DUP SOURCE-FILE !
     FILE? IF  $ 80 ALLOCATE DROP SOURCE-BUF !  NEW-STRING SOURCE-NAME !  THEN
     $ 0 SOURCE-LINE ! ;
@@ -505,7 +502,7 @@ CODE NEW-STRING ( adr len -- c-str ) top = rel(new_string(abs(*S++), top)); NEXT
         SOURCE-BUF  @ FREE DROP
         SOURCE-NAME @ FREE DROP
     THEN
-    $ -8 CELLS 'IN +! ;
+    #SOURCE NEGATE 'IN +! ;
 
 CODE REFILL ( -- f )  push refill(SOURCE); NEXT
 
@@ -657,12 +654,10 @@ CODE ALIGNED  top = aligned(top); NEXT
 
 : INTERPRET  ( -- )
     BEGIN  BL WORD  DUP C@ WHILE
-        STATE @
-        IF  FIND ?DUP
-            IF  0< IF  COMPILE,  ELSE  EXECUTE  THEN
-            ELSE  NUMBER [COMPILE] LITERAL
-            THEN
-        ELSE  FIND IF  EXECUTE ?STACK  ELSE  NUMBER  THEN
+        FIND ?DUP IF
+            STATE @ = IF  COMPILE,  ELSE  EXECUTE  ?STACK  THEN
+        ELSE
+            NUMBER  STATE @ IF  [COMPILE] LITERAL  THEN
         THEN
     REPEAT DROP ;
 
@@ -670,13 +665,14 @@ CODE CATCH  ( xt -- ex# | 0 )
     ` *--R = (cell) I, *--R = (cell) S, *--R = HANDLER, HANDLER = (cell) R,
     ` *--R = (cell) &RESUME, I = m + top, pop; NEXT
 
-CODE THROW  ( n -- )
-    ` if (top) THROW; else pop; NEXT
+CODE THROW  ( n -- )  if (!top) pop; else if (!HANDLER) goto abort;
+    ` else THROW; NEXT
 
 CODE RESET  R = R0; NEXT
 
 80 BUFFER TIB
 : QUERY  $ 0 SOURCE-FILE !  TIB SOURCE-BUF !  REFILL 0= IF BYE THEN ;
+: QUERY? ( -- f )  $ 0 SOURCE-FILE !  TIB SOURCE-BUF !  REFILL ;
 
 CODE ERROR ( n -- )
     ` show_error(top, (top == -2) ? abs(MSG) : 0, abs(HERE), abs(SOURCE));
@@ -688,26 +684,33 @@ CODE ERROR ( n -- )
            ?DUP IF ERROR ELSE STATE @ 0= IF ."  ok" THEN THEN
     AGAIN ;
 
+: (INCLUDE)  BEGIN REFILL WHILE INTERPRET REPEAT ;
+
 : INCLUDED  ( str len -- )
-    2DUP R/O OPEN-FILE ABORT" file not found"
-    >SOURCE  BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
+    2DUP R/O OPEN-FILE ABORT" file not found" >SOURCE
+    BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
+\    ['] (INCLUDE) CATCH  SOURCE>  THROW ;
+
+\ HANDLER @ IF ['] (INCLUDE) CATCH SOURCE> THROW ELSE (INCLUDE) SOURCE> THEN ;
 
 : INCLUDE  PARSE-NAME INCLUDED ;
 
-CODE QUIT   goto quit;
-CODE ABORT  goto abort;
-
 TAG TAG
 
-: WARM
-    BEGIN  SOURCE-DEPTH 0> WHILE  SOURCE>  REPEAT
+: QUIT  RESET
+    BEGIN  SOURCE-DEPTH WHILE  SOURCE>  REPEAT
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
-1 HAS WARM
+
+: QUIT2  RESET
+    BEGIN  SOURCE-DEPTH WHILE  SOURCE>  REPEAT
+    BEGIN  CR QUERY? WHILE  INTERPRET  STATE @ 0= IF ."  ok" THEN  REPEAT BYE ;
+
+1 HAS QUIT
 
 : COLD
     SOURCE-STACK 'IN !
     ARGC $ 1 ?DO  I ARGV INCLUDED  LOOP
-    TAG COUNT TYPE  WARM ;
+    TAG COUNT TYPE  QUIT ;
 0 HAS COLD
 
 ( ********** Defining Words ********** )
@@ -745,3 +748,11 @@ T: ;  [COMPILE] EXIT [COMPILE] [ REVEAL ; IMMEDIATE forget
 : ]  $ -1 STATE ! ;
 : :NONAME  ALIGN HERE  DUP 'RECURSE !  ] ;
 : :  HEADER SMUDGE  :NONAME DROP ;
+
+``
+default:
+    printf("Invalid opcode 0x%02X\n", I[-1]);
+    top = -256;
+    goto abort;
+}
+``

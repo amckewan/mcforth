@@ -206,19 +206,21 @@ void dump(int a, int n, int base) {
 }
 
 void show_error(int code, const char *msg, const char *here, const struct source *source) {
-    int col = source->in;
-    if (col == source->len) col++;
+    if (code == -1) return; // no msg on abort
     putchar('\n');
-    if (source->file != SOURCE_CONSOLE && source->file != SOURCE_EVALUATE)
+    if (isfile(source->file)) {
+        int col = source->in;
+        if (col == source->len) col++;
         printf("%s:%td:%d: ", (char*)abs(source->filename+1), source->line, col);
-    int n = *here & 31;
-    while (n--) putchar(*++here);
+    }
+    char n = *here++ & 31;
+    while (n--) putchar(*here++);
     putchar(' ');
-    if (msg) {
+    if (code == -2 && msg) {
         n = *msg++;
         while (n--) putchar(*msg++);
     } else {
-        printf("Error %d", code);
+        printf("error %d", code);
     }
     // show the line and position
 //    cr(); type(source->addr, source->len);
@@ -226,13 +228,7 @@ void show_error(int code, const char *msg, const char *here, const struct source
 }
 
 int run(int argc, char *argv[]) {
-
 #include "../prims.inc"
-
-    default:
-        printf("Invalid opcode 0x%02X\n", I[-1]);
-        goto abort;
-    }
 }
 
 // Initial dictionary

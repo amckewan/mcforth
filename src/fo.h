@@ -37,7 +37,7 @@ extern int verbose;
 #define SOURCE_CONSOLE      ((FILE*) 0)
 #define SOURCE_EVALUATE     ((FILE*)-1)
 
-#define isfile(fid)     ((ucell)(fid) + 1 >= 1u)
+#define isfile(fid)     ((ucell)(fid) + 1 > 1u)
 
 struct source {
     cell in;            // current parsing offset (>IN)

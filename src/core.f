@@ -81,7 +81,8 @@ DECIMAL
     0< IF  [COMPILE] LITERAL  ['] COMPILE,  THEN  COMPILE, ; IMMEDIATE
 
 : EVALUATE ( a n -- )
-    -1 >SOURCE  >IN CELL+ 2!  0 >IN !  INTERPRET  SOURCE> ;
+    -1 >SOURCE  >IN CELL+ 2!  0 >IN !  HANDLER @
+    IF  ['] INTERPRET CATCH SOURCE> THROW  ELSE  INTERPRET SOURCE>  THEN ;
 
 \ have to remember current, context as well
 \ as here to trim all wordlists

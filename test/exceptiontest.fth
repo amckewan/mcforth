@@ -64,10 +64,9 @@ T{ C4 -> 3 4 5 0 999 -111 }T   \ Test return stack unwinding
    DEPTH >R DROP 2DROP 2DROP R> ;   \ after stack has been emptied
 T{ C5 -> 5 }T
 
-\S
 \ ------------------------------------------------------------------------------
 TESTING ABORT ABORT"
-
+: ABORT -1 THROW ;
 -1  CONSTANT EXC_ABORT
 -2  CONSTANT EXC_ABORT"
 -13 CONSTANT EXC_UNDEF
@@ -96,11 +95,13 @@ TESTING a system generated exception
 : T8 S" 222 T7 223" EVALUATE 224 ;
 : T9 S" 111 112 T8 113" EVALUATE 114 ;
 
-T{ 6 7 ' T9 C6 3 -> 6 7 13 3 }T         \ Test unlinking of sources
+\ T{ 6 7 ' T9 C6 3 -> 6 7 13 3 }T         \ Test unlinking of sources
+\ undef uses abort"
+T{ 6 7 ' T9 C6 3 -> 6 7 12 3 }T         \ Test unlinking of sources
 
 \ ------------------------------------------------------------------------------
 
-EXCEPTION-ERRORS SET-ERROR-COUNT
+\ EXCEPTION-ERRORS SET-ERROR-COUNT
 
 CR .( End of Exception word tests) CR
 
