@@ -48,7 +48,7 @@ run: forth
 	@./forth
 
 test: forth test/*
-	@./forth -e exit-on-error test/suite.f -e "cr bye"
+	@./forth -e exit-on-error test/all.f -e "cr bye"
 
 bench: forth
 	make -C bench

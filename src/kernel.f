@@ -278,27 +278,27 @@ CODE +!         *(cell *)(m + top) += *S; pop2; NEXT
 
 70 OP! ( conditionals )
 
-CODE 0=         top = (top == 0) LOGICAL; NEXT
-CODE 0<         top = (top < 0) LOGICAL; NEXT
-CODE 0>         top = (top > 0) LOGICAL; NEXT
-CODE =          top = (*S++ == top) LOGICAL; NEXT
-CODE <          top = (*S++ < top) LOGICAL; NEXT
-CODE >          top = (*S++ > top) LOGICAL; NEXT
-CODE U<         top = ((ucell)*S++ < (ucell)top) LOGICAL; NEXT
-CODE U>         top = ((ucell)*S++ > (ucell)top) LOGICAL; NEXT
+` #define COND(cond) top = (cond) LOGICAL; NEXT
 
-OP: 0<>   top = (top != 0) LOGICAL; NEXT
-OP: 0>=   top = (top >= 0) LOGICAL; NEXT
-OP: 0<=   top = (top <= 0) LOGICAL; NEXT
-OP: <>   top = (*S++ != top) LOGICAL; NEXT
-OP: >=   top = (*S++ >= top) LOGICAL; NEXT
-OP: <=   top = (*S++ <= top) LOGICAL; NEXT
-OP: U>=   top = ((ucell)*S++ >= (ucell)top) LOGICAL; NEXT
-OP: U<=   top = ((ucell)*S++ <= (ucell)top) LOGICAL; NEXT
+CODE 0=         COND(top == 0)
+CODE 0<         COND(top < 0)
+CODE 0>         COND(top > 0)
+CODE =          COND(*S++ == top)
+CODE <          COND(*S++ < top)
+CODE >          COND(*S++ > top)
+CODE U<         COND((ucell)*S++ < (ucell)top)
+CODE U>         COND((ucell)*S++ > (ucell)top)
+
+OP: 0<>         COND(top != 0)
+OP: 0>=         COND(top >= 0)
+OP: 0<=         COND(top <= 0)
+OP: <>          COND(*S++ != top)
+OP: >=          COND(*S++ >= top)
+OP: <=          COND(*S++ <= top)
+OP: U>=         COND((ucell)*S++ >= (ucell)top)
+OP: U<=         COND((ucell)*S++ <= (ucell)top)
 
 80 OP! ( nothing special after this )
-
-CODE EXECUTE    *--R = (cell)I, I = m + top, pop; NEXT
 
 CODE DUP        *--S = top; NEXT
 CODE DROP       pop; NEXT
@@ -562,6 +562,19 @@ CODE WORDS  ( -- )  words(M[CONTEXT]); NEXT
 CODE DUMP  ( a n -- )  dump(*S++, top, BASE); pop; NEXT
 CODE VERBOSE  push rel(&verbose); NEXT
 
+( ********** Catch/Throw ********** )
+
+CODE EXECUTE ( xt -- )  *--R = (cell)I, I = m + top, pop; NEXT
+
+CODE CATCH  ( xt -- ex# | 0 )
+    ` *--R = (cell) I, *--R = (cell) S, *--R = HANDLER, HANDLER = (cell) R,
+    ` *--R = (cell) &RESUME, I = m + top, pop; NEXT
+
+CODE THROW  ( n -- )
+    ` if (!top) pop; else if (!HANDLER) goto abort; else THROW; NEXT
+
+CODE RESET  R = R0, HANDLER = 0; NEXT
+
 ( ********** Compiler ********** )
 
 VARIABLE dA ( offset for target compiler )
@@ -661,51 +674,25 @@ CODE ALIGNED  top = aligned(top); NEXT
         THEN
     REPEAT DROP ;
 
-CODE CATCH  ( xt -- ex# | 0 )
-    ` *--R = (cell) I, *--R = (cell) S, *--R = HANDLER, HANDLER = (cell) R,
-    ` *--R = (cell) &RESUME, I = m + top, pop; NEXT
-
-CODE THROW  ( n -- )  if (!top) pop; else if (!HANDLER) goto abort;
-    ` else THROW; NEXT
-
-CODE RESET  R = R0; NEXT
-
-80 BUFFER TIB
-: QUERY  $ 0 SOURCE-FILE !  TIB SOURCE-BUF !  REFILL 0= IF BYE THEN ;
-: QUERY? ( -- f )  $ 0 SOURCE-FILE !  TIB SOURCE-BUF !  REFILL ;
-
-CODE ERROR ( n -- )
-    ` show_error(top, (top == -2) ? abs(MSG) : 0, abs(HERE), abs(SOURCE));
-    ` STATE = 0, S = S0; NEXT
-
-: (QUIT)
-    RESET  $ 0 STATE !
-    BEGIN  CR QUERY  ['] INTERPRET CATCH
-           ?DUP IF ERROR ELSE STATE @ 0= IF ."  ok" THEN THEN
-    AGAIN ;
-
 : (INCLUDE)  BEGIN REFILL WHILE INTERPRET REPEAT ;
 
-: INCLUDED  ( str len -- )
-    2DUP R/O OPEN-FILE ABORT" file not found" >SOURCE
-    BEGIN REFILL WHILE INTERPRET REPEAT  SOURCE> ;
-\    ['] (INCLUDE) CATCH  SOURCE>  THROW ;
+: INCLUDE-FILE  ( str len fid -- )  >SOURCE  HANDLER @
+    IF  ['] (INCLUDE) CATCH SOURCE> THROW  ELSE  (INCLUDE) SOURCE>  THEN ;
 
-\ HANDLER @ IF ['] (INCLUDE) CATCH SOURCE> THROW ELSE (INCLUDE) SOURCE> THEN ;
+: INCLUDED  ( str len -- )
+    2DUP R/O OPEN-FILE ABORT" file not found" INCLUDE-FILE ;
 
 : INCLUDE  PARSE-NAME INCLUDED ;
 
-TAG TAG
+80 BUFFER TIB
+: QUERY  $ 0 SOURCE-FILE !  TIB SOURCE-BUF !  REFILL 0= IF BYE THEN ;
 
 : QUIT  RESET
     BEGIN  SOURCE-DEPTH WHILE  SOURCE>  REPEAT
     BEGIN  CR QUERY  INTERPRET  STATE @ 0= IF ."  ok" THEN  AGAIN ;
-
-: QUIT2  RESET
-    BEGIN  SOURCE-DEPTH WHILE  SOURCE>  REPEAT
-    BEGIN  CR QUERY? WHILE  INTERPRET  STATE @ 0= IF ."  ok" THEN  REPEAT BYE ;
-
 1 HAS QUIT
+
+TAG TAG
 
 : COLD
     SOURCE-STACK 'IN !

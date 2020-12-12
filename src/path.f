@@ -37,9 +37,6 @@
     \ todo: search path goes here
     2dup r/o open-file abort" file not found" ;
 
-: included  ( str len -- )
-    open-on-path >source
-    begin refill while interpret repeat
-    source> ;
+: included  ( str len -- )  open-on-path include-file ;
 
-: include  parse-name included ;
+: include   parse-name included ;

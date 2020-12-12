@@ -15,6 +15,7 @@ include test/strings.f
 include test/stringtest.fth
 \ include test/localstest.f
 include ./pathtest.f
+include test/exceptiontest.fth
 
 \ gforth tests
 \ include /usr/share/gforth/0.7.3/test/
