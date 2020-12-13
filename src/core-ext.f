@@ -18,7 +18,8 @@ got ?do
 missing action-of
 got again
 missing buffer:
-missing c"
+\ missing c"
+: c"  postpone s" postpone drop postpone 1- ; immediate
 missing case
 got compile,
 got defer
@@ -49,7 +50,7 @@ got to
 : TUCK      SWAP OVER ;
 got u.r
 got u>
-missing unused
+got unused
 got value
 got within
 got [compile]

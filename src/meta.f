@@ -116,6 +116,7 @@ MARKER EMPTY
 : T: : ;
 : forget PREVIOUS 10 OR SWAP C! ;
 : ,A  dA @ - , ;
+: 0, 0 , ;
 
 HEX  8000 2000 0 FILL  8000 H' !
 { include ./kernel.f }

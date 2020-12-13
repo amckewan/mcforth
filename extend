@@ -1,3 +1,4 @@
+:NONAME  CR 1 (BYE) ; 1 CELLS !
 
 include rth
 
@@ -21,6 +22,8 @@ include rth
     doargs
     TAG COUNT TYPE QUIT ;
 0 ! ( cold )
+
+' quit 1 cells !
 
 save forth.inc
 save-image forth.img

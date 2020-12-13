@@ -187,6 +187,7 @@ VARIABLE OP  ( next opcode )
 : forget ;
 : ,A  , ;
 : [COMPILE] ;
+: 0, 0 , ;
 
 \ : CELL+ CELL + ;
 \ : CELLS CELL * ;

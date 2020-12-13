@@ -44,6 +44,7 @@ DECIMAL
 : S"        $A C, ," ; IMMEDIATE
 : ."        $B C, ," ; IMMEDIATE
 : ABORT"    $C C, ," ; IMMEDIATE
+: ABORT     -1 THROW ;
 
 : -ROT      ROT ROT ;
 
