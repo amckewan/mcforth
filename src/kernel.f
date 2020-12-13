@@ -711,11 +711,8 @@ VARIABLE WARNING
 VARIABLE LAST 0,
 : PREVIOUS ( -- nfa count )  LAST @ CELL+  DUP C@ ;
 
-\ : HIDE      CURRENT @ @ CURRENT @ ! ;
-\ : REVEAL    LAST @ ?DUP IF CURRENT @ ! THEN ;
-
-: SMUDGE    PREVIOUS  $ 20 OR   SWAP C! ;
-: REVEAL    PREVIOUS  $ DF AND  SWAP C! ;
+: HIDE      LAST @ @  CURRENT @ ! ;
+: REVEAL    LAST @ ?DUP IF  CURRENT @ !  THEN ;
 
 : LINK,     ALIGN HERE  OVER @ ,  SWAP ! ;
 : HEADER    WARN  ALIGN HERE  CURRENT @ LINK,
@@ -723,11 +720,10 @@ VARIABLE LAST 0,
 
 : CONSTANT  HEADER  $ 10 , , ;
 : CREATE    HEADER  $ 11 , ;
-: VARIABLE  CREATE $ 0 , ;
+: VARIABLE  CREATE  $ 0 , ;
 
 \ | opc | I for does | data
-: DOES>   R> M -  dA @ -  $ 8 LSHIFT $ 12 OR
-          PREVIOUS $ 1F AND + 1+ ALIGNED ( cfa ) ! ;
+: DOES>   R> M -  dA @ -  $ 8 LSHIFT $ 12 OR  LAST CELL+ @ ! ;
 : >BODY   CELL+ ;
 
 \ Be careful from here on...
@@ -737,8 +733,8 @@ T: ;  [COMPILE] EXIT [COMPILE] [ REVEAL ; IMMEDIATE forget
 : RECURSE  LAST CELL+ @ COMPILE, ; IMMEDIATE
 
 : ]  $ -1 STATE ! ;
-: :NONAME  ALIGN HERE  DUP LAST CELL+ !  ] ;
-: :  HEADER SMUDGE  :NONAME DROP ;
+: :NONAME  ALIGN HERE  DUP 0 LAST 2!  -OPT  ] ;
+: :  HEADER HIDE ] ;
 
 ``
 default:
