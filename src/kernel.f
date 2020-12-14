@@ -59,7 +59,7 @@ cell *S, top;
 cell *R;
 cell w;
 
-#define LOCALS 0
+#define LOCALS 1
 #if LOCALS
 cell *L;
 #endif
@@ -709,7 +709,7 @@ VARIABLE WARNING
     HERE COUNT TYPE ."  redefined " THEN  DROP >IN !  THEN ;
 
 VARIABLE LAST 0,
-: PREVIOUS ( -- nfa count )  LAST @ CELL+  DUP C@ ;
+: PRIOR ( -- nfa count )  LAST @ CELL+  DUP C@ ;
 
 : HIDE      LAST @ @  CURRENT @ ! ;
 : REVEAL    LAST @ ?DUP IF  CURRENT @ !  THEN ;
@@ -733,7 +733,7 @@ T: ;  [COMPILE] EXIT [COMPILE] [ REVEAL ; IMMEDIATE forget
 : RECURSE  LAST CELL+ @ COMPILE, ; IMMEDIATE
 
 : ]  $ -1 STATE ! ;
-: :NONAME  ALIGN HERE  DUP 0 LAST 2!  -OPT  ] ;
+: :NONAME  ALIGN HERE  DUP $ 0 LAST 2!  -OPT  ] ;
 : :  HEADER HIDE ] ;
 
 ``

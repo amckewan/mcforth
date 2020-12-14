@@ -111,7 +111,7 @@ VARIABLE LAST
     ALIGN  HERE  LAST  DUP @ ,  !
     BL WORD COUNT  DUP C, S,  ALIGN ;
 
-: PREVIOUS ( -- nfa count )  LAST @ CELL +  DUP TC@ ;
+: PRIOR ( -- nfa count )  LAST @ CELL +  DUP TC@ ;
 
 VARIABLE STATE-T
 : ?EXEC  STATE-T @ 0= ABORT" cannot execute target word!" ;
@@ -205,7 +205,7 @@ VARIABLE OP  ( next opcode )
 : T:  HEADER  ] ;  \ to create words with no host header
 
 : ;_  POSTPONE ; ; IMMEDIATE
-: IMMEDIATE  PREVIOUS 40 OR SWAP TC! ;
+: IMMEDIATE  PRIOR 40 OR SWAP TC! ;
 : ;   ?CSP EXIT [ ;
 : :   TARGET-CREATE !CSP ] ;_
 

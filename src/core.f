@@ -2,7 +2,7 @@
 : DECIMAL   10 BASE ! ;
 : HEX       16 BASE ! ;
 
-: IMMEDIATE  PREVIOUS  $40 OR  SWAP C! ;
+: IMMEDIATE  PRIOR  $40 OR  SWAP C! ;
 
 : \         SOURCE >IN ! DROP ; IMMEDIATE
 : (         ')' PARSE 2DROP ; IMMEDIATE

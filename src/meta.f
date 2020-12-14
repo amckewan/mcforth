@@ -101,7 +101,7 @@ MARKER EMPTY
 
 : {   dA @  HERE  H' 2@ H !  dA !  H' 2! ;
 : }   { ;
-\ headless : }   H' @ ,  PREVIOUS  80 XOR  SWAP C!  { ; IMMEDIATE
+\ headless : }   H' @ ,  PRIOR  80 XOR  SWAP C!  { ; IMMEDIATE
 
 : SCAN ( a - a)   BEGIN  @  DUP 1 8000 WITHIN NOT UNTIL ;
 : TRIM ( a a - a)   DUP >R  dA @ -  SWAP !  R>
@@ -114,7 +114,7 @@ MARKER EMPTY
 \ for compatibility with cross.fs
 : $ ; IMMEDIATE
 : T: : ;
-: forget PREVIOUS 10 OR SWAP C! ;
+: forget PRIOR 10 OR SWAP C! ;
 : ,A  dA @ - , ;
 : 0, 0 , ;
 
