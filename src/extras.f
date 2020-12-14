@@ -1,14 +1,12 @@
 ( useful extras )
 
-:NONAME  CR 1 (BYE) ;
-: EXIT-ON-ERROR  LITERAL 1 CELLS ! ;
-
 : ON        TRUE  SWAP ! ;
 : OFF       FALSE SWAP ! ;
 
+( comment to end of file )
+: \S        BEGIN REFILL 0= UNTIL ;
 
 ( Multi-line comments )
-
 : COMMENT  CHAR
     BEGIN  DUP DUP PARSE + C@ = NOT
     WHILE  REFILL NOT ABORT" comment?"
@@ -28,13 +26,13 @@ typical
 : [ELSE] ( -- )
     1 BEGIN
         BEGIN PARSE-NAME DUP WHILE
-          2DUP S" [IF]" S= IF
+          2DUP S" [IF]" COMPARE 0= IF
             2DROP 1+
           ELSE
-            2DUP S" [ELSE]" S= IF
+            2DUP S" [ELSE]" COMPARE 0= IF
               2DROP 1- DUP IF 1+ THEN
             ELSE
-              S" [THEN]" S= IF
+              S" [THEN]" COMPARE 0= IF
                 1-
               THEN
             THEN
@@ -49,5 +47,21 @@ typical
 
 \ My needs are simpler than require, e.g.
 \ need locals from opt/locals.f
+\ need off : off 0 swap ! ;
 : need  defined if [COMPILE] \ then ;
 : from  include ; ( sugar )
+
+
+\ Save dictionary image
+: ?IOERR  ABORT" File I/O Error" ;
+: SAVE ( <filename> -- ) \ format for include
+    PARSE-NAME W/O CREATE-FILE ?IOERR
+    HERE 0 DO
+        DUP I C@ 0 <# ',' HOLD #S #> ROT
+        I 15 AND 15 = IF WRITE-LINE ELSE WRITE-FILE THEN ?IOERR
+    LOOP
+    CLOSE-FILE ?IOERR ;
+: SAVE-IMAGE ( <filename> -- )
+    PARSE-NAME W/O CREATE-FILE ?IOERR
+    DUP 0 HERE ROT WRITE-FILE ?IOERR
+    CLOSE-FILE ?IOERR ;

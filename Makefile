@@ -48,13 +48,13 @@ run: forth
 	@./forth
 
 test: forth test/*
-	@./forth -e exit-on-error test/all.f -e "cr bye"
+	@./forth -e ":NONAME CR 1 (BYE) ; 1 CELLS !" test/all.f -e "cr bye"
 
 bench: forth
 	make -C bench
 
 checkans: forth
-	./forth lib/standard.f /usr/share/gforth/0.7.3/test/checkans.fs -e bye
+	./forth /usr/share/gforth/0.7.3/test/checkans.fs -e bye
 
 clean:
 	@rm -f fo forth *.inc *.img *.hex *.info *.s

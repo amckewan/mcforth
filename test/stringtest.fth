@@ -154,7 +154,7 @@ T{ PAD 12 S13 COMPARE -> 0 }T
 \ ------------------------------------------------------------------------------
 DEFINED SLITERAL [IF]
 TESTING SLITERAL
-
+need 2constant : 2constant create , , does> 2@ ;
 T{ HERE DUP S1 DUP ALLOT ROT SWAP MOVE S1 SWAP DROP 2CONSTANT S1A -> }T
 T{ : S14 [ S1A ] SLITERAL ; -> }T
 T{ S1A S14 COMPARE -> 0 }T

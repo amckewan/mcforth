@@ -1,7 +1,8 @@
-0 warning !
 include src/core.f
-include src/core-ext.f
-include src/path.f
 include src/extras.f
-include src/module.f
-include src/see.f
+
+include lib/core-ext.f
+include lib/string.f
+include lib/path.f
+include lib/module.f
+include lib/see.f

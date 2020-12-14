@@ -1,8 +1,8 @@
 \ Local Variables
 \ Copyright (c) 2020 Andrew McKewan
 
-need order from src/order.f
-need module from src/module.f
+need order from lib/order.f
+need module from lib/module.f
 
 forth decimal
 

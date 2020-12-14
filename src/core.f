@@ -1,6 +1,5 @@
-5 5 + BASE !
-: DECIMAL   10 BASE ! ;
-: HEX       16 BASE ! ;
+: DECIMAL   #10 BASE ! ; DECIMAL
+: HEX       #16 BASE ! ;
 
 : IMMEDIATE  PRIOR  $40 OR  SWAP C! ;
 
@@ -39,31 +38,27 @@
 DECIMAL
 
 : ,"        '"' PARSE  DUP C, S,  -OPT ;
-
-: S"        $A C, ," ; IMMEDIATE
+: SLITERAL  $A C, DUP C, S, -OPT ; IMMEDIATE
+\ : S"        $A C, ," ; IMMEDIATE
 : ."        $B C, ," ; IMMEDIATE
 : ABORT"    $C C, ," ; IMMEDIATE
 
 : ABORT     -1 THROW ;
-
-: -ROT      ROT ROT ;
 
 : 2OVER     3 PICK 3 PICK ;
 : 2SWAP     ROT >R ROT R> ;
 
 : NOT       0= ;
 
+: CHARS     ;
+: CHAR+     1+ ;
+
 : CHAR      BL WORD 1+ C@ ;
 : [CHAR]    CHAR [COMPILE] LITERAL ; IMMEDIATE
 : [']       ' dA @ - [COMPILE] LITERAL ; IMMEDIATE
 
-: BLANK  BL FILL ;
-: PLACE  ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;
-
-: S=  COMPARE 0= ;
-: /STRING  ROT OVER +  -ROT - ;
-: -TRAILING  ( a n -- a n' )
-    BEGIN  DUP WHILE  2DUP + 1- C@ BL = WHILE  1-  REPEAT THEN ;
+: ERASE     BL FILL ;
+: PLACE     ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;
 
 : ABS       DUP 0< IF NEGATE THEN ;
 : MIN       2DUP > IF SWAP THEN DROP ;
@@ -74,9 +69,14 @@ DECIMAL
 : */        */MOD NIP ;
 : /MOD      >R S>D R> SM/REM ;
 
-: SPACES    0 MAX  0 ?DO  SPACE  LOOP ;
+( fm/mod adapted from standard implementation )
+: FM/MOD  ( d n -- rem quot )
+    DUP>R SM/REM
+    ( if the remainder is not zero and has a different sign than the divisor )
+    OVER DUP SWAP R@ XOR 0< AND IF  1- SWAP R@ + SWAP  THEN
+    R>DROP ;
 
-: \S        BEGIN REFILL 0= UNTIL ;
+: SPACES    0 MAX  0 ?DO  SPACE  LOOP ;
 
 : POSTPONE  BL WORD FIND  DUP 0= ABORT" ?"
     0< IF  [COMPILE] LITERAL  ['] COMPILE,  THEN  COMPILE, ; IMMEDIATE
@@ -85,17 +85,10 @@ DECIMAL
     -1 >SOURCE  >IN CELL+ 2!  0 >IN !  HANDLER @
     IF  ['] INTERPRET CATCH SOURCE> THROW  ELSE  INTERPRET SOURCE>  THEN ;
 
-\ have to remember current, context as well
-\ as here to trim all wordlists
-: MARKER  ALIGN HERE  FORTH-WORDLIST @ ,  CREATE ,
-    DOES> @  DUP H !  @ FORTH-WORDLIST ! ;
+ 0 CONSTANT FALSE
+-1 CONSTANT TRUE
 
-: VALUE  HEADER  $13 , , ;
-: (TO) ( xt -- )  >BODY  STATE @ IF POSTPONE LITERAL POSTPONE ! ELSE ! THEN ;
-: TO  ' (TO) ; IMMEDIATE
-
-: DEFER  HEADER  $14 , CELL , ( abort ) ;
-: IS  POSTPONE TO ; IMMEDIATE
+: ENVIRONMENT?  2DROP FALSE ;
 
 \ Interpreter string literals
 CREATE SBUF 300 ALLOT
@@ -107,8 +100,7 @@ VARIABLE #SBUF
 \ : S"  [CHAR] " PARSE STASH ;
 
 \ state-smart version
-: S"  STATE @ IF [COMPILE] S" ELSE [CHAR] " PARSE STASH THEN ; IMMEDIATE
-
+: S"  [CHAR] " PARSE  STATE @ IF [COMPILE] SLITERAL ELSE STASH THEN ; IMMEDIATE
 
 \ Pictured numeric output
 \ Adapted from Wil Baden's ThisForth
@@ -129,17 +121,3 @@ VARIABLE HLD
 : U.R       >R 0 <# #S #> R> OVER - SPACES  TYPE ;
 : H.        BASE @ HEX  SWAP U.  BASE ! ;
 : ?         @ . ;
-
-\ Save dictionary image
-: ?IOERR  ABORT" File I/O Error" ;
-: SAVE ( <filename> -- ) \ format for include
-    PARSE-NAME W/O CREATE-FILE ?IOERR
-    HERE 0 DO
-        DUP I C@ 0 <# ',' HOLD #S #> ROT
-        I 15 AND 15 = IF WRITE-LINE ELSE WRITE-FILE THEN ?IOERR
-    LOOP
-    CLOSE-FILE ?IOERR ;
-: SAVE-IMAGE ( <filename> -- )
-    PARSE-NAME W/O CREATE-FILE ?IOERR
-    DUP 0 HERE ROT WRITE-FILE ?IOERR
-    CLOSE-FILE ?IOERR ;
