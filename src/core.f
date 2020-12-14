@@ -38,12 +38,12 @@
 : +LOOP     7 C,  <RESOLVE  >RESOLVE ; IMMEDIATE
 DECIMAL
 
-: S,        0 ?DO  COUNT C,  LOOP DROP ;
 : ,"        '"' PARSE  DUP C, S,  -OPT ;
 
 : S"        $A C, ," ; IMMEDIATE
 : ."        $B C, ," ; IMMEDIATE
 : ABORT"    $C C, ," ; IMMEDIATE
+
 : ABORT     -1 THROW ;
 
 : -ROT      ROT ROT ;
@@ -91,7 +91,8 @@ DECIMAL
     DOES> @  DUP H !  @ FORTH-WORDLIST ! ;
 
 : VALUE  HEADER  $13 , , ;
-: TO  ' >BODY  STATE @ IF POSTPONE LITERAL POSTPONE ! ELSE ! THEN ; IMMEDIATE
+: (TO) ( xt -- )  >BODY  STATE @ IF POSTPONE LITERAL POSTPONE ! ELSE ! THEN ;
+: TO  ' (TO) ; IMMEDIATE
 
 : DEFER  HEADER  $14 , CELL , ( abort ) ;
 : IS  POSTPONE TO ; IMMEDIATE

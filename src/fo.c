@@ -58,27 +58,20 @@ cell search_wordlist(cell name, cell len, cell wid) {
     return 0;
 }
 
-cell find(cell name, cell link) {
-    //printf("find '"); type(name+1, m[name]); printf("' link %tX\n", link);
-    // return xt if found, else zero
-    int len = m[name];
-    while (link) {
-        //printf("find len=%d link=%tX\n", len, link);
-        if ((m[link + CELL] & 63) == len
-              && match((char*)m + name + 1, (char*)m + link + CELL + 1, len)) {
-            cell xt = aligned(link + CELL + 1 + len);
-            if (m[link + CELL] & 0x80) // headless
-                xt = *(cell *)(m + xt);
-            if (m[link + CELL] & 0x40) // immediate
-                xt = -xt;
-            //printf("found xt=%tX\n", xt);
-            return xt;
+cell find(cell name, cell context) {
+    cell len = m[name++];
+    cell wid, prev = 0;
+    while ((wid = AT(context))) {
+        if (wid != prev) {
+            cell xt = search_wordlist(name, len, wid);
+            if (xt) return xt;
+            prev = wid;
         }
-        link = AT(link);
+        context += CELL;
     }
-    //printf("not found\n");
     return 0;
 }
+
 
 #define THREADS 8 // # of method threads in the class
 cell find_method(cell class, cell selector) {

@@ -1,9 +1,9 @@
 TESTING STRINGS
 
 DEFINED /STRING [IF]
-{ s" abcdef" nip -> 6 }
-{ s" abcdef" 2 /string nip -> 4 }
-{ s" abcdef" -2 /string nip -> 8 }
+T{ s" abcdef" nip -> 6 }T
+T{ s" abcdef" 2 /string nip -> 4 }T
+T{ s" abcdef" -2 /string nip -> 8 }T
 [THEN]
 
 T{ :  S1 S" abcdefghijklmnopqrstuvwxyz" ; -> }T
@@ -24,12 +24,12 @@ Compare the string specified by c-addr1 u1 to the string specified by c-addr2 u2
 
 TESTING COMPARE
 
-{ s" " s" " compare -> 0 }
-{ s" abc" s" abc" compare -> 0 }
-{ s" abc" s" abcdef" compare -> -1 }
-{ s" abcdef" s" abc" compare -> 1 }
-{ s" abcdef" s" abzdef" compare -> -1 }
-{ s" abzdef" s" abcdef" compare -> 1 }
+T{ s" " s" " compare -> 0 }T
+T{ s" abc" s" abc" compare -> 0 }T
+T{ s" abc" s" abcdef" compare -> -1 }T
+T{ s" abcdef" s" abc" compare -> 1 }T
+T{ s" abcdef" s" abzdef" compare -> -1 }T
+T{ s" abzdef" s" abcdef" compare -> 1 }T
 
 T{ S1 S1 COMPARE -> 0 }T
 T{ S1 PAD SWAP MOVE -> }T

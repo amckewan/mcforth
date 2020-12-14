@@ -536,15 +536,11 @@ CODE SEARCH-WORDLIST  ( c-addr u wid -- 0 | xt 1 | xt -1 )
     ` else if (w < 0) *++S = -w, top = 1;
     ` else S += 2, top = 0; NEXT
 
-\ CODE xFIND  ( str -- xt flag | str 0 )
-\ `       w = find(top, CELLS(CONTEXT)); // search FORTH only
-\ `       if (w > 0) *--S = w, top = -1;
-\ `       else if (w < 0) *--S = -w, top = 1;
-\ `       else push 0; NEXT
-
-: FIND  ( c-addr -- c-addr 0 | xt 1 | xt -1 )
-    DUP COUNT FORTH-WORDLIST SEARCH-WORDLIST
-    DUP IF  ROT DROP  THEN ;
+CODE FIND  ( str -- xt flag | str 0 )
+    ` w = find(top, CELLS(CONTEXT));
+    ` if (w > 0) *--S = w, top = -1;
+    ` else if (w < 0) *--S = -w, top = 1;
+    ` else push 0; NEXT
 
 : '  ( --- xt )  BL WORD FIND 0= ABORT" ?" ;
 
@@ -591,7 +587,7 @@ CODE UNUSED  ( -- u )  push rel(R0) - CELLS(256) - HERE; NEXT
 : W,  HERE W!  $ 2 H +! ;
 
 CODE ALIGNED  top = aligned(top); NEXT
-: ALIGN  BEGIN HERE DUP ALIGNED < WHILE $ 0 C, REPEAT ;
+: ALIGN  BEGIN HERE CELL 1- AND WHILE $ 0 C, REPEAT ;
 
 : OP, ( opc -- )  ?CODE @ HERE ?CODE 2!  C, ;
 
@@ -715,8 +711,12 @@ VARIABLE LAST 0,
 : REVEAL    LAST @ ?DUP IF  CURRENT @ !  THEN ;
 
 : LINK,     ALIGN HERE  OVER @ ,  SWAP ! ;
-: HEADER    WARN  ALIGN HERE  CURRENT @ LINK,
-            BL WORD C@ 1+ ALLOT  ALIGN  HERE SWAP LAST 2!  -OPT ;
+: S,        HERE SWAP  DUP ALLOT  MOVE ;
+
+: (HEADER)  ( addr len wid -- )
+            HERE ALIGNED LAST !  LINK,  DUP C,  S,  ALIGN
+            HERE LAST CELL+ !  -OPT ;
+: HEADER    WARN  PARSE-NAME CURRENT @ (HEADER) ;
 
 : CONSTANT  HEADER  $ 10 , , ;
 : CREATE    HEADER  $ 11 , ;

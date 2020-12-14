@@ -6,7 +6,7 @@
 \ MAY BE DISTRIBUTED FREELY AS LONG AS THIS COPYRIGHT NOTICE REMAINS.
 \ VERSION 1.2
 
-\ 14/10/2020 AMcKewan Add back { and }, add test counter
+\ 14/10/2020 AMcKewan Add test counter, print failures
 \ 24/11/2015 Replaced Core Ext word <> with = 0=
 \ 31/3/2015 Variable #ERRORS added and incremented for each error reported.
 \ 22/1/09 The words { and } have been changed to T{ and }T respectively to
@@ -26,7 +26,6 @@ VARIABLE VERBOSE
 
 VARIABLE #ERRORS 0 #ERRORS !
 
-\ : STRLEN 0 SWAP BEGIN COUNT WHILE SWAP 1+ SWAP REPEAT DROP ;
 : .ERRLOC
    SOURCE-NAME @ IF
       BASE @ DECIMAL
@@ -44,13 +43,13 @@ VARIABLE #ERRORS 0 #ERRORS !
 ;
 
 VARIABLE #TESTS
-: .TESTS  #TESTS @ DUP #ERRORS @ - 0 .R ." /" . ;
+: .TESTS  ." PASSED " #TESTS @ DUP #ERRORS @ - 0 .R ." /" . ;
 
 VARIABLE ACTUAL-DEPTH         \ STACK RECORD
 CREATE ACTUAL-RESULTS 20 CELLS ALLOT
 
 : T{      \ ( -- ) SYNTACTIC SUGAR.
-   1 #TESTS +! ;
+   ;
 
 : ->      \ ( ... -- ) RECORD DEPTH AND CONTENT OF STACK.
    DEPTH DUP ACTUAL-DEPTH !      \ RECORD DEPTH
@@ -60,6 +59,7 @@ CREATE ACTUAL-RESULTS 20 CELLS ALLOT
 
 : }T      \ ( ... -- ) COMPARE STACK (EXPECTED) CONTENTS WITH SAVED
       \ (ACTUAL) CONTENTS.
+   1 #TESTS +!
    DEPTH ACTUAL-DEPTH @ = IF      \ IF DEPTHS MATCH
       DEPTH ?DUP IF         \ IF THERE IS SOMETHING ON THE STACK
          0  DO            \ FOR EACH STACK ITEM
@@ -76,7 +76,3 @@ CREATE ACTUAL-RESULTS 20 CELLS ALLOT
    IF DUP >R TYPE CR R> >IN !
    ELSE >IN ! DROP [CHAR] * EMIT
    THEN ;
-
-\ My preference for the old names
-: { T{ ;
-: } }T ;
