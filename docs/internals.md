@@ -103,12 +103,12 @@ opcode | function | operands
 5 | ?do | offset
 6 | loop | offset
 7 | +loop | offset
-8 |
-9 |
+8 | resume | none, resume from catch w/o throw
+9 | jump | 16-bit cell offset
 A | s" | counted string
 B | ." | counted string
 C | abort" | counted string
-D | 
+D | of | offset
 E | 
 F | 
 

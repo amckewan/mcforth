@@ -130,6 +130,7 @@ OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
 OP: ABORT"      if (!top) { w = *I++, I += w, pop; NEXT }
                 ` top = -2, MSG = rel(I); if (!HANDLER) goto abort; THROW; NEXT
+OP: OF          if (top == *S) pop2, NOBRANCH; else pop, BRANCH; NEXT
 
 10 OP! ( runtime for defining words )
 

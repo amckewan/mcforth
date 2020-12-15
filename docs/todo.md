@@ -1,6 +1,5 @@
 # To-do list
 
-* case
 * path in forth
 * move stuff from kernel to extend
 * remove non-essential code words (keep opcodes trim)
