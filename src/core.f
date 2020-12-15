@@ -45,9 +45,6 @@ DECIMAL
 
 : ABORT     -1 THROW ;
 
-: 2OVER     3 PICK 3 PICK ;
-: 2SWAP     ROT >R ROT R> ;
-
 : NOT       0= ;
 
 : CHAR      BL WORD 1+ C@ ;

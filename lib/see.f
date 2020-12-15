@@ -1,6 +1,8 @@
 ( decompiler )
 ( intended to see what the compiler does, not to reproduce source code )
 
+need module from lib/module.f
+
 base @ hex
 
 \ cheesy decompiler

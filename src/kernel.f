@@ -321,16 +321,19 @@ CODE J          push R[3] + R[4]; NEXT
 CODE LEAVE      I = (byte*)R[2];
 CODE UNLOOP     R += 3; NEXT
 
-: 2DUP      OVER OVER ;
-: 2DROP     DROP DROP ;
+CODE 2DUP       w = *S, *--S = top, *--S = w; NEXT
+CODE 2DROP      top = S[1], S += 2; NEXT
+CODE 2SWAP      w = S[0], S[0] = S[2], S[2] = w,
+`               w = S[1], S[1] = top, top = w; NEXT
+CODE 2OVER      w = S[2], *--S = top, *--S = w, top = S[3]; NEXT
 
-CODE INVERT  top = ~top; NEXT
-CODE NEGATE  top = -top; NEXT
-CODE LSHIFT  top = *S++ << top; NEXT
-CODE RSHIFT  top = ((ucell)*S++) >> top; NEXT
+CODE INVERT     top = ~top; NEXT
+CODE NEGATE     top = -top; NEXT
+CODE LSHIFT     top = *S++ << top; NEXT
+CODE RSHIFT     top = ((ucell)*S++) >> top; NEXT
 
-CODE MOD   top = *S++ % top;  NEXT
-CODE UMOD  top = (ucell)*S++ % (ucell)top;  NEXT
+CODE MOD        top = *S++ % top;  NEXT
+\ CODE UMOD       top = (ucell)*S++ % (ucell)top;  NEXT
 
 ` #define LOWER(u1,u2)  ((ucell)(u1) < (ucell)(u2))
 

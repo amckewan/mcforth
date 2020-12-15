@@ -1,8 +1,7 @@
 include src/core.f
-include src/extras.f
 
+include lib/extras.f
 include lib/core-ext.f
 include lib/string.f
 include lib/path.f
-include lib/module.f
 include lib/see.f

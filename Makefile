@@ -1,6 +1,6 @@
 # mcforth makefile
 
-all: test
+all: tests
 
 CELL = 4
 
@@ -20,8 +20,8 @@ LIBS = -ledit
 forth: forth.inc $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(SOURCES) $(LIBS) -o $@
 
-forth.inc: fo rth extend src/*.f
-	./fo extend
+forth.inc: fo rth extend src/core.f lib/*
+	./fo exit-on-error extend
 	hexdump -C forth.img > forth.hex
 
 fo: prims.inc kernel.inc $(SOURCES) $(HEADERS)
@@ -39,7 +39,7 @@ bootstrap:
 	hexdump -C forth.img > forth.hex
 	$(CC) $(CFLAGS) $(SOURCES) $(LIBS) -o forth
 	rm kernel.inc
-	$(MAKE) test
+	$(MAKE) tests
 
 asm: prims.inc kernel.inc $(SOURCES) $(HEADERS)
 	$(CC) -DKERNEL $(CFLAGS) src/fo.c -S
@@ -47,8 +47,8 @@ asm: prims.inc kernel.inc $(SOURCES) $(HEADERS)
 run: forth
 	@./forth
 
-test: forth test/*
-	@./forth -e ":NONAME CR 1 (BYE) ; 1 CELLS !" test/all.f -e "cr bye"
+tests: forth test/*
+	@./forth exit-on-error test/all.f -e "cr bye"
 
 bench: forth
 	make -C bench

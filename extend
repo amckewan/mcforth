@@ -1,15 +1,9 @@
-:NONAME  CR 1 (BYE) ; 1 CELLS !
-
-1 parse The above exits on a compile error so I can run make from my editor
-2drop
-
 include src/core.f
-include src/extras.f
 
+include lib/extras.f
 include lib/core-ext.f
 include lib/string.f
 include lib/path.f
-include lib/module.f
 include lib/see.f
 
 \ Process command-line arguments
