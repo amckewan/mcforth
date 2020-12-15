@@ -3,7 +3,6 @@
 * path in forth
 * move stuff from kernel to extend
 * remove non-essential code words (keep opcodes trim)
-* add back locals with catch/throw support
 
 ## Maybe do
 

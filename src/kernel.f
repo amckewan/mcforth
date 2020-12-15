@@ -62,6 +62,8 @@ cell w;
 #define LOCALS 1
 #if LOCALS
 cell *L;
+#else
+static cell *L;  // for catch/throw
 #endif
 
 #define OBJECTS 0
@@ -106,8 +108,11 @@ next:
 #define NOBRANCH    I += 1
 #define EXIT        I = (byte *)*R++; NEXT
 
-#define THROW       R = (cell*) HANDLER, \
-                    HANDLER = *R++, S = (cell*) *R++, I = (byte*) *R++
+#define CATCH       *--R = (cell) I, *--R = (cell) S, *--R = (cell) L, \
+                    *--R = HANDLER, HANDLER = (cell) R
+
+#define THROW       R = (cell*) HANDLER, HANDLER = *R++, \
+                    L = (cell*) *R++, S = (cell*) *R++, I = (byte*) *R++
 ``
 
 0 OP! ( special functions )
@@ -124,7 +129,7 @@ OP: +LOOP       w = *R, *R += top;
                 ` if ((w ^ *R) < 0 && (w ^ top) < 0) NOBRANCH, R += 3;
                 ` else BRANCH; pop; NEXT
 
-OP: RESUME      HANDLER = *R++, R++, I = (byte*) *R++, push 0; NEXT
+OP: RESUME      HANDLER = *R++, R++, R++, I = (byte*) *R++, push 0; NEXT
 OP: JUMP        w = *(uint16_t *)I; I = m + CELLS(w); NEXT
 OP: S"          w = *I++, push rel(I), push w, I += w; NEXT
 OP: ."          I = dotq(I); NEXT
@@ -567,8 +572,7 @@ CODE VERBOSE  push rel(&verbose); NEXT
 CODE EXECUTE ( xt -- )  *--R = (cell)I, I = m + top, pop; NEXT
 
 CODE CATCH  ( xt -- ex# | 0 )
-    ` *--R = (cell) I, *--R = (cell) S, *--R = HANDLER, HANDLER = (cell) R,
-    ` *--R = (cell) &RESUME, I = m + top, pop; NEXT
+    ` CATCH, *--R = (cell) &RESUME, I = m + top, pop; NEXT
 
 CODE THROW  ( n -- )
     ` if (!top) pop; else if (!HANDLER) goto abort; else THROW; NEXT
