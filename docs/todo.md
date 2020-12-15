@@ -23,6 +23,5 @@
 ## Do later (or never)
 
 * add require
-* improve documentation
 * view source
 * get .s to fully observe base (dot())
