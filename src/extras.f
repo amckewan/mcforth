@@ -1,10 +1,10 @@
 ( useful extras )
 
-: ON        TRUE  SWAP ! ;
-: OFF       FALSE SWAP ! ;
+: ON   -1 SWAP ! ;
+: OFF   0 SWAP ! ;
 
 ( comment to end of file )
-: \S        BEGIN REFILL 0= UNTIL ;
+: \S  BEGIN REFILL 0= UNTIL ;
 
 ( Multi-line comments )
 : COMMENT  CHAR

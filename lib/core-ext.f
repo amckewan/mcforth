@@ -1,5 +1,8 @@
 ( core extension words )
 
+ 0 CONSTANT FALSE
+-1 CONSTANT TRUE
+
 : 2>R       SWAP >R >R ;
 : 2R>       R> R> SWAP ;
 : 2R@       R> R> 2DUP >R >R SWAP ;

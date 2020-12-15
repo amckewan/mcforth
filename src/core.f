@@ -50,9 +50,6 @@ DECIMAL
 
 : NOT       0= ;
 
-: CHARS     ;
-: CHAR+     1+ ;
-
 : CHAR      BL WORD 1+ C@ ;
 : [CHAR]    CHAR [COMPILE] LITERAL ; IMMEDIATE
 : [']       ' dA @ - [COMPILE] LITERAL ; IMMEDIATE
@@ -69,13 +66,6 @@ DECIMAL
 : */        */MOD NIP ;
 : /MOD      >R S>D R> SM/REM ;
 
-( fm/mod adapted from standard implementation )
-: FM/MOD  ( d n -- rem quot )
-    DUP>R SM/REM
-    ( if the remainder is not zero and has a different sign than the divisor )
-    OVER DUP SWAP R@ XOR 0< AND IF  1- SWAP R@ + SWAP  THEN
-    R>DROP ;
-
 : SPACES    0 MAX  0 ?DO  SPACE  LOOP ;
 
 : POSTPONE  BL WORD FIND  DUP 0= ABORT" ?"
@@ -84,11 +74,6 @@ DECIMAL
 : EVALUATE ( a n -- )
     -1 >SOURCE  >IN CELL+ 2!  0 >IN !  HANDLER @
     IF  ['] INTERPRET CATCH SOURCE> THROW  ELSE  INTERPRET SOURCE>  THEN ;
-
- 0 CONSTANT FALSE
--1 CONSTANT TRUE
-
-: ENVIRONMENT?  2DROP FALSE ;
 
 \ Interpreter string literals
 CREATE SBUF 300 ALLOT
