@@ -21,7 +21,8 @@ typedef uint8_t byte;
 #define AT(va) at(m + (va))
 #define FETCH(va) AT(m + (va))
 
-extern byte *const m; // forth memory
+extern byte *m; // forth memory
+
 extern int verbose;
 
 #define abs(va)    (void *)(m + (va))

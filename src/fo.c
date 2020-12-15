@@ -3,14 +3,14 @@
 #include "fo.h"
 
 // sizes in cells
-#define DATASIZE    20000
-#define STACKSIZE   100
+#define DATASIZE    (32*1024) // default without -m option
+#define STACKSIZE   1024
 
-static cell M[DATASIZE];
-byte * const m = (byte *)M;
+byte *m;
+static cell *M;
 
 // return stack grows down from top of memory
-cell *const R0 = M + DATASIZE;
+cell *R0;
 
 // data stack, grows down
 static cell stack[STACKSIZE+20]; // a bit of underflow not tragic
@@ -245,8 +245,29 @@ void load_image(const char *filename) {
     fclose(f);
 }
 
+cell getsize(const char *arg) {
+    //printf("arg = %s\n", arg);
+    char *end;
+    cell size = strtoul(arg, &end, 10);
+    switch (*end) {
+        case 'g':
+        case 'G':
+            size *= 1024;
+        case 'm':
+        case 'M':
+            size *= 1024;
+        case 'k':
+        case 'K':
+            size *= 1024;
+            break;
+    }
+    cell minsize = sizeof dict + 1000;
+    if (size < minsize) size = minsize;
+    return aligned(size);
+}
+
 int main(int argc, char *argv[]) {
-    memcpy(m, dict, sizeof dict);
+    cell datasize = CELLS(DATASIZE);
 
     // process args, handle and remove the ones I use
     int fargc = 1;
@@ -256,6 +277,11 @@ int main(int argc, char *argv[]) {
         char *arg = argv[i];
         if (*arg++ == '-') {
             switch (*arg) {
+                case 'm':
+                    if (!*++arg && ++i < argc)
+                        arg = argv[i];
+                    datasize = getsize(arg);
+                    continue;
                 case 'v':
                     verbose = strlen(arg);
                     continue;
@@ -266,6 +292,13 @@ int main(int argc, char *argv[]) {
         }
         fargv[fargc++] = argv[i];
     }
+
+    //printf("data size = %tu\n", datasize);
+    m = malloc(datasize);
+    M = (cell*) m;
+    R0 = (cell*) (m + datasize);
+
+    memcpy(m, dict, sizeof dict);
 
     if (verbose > 1) {
         printf("sizeof(source) = %tu\n", sizeof(struct source));
