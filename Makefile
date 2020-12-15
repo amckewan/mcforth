@@ -53,8 +53,8 @@ tests: forth test/*
 bench: forth
 	make -C bench
 
-checkans: forth
-	./forth /usr/share/gforth/0.7.3/test/checkans.fs -e bye
+checkans: forth lib/standard.f
+	./forth lib/standard.f test/checkans.f -e bye
 
 clean:
 	@rm -f fo forth *.inc *.img *.hex *.info *.s
