@@ -20,7 +20,7 @@ LIBS = -ledit
 forth: forth.inc $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(SOURCES) $(LIBS) -o $@
 
-forth.inc: fo rth extend src/core.f lib/*
+forth.inc: fo rth extend lib/*
 	./fo exit-on-error extend
 	hexdump -C forth.img > forth.hex
 

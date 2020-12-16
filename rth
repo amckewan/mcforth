@@ -1,5 +1,4 @@
-include src/core.f
-
+include lib/core.f
 include lib/extras.f
 include lib/core-ext.f
 include lib/string.f

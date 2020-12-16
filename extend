@@ -1,10 +1,4 @@
-include src/core.f
-
-include lib/extras.f
-include lib/core-ext.f
-include lib/string.f
-include lib/path.f
-include lib/see.f
+include rth
 
 \ Process command-line arguments
 : doargs
@@ -28,6 +22,7 @@ include lib/see.f
 0 ! ( cold )
 
 ' quit 1 cells !
+decimal
 
 save forth.inc
 save-image forth.img
