@@ -5,6 +5,9 @@
 : CHARS     ;
 : CHAR+     1+ ;
 
+: 0<>       0= NOT ;
+: <>         = NOT ;
+
 ( fm/mod adapted from standard implementation )
 : FM/MOD  ( d n -- rem quot )
     DUP>R SM/REM

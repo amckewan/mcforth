@@ -7,11 +7,6 @@
 : 2R>       R> R> SWAP ;
 : 2R@       R> R> 2DUP >R >R SWAP ;
 
-( here for completeness but they break the optimizer )
-( much better to just say "0= not" in a definition )
-: 0<>       0= NOT ;
-: <>        = NOT ;
-
 : .(        ')' PARSE TYPE ; IMMEDIATE
 
 \ have to remember current, context as well
@@ -26,7 +21,7 @@
 : DEFER  HEADER  $14 , CELL , ( abort ) ;
 : IS  POSTPONE TO ; IMMEDIATE
 
-: c"  postpone s" postpone drop postpone 1- ; immediate
+: C"  '"' PARSE  POSTPONE SLITERAL  POSTPONE DROP  POSTPONE 1- ; IMMEDIATE
 
 : ERASE  0 FILL ;
 
@@ -35,53 +30,61 @@
 : CASE      0 ; IMMEDIATE
 : OF        $D C, >MARK ; IMMEDIATE
 : ENDOF     POSTPONE ELSE ; IMMEDIATE
+: ENDOF;    POSTPONE EXIT  POSTPONE THEN ; IMMEDIATE
 : ENDCASE   POSTPONE DROP  BEGIN ?DUP WHILE >RESOLVE REPEAT ; IMMEDIATE
 
+\ Use SBUF and HLD for S\"
+: +CHAR   HLD @ C!  1 HLD +! ;
 
-\S
+0 [IF] \ This fails since it exceeds the 8-bit branch reach
+: \CHAR  ( char -- n )
+    CASE
+        'a' OF  7 ENDOF
+        'b' OF  8 ENDOF
+        'e' OF 27 ENDOF
+        'f' OF 12 ENDOF
+        'l' OF 10 ENDOF
+        'm' OF 13 +CHAR 10 ENDOF
+        'n' OF 10 ENDOF
+        'q' OF 34 ENDOF
+        'r' OF 13 ENDOF
+        't' OF  9 ENDOF
+        'v' OF 11 ENDOF
+        'x' OF COUNT DIGIT 4 LSHIFT >R COUNT DIGIT R> OR ENDOF
+        'z' OF  0 ENDOF
+        \ '"' OF 34 ENDOF
+        \ '\' OF 92 ENDOF
+        DUP
+    ENDCASE ;
+[ELSE]
+: \CHAR  ( char -- n )
+    ( could put the most common ones first )
+    'a' OF  7 ENDOF;
+    'b' OF  8 ENDOF;
+    'e' OF 27 ENDOF;
+    'f' OF 12 ENDOF;
+    'l' OF 10 ENDOF;
+    'm' OF 13 +CHAR 10 ENDOF;
+    'n' OF 10 ENDOF;
+    'q' OF 34 ENDOF;
+    'r' OF 13 ENDOF;
+    't' OF  9 ENDOF;
+    'v' OF 11 ENDOF;
+    'x' OF COUNT DIGIT 4 LSHIFT >R COUNT DIGIT R> OR ENDOF;
+    'z' OF  0 ENDOF;
+    \ '"' OF 34 ENDOF;
+    \ '\' OF 92 ENDOF;
+    ;
+[THEN]
 
-: got ' drop ;
-: missing bl word find abort" nope, got it" drop ;
+: PARSE\"  ( -- addr len )
+    'SBUF DUP HLD !
+    SOURCE OVER +  OVER >IN @ + ( src end src' )
+    BEGIN  2DUP U> NOT ABORT" oops"
+           COUNT  DUP '"' = NOT
+    WHILE  DUP '\' = IF  DROP COUNT \CHAR  THEN  +CHAR
+    REPEAT DROP
+    NIP SWAP - >IN !
+    HLD @ OVER - ;
 
-got .r
-got 0>
-
-got :noname
-got ?do
-missing action-of
-got again
-missing buffer:
-\ missing c"
-missing case
-got compile,
-got defer
-missing defer!
-missing defer@
-missing endcase
-missing endof
-0 CONSTANT FALSE
-got hex
-got holds
-got is
-got marker
-got nip
-missing of
-got pad
-got parse
-got parse-name
-got pick
-got refill
-missing restore-input
-missing roll
-missing s\"
-missing save-input
-got source-id
-got to
--1 CONSTANT TRUE
-got u.r
-got u>
-got unused
-got value
-got within
-got [compile]
-got \
+: S\"  PARSE\"  STATE @ IF [COMPILE] SLITERAL THEN ; IMMEDIATE

@@ -1,5 +1,7 @@
 ( useful extras )
 
+: PLACE     ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;
+
 : ON   -1 SWAP ! ;
 : OFF   0 SWAP ! ;
 

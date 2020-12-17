@@ -3,6 +3,7 @@
 * path in forth
 * move stuff from kernel to extend
 * remove non-essential code words (keep opcodes trim)
+* make branch offsets 16 bits if it keeps being a problem
 
 ## Maybe do
 

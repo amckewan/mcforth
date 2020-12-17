@@ -8,11 +8,20 @@
 
 : [COMPILE] ' COMPILE, ; IMMEDIATE
 
+: ,"        '"' PARSE  DUP C, S,  -OPT ;
+: SLITERAL  $A C, DUP C, S, -OPT ; IMMEDIATE
+\ : S"        $A C, ," ; IMMEDIATE
+: ."        $B C, ," ; IMMEDIATE
+: ABORT"    $C C, ," ; IMMEDIATE
+
+: ABORT     -1 THROW ;
+
 ( Conditionals ) HEX
+: OFFSET    - DUP 80 + FF U> ABORT" branch too far" ;
 : <MARK     HERE  -OPT ;
-: <RESOLVE  <MARK  - C, ;
+: <RESOLVE  <MARK  OFFSET C, ;
 : >MARK     <MARK  0 C, ;
-: >RESOLVE  <MARK  OVER -  SWAP C! ;
+: >RESOLVE  <MARK  OVER OFFSET  SWAP C! ;
 
 : IF        58 C, >MARK               ; IMMEDIATE
 : THEN      >RESOLVE                  ; IMMEDIATE
@@ -37,22 +46,11 @@
 : +LOOP     7 C,  <RESOLVE  >RESOLVE ; IMMEDIATE
 DECIMAL
 
-: ,"        '"' PARSE  DUP C, S,  -OPT ;
-: SLITERAL  $A C, DUP C, S, -OPT ; IMMEDIATE
-\ : S"        $A C, ," ; IMMEDIATE
-: ."        $B C, ," ; IMMEDIATE
-: ABORT"    $C C, ," ; IMMEDIATE
-
-: ABORT     -1 THROW ;
-
 : NOT       0= ;
 
 : CHAR      BL WORD 1+ C@ ;
 : [CHAR]    CHAR [COMPILE] LITERAL ; IMMEDIATE
 : [']       ' dA @ - [COMPILE] LITERAL ; IMMEDIATE
-
-: ERASE     BL FILL ;
-: PLACE     ( a n a' -- )  2DUP C!  1+ SWAP MOVE ;
 
 : ABS       DUP 0< IF NEGATE THEN ;
 : MIN       2DUP > IF SWAP THEN DROP ;
@@ -73,16 +71,17 @@ DECIMAL
     IF  ['] INTERPRET CATCH SOURCE> THROW  ELSE  INTERPRET SOURCE>  THEN ;
 
 \ Interpreter string literals
-CREATE SBUF 300 ALLOT
-VARIABLE #SBUF
-: STASH ( a n -- a' n )  DUP 300 U> ABORT" too big for stash"
-    DUP #SBUF @ + 300 > IF  0 #SBUF ! ( wrap ) THEN
-    #SBUF @  OVER #SBUF +!  SBUF + SWAP  ( a a' n )
-    DUP >R OVER >R  MOVE  R> R> ;
-\ : S"  [CHAR] " PARSE STASH ;
+\ Standard says minmum 2 * 80 char buffers
+CREATE SBUF 2 80 * ALLOT
+VARIABLE SBUF#
+: 'SBUF ( -- a )  SBUF# @ DUP 1 XOR SBUF# !  80 * SBUF + ;
+: STASH ( a n -- a' n )
+    DUP>R 80 U> ABORT" too big for stash"
+    'SBUF SWAP OVER R@ MOVE R> ;
 
 \ state-smart version
-: S"  [CHAR] " PARSE  STATE @ IF [COMPILE] SLITERAL ELSE STASH THEN ; IMMEDIATE
+: S"  [CHAR] " PARSE
+      STATE @ IF  [COMPILE] SLITERAL  ELSE  STASH  THEN ; IMMEDIATE
 
 \ Pictured numeric output
 \ Adapted from Wil Baden's ThisForth

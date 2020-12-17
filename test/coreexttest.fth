@@ -729,12 +729,12 @@ T{ : RF1  S" REFILL" EVALUATE ; RF1 -> FALSE }T
 T{ : SID1  S" SOURCE-ID" EVALUATE ; SID1 -> -1 }T
 
 \ ------------------------------------------------------------------------------
+DEFINED S\" [IF]
 TESTING S\"  (Forth 2012 compilation mode)
 \ Extended the Forth 200X RfD tests
 \ Note this tests the Core Ext definition of S\" which has unedfined
 \ interpretation semantics. S\" in interpretation mode is tested in the tests on
 \ the File-Access word set
-DEFINED S\" [IF]
 T{ : SSQ1 S\" abc" S" abc" S= ; -> }T  \ No escapes
 T{ SSQ1 -> TRUE }T
 T{ : SSQ2 S\" " ; SSQ2 SWAP DROP -> 0 }T    \ Empty string

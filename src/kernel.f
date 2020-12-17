@@ -400,8 +400,16 @@ CODE 2!     AT(top) = *S++; AT(top + CELL) = *S++; pop; NEXT
 CODE W@     top = W(top); NEXT
 CODE W!     W(top) = *S++, pop; NEXT
 
-CODE FILL  ( a u c -- )       memset(abs(S[1]), top, *S);       pop3; NEXT
+CODE FILL  ( a u c -- )       memset(abs(S[1]), top, *S); pop3; NEXT
 CODE MOVE  ( src dest u -- )  memmove(abs(*S), abs(S[1]), top); pop3; NEXT
+
+CODE CMOVE ( src dest u -- )  w = *S++;
+    ` while (top--) m[w++] = m[(*S)++]; pop2; NEXT
+
+CODE CMOVE> ( src dest u -- )  w = *S++ + top;
+    ` while (top--) m[--w] = m[*S + top]; pop2; NEXT
+
+CODE /STRING ( a u n -- a' u' ) S[1] += top, top = *S++ - top; NEXT
 
 CODE M  push (cell)m; NEXT
 
@@ -520,6 +528,8 @@ CODE REFILL ( -- f )  push refill(SOURCE); NEXT
 ` #define dot(n)  printf(BASE == 16 ? "%tx " : "%td ", n)
 
 CODE .  ( n -- )  dot(top), pop; NEXT
+
+CODE DIGIT ( ch -- n )  top = digit(top); NEXT
 
 CODE -NUMBER  ( a -- a t, n f ) w = number(abs(top), --S, BASE);
 `   if (w) top = 0; else *S = top, top = -1; NEXT

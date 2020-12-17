@@ -37,7 +37,7 @@ include see.info
     \ case?
     dup 1 = over 9 = or if drop .call exit then
     dup 2 = if drop .callx exit then
-    dup 3 8 within over 50 60 within or if drop .branch exit then
+    dup 3 8 within over D = or over 50 60 within or if drop .branch exit then
     dup 20 40 within if drop .lit exit then
     dup 40 50 within if drop .lit .branch exit then
     dup A D within if drop .slit exit then
