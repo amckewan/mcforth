@@ -56,6 +56,8 @@ struct source {
 STATIC_ASSERT(sizeof(struct source) == 8*sizeof(cell), source_size);
 
 // string.c
+char *new_string(const char *str, int len);
+char *temp_string(const char *str, size_t len);
 int compare(const char *a1, int n1, const char *a2, int n2);
 int search(cell *sp, cell top);
 

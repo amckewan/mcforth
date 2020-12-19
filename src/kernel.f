@@ -411,8 +411,6 @@ CODE CMOVE> ( src dest u -- )  w = *S++ + top;
 
 CODE /STRING ( a u n -- a' u' ) S[1] += top, top = *S++ - top; NEXT
 
-CODE M  push (cell)m; NEXT
-
 CODE KEY   ( -- char )  push getchar(); NEXT
 CODE EMIT  ( char -- )  putchar(top); pop; NEXT
 CODE TYPE  ( a n -- )   type(*S, top); pop2; NEXT
@@ -433,6 +431,22 @@ CODE ARGV ( n -- a n ) *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEX
 
 CODE GETENV  ( name len -- value len )  top = get_env(S, top); NEXT
 CODE SETENV  ( value len name len -- )  set_env(S, top); S += 3, pop; NEXT
+
+CODE DLOPEN  ( name len -- handle )
+    ` top = dl_open(*S++, top, RTLD_LAZY); NEXT
+CODE DLCLOSE ( handle -- )
+    ` dlclose((void *)top), pop; NEXT
+CODE DLSYM ( name len handle -- sym )
+    ` top = dl_sym(S[1], *S, top); S += 2; NEXT
+CODE DLERROR ( -- addr len )
+    ` w = (cell) dlerror(); if (w) push rel(w), push strlen((char*)w);
+    ` else push 0, push 0; NEXT
+
+CODE DLCALL ( <args> #args sym -- result )
+    ` w = dl_call(top, *S, S+1), S += *S + 1, top = w; NEXT
+
+CODE >ABS ( a -- a' )  top += (cell) m; NEXT
+CODE >REL ( a' -- a )  top -= (cell) m; NEXT
 
 ( ********** File I/O ********** )
 
@@ -741,7 +755,7 @@ VARIABLE LAST 0,
 : VARIABLE  CREATE  $ 0 , ;
 
 \ | opc | I for does | data
-: DOES>   R> M -  dA @ -  $ 8 LSHIFT $ 12 OR  LAST CELL+ @ ! ;
+: DOES>   R> >REL  dA @ -  $ 8 LSHIFT $ 12 OR  LAST CELL+ @ ! ;
 : >BODY   CELL+ ;
 
 \ Be careful from here on...

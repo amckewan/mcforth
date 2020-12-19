@@ -2,6 +2,28 @@
 
 #include "fo.h"
 
+// counted and null-terminated, malloc
+char *new_string(const char *str, int len) {
+    char *cstr = malloc(len + 2);
+    cstr[0] = len;
+    memcpy(cstr+1, str, len);
+    cstr[len+1] = 0;
+    return cstr;
+}
+
+// null-terminated, static allocation
+char *temp_string(const char *str, size_t len) {
+    static char buf[512];
+    static size_t used = 0;
+    if (len >= sizeof buf) return 0;
+    if (used + len >= sizeof buf) used = 0;
+    char *cstr = buf + used;
+    memcpy(cstr, str, len);
+    cstr[len] = 0;
+    used += len + 1;
+    return cstr;
+}
+
 /*
     COMPARE  ( c-addr1 u1 c-addr2 u2 -- n )
     Compare the string specified by c-addr1 u1 to the string specified by

@@ -18,7 +18,7 @@
 : (TO) ( xt -- )  >BODY  STATE @ IF POSTPONE LITERAL POSTPONE ! ELSE ! THEN ;
 : TO  ' (TO) ; IMMEDIATE
 
-: DEFER  HEADER  $14 , CELL , ( abort ) ;
+: DEFER  HEADER  $14 , ['] ABORT , ;
 : IS  POSTPONE TO ; IMMEDIATE
 
 : C"  '"' PARSE  POSTPONE SLITERAL  POSTPONE DROP  POSTPONE 1- ; IMMEDIATE
@@ -82,7 +82,7 @@
     SOURCE OVER +  OVER >IN @ + ( src end src' )
     BEGIN  2DUP U> NOT ABORT" oops"
            COUNT  DUP '"' = NOT
-    WHILE  DUP '\' = IF  DROP COUNT \CHAR  THEN  +CHAR
+    WHILE  '\' OF  COUNT \CHAR  THEN  +CHAR
     REPEAT DROP
     NIP SWAP - >IN !
     HLD @ OVER - ;

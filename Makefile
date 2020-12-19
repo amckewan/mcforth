@@ -15,7 +15,7 @@ SOURCES = src/fo.c src/string.c src/parse.c src/file.c
 HEADERS = src/fo.h
 # use libedit to avoid GPL
 #LIBS = -lreadline
-LIBS = -ledit
+LIBS = -ledit -ldl
 
 forth: forth.inc $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(SOURCES) $(LIBS) -o $@

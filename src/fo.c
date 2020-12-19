@@ -1,6 +1,7 @@
 // fo.c
 
 #include "fo.h"
+#include <dlfcn.h>
 
 // sizes in cells
 #define DATASIZE    (32*1024) // default without -m option
@@ -155,14 +156,6 @@ void words(cell link) {
     }
 }
 
-char *new_string(const char *str, int len) {
-    char *cstr = malloc(len + 2);
-    cstr[0] = len;
-    memcpy(cstr+1, str, len);
-    cstr[len+1] = 0;
-    return cstr;
-}
-
 cell get_env(cell *S, cell len) {
     char *name = new_string(abs(*S), len);
     char *value = getenv(name + 1);
@@ -181,6 +174,30 @@ void set_env(cell *S, cell len) {
         free(value);
     }
     free(name);
+}
+
+cell dl_open(cell addr, cell len, cell flags) {
+    const char *filename = temp_string(abs(addr), len);
+    void *handle = dlopen(filename, flags);
+    //printf("dlopen %s returned %p error %s\n", filename, handle, dlerror());
+    return (cell) handle;
+}
+
+cell dl_sym(cell addr, cell len, cell handle) {
+    const char *symbol = temp_string(abs(addr), len);
+    void *symaddr = dlsym((void*)handle, symbol);
+    return (cell) symaddr;
+}
+
+cell dl_call(cell sym, cell nargs, cell *args) {
+    cell (*func)() = (void*) sym;
+    switch (nargs) {
+        case 1: return func(args[0]);
+        case 2: return func(args[1], args[0]);
+        case 3: return func(args[2], args[1], args[0]);
+        case 4: return func(args[3], args[2], args[1], args[0]);
+        default: return func();
+    }
 }
 
 void dump(int a, int n, int base) {
