@@ -196,6 +196,8 @@ cell dl_call(cell sym, cell nargs, cell *args) {
         case 2: return func(args[1], args[0]);
         case 3: return func(args[2], args[1], args[0]);
         case 4: return func(args[3], args[2], args[1], args[0]);
+        case 5: return func(args[4], args[3], args[2], args[1], args[0]);
+        case 6: return func(args[5], args[4], args[3], args[2], args[1], args[0]);
         default: return func();
     }
 }
