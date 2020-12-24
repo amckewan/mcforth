@@ -322,6 +322,10 @@ CODE R@         push *R  ; NEXT
 CODE R>DROP     ++R; NEXT
 CODE DUP>R      *--R = top; NEXT
 
+CODE 2>R        *--R = *S++, *--R = top, pop; NEXT
+CODE 2R>        push R[1], push R[0], R += 2; NEXT
+CODE 2R@        push R[1], push R[0]; NEXT
+
 CODE I          push R[0] + R[1]; NEXT
 CODE J          push R[3] + R[4]; NEXT
 CODE LEAVE      I = (byte*)R[2];
@@ -411,20 +415,23 @@ CODE CMOVE> ( src dest u -- )  w = *S++ + top;
 
 CODE /STRING ( a u n -- a' u' ) S[1] += top, top = *S++ - top; NEXT
 
-CODE KEY   ( -- char )  push getchar(); NEXT
-CODE EMIT  ( char -- )  putchar(top); pop; NEXT
-CODE TYPE  ( a n -- )   type(*S, top); pop2; NEXT
+CODE COMPARE  top = compare(abs(S[2]), S[1], abs(*S), top); S += 3; NEXT
+CODE SEARCH   top = search(S++, top); NEXT
+
+( ********** Terminal I/O ********** )
+
+CODE KEY    ( -- char )  push getchar(); NEXT
+CODE EMIT   ( char -- )  putchar(top); pop; NEXT
+CODE TYPE   ( a n -- )   type(*S, top); pop2; NEXT
+CODE ACCEPT ( a n -- n ) top = accept(*S++, top); NEXT
 
 : CR     $ 0A EMIT ;
 : SPACE  $ 20 EMIT ;
 
-CODE COMPARE  top = compare(abs(S[2]), S[1], abs(*S), top); S += 3; NEXT
-CODE SEARCH   top = search(S++, top); NEXT
+( ********** System ********** )
 
 CODE (BYE)  return top;
 : BYE $ 0 (BYE) ;
-
-CODE ACCEPT ( a n -- n )  top = accept(*S++, top); NEXT
 
 CODE ARGC ( -- n ) push argc; NEXT
 CODE ARGV ( n -- a n ) *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEXT
@@ -432,12 +439,15 @@ CODE ARGV ( n -- a n ) *--S = rel(argv[top]); top = (cell)strlen(argv[top]); NEX
 CODE GETENV  ( name len -- value len )  top = get_env(S, top); NEXT
 CODE SETENV  ( value len name len -- )  set_env(S, top); S += 3, pop; NEXT
 
+( ********** Dynamic Libraries ********** )
+
 CODE DLOPEN  ( name len -- handle )
     ` top = dl_open(*S++, top, RTLD_LAZY); NEXT
 CODE DLCLOSE ( handle -- )
     ` dlclose((void *)top), pop; NEXT
 CODE DLSYM ( name len handle -- sym )
     ` top = dl_sym(S[1], *S, top); S += 2; NEXT
+
 CODE DLERROR ( -- addr len )
     ` w = (cell) dlerror(); if (w) push rel(w), push strlen((char*)w);
     ` else push 0, push 0; NEXT
@@ -488,8 +498,8 @@ CODE WRITE-LINE ( a u fid -- ior )
     ` if (w == *S) *S = 1, w = fwrite("\n", 1, 1, (FILE*)top);
     ` top = w == *S ? 0 : ferror((FILE*)top); S += 2; NEXT
 
+( ********** Memory allocation ********** )
 
-\ Memory allocation
 CODE ALLOCATE ( n -- a ior )    *--S = rel(malloc(top)), top = *S ? 0 : -1; NEXT
 CODE RESIZE   ( a n -- a' ior ) *S = rel(realloc(abs(*S), top)), top = *S ? 0 : -1; NEXT
 CODE FREE     ( a -- ior )      if (top) free(abs(top)); top = 0; NEXT
@@ -704,6 +714,19 @@ CODE ALIGNED  top = aligned(top); NEXT
         THEN
     REPEAT DROP ;
 
+\ These are the foundations for REQUIRED, but I'm not
+\ going to add the complexity right now. See also lib/path.f.
+\ I thought this would eliminate the need to allocate the
+\ file name for error reporting, but it won't do that since
+\ after we add a path we might have a different name representing
+\ the file we opened vs. the name given to INCLUDED/REQUIRED.
+\ REQUIRED should just use the supplied name.
+\ It may be better if we record the name after the files is included.
+\ : LINK, ( a -- )  ALIGN HERE  OVER @ ,  SWAP ! ;
+\ : S,  ( a n -- )  HERE SWAP  DUP ALLOT  MOVE ;
+\ VARIABLE INCLUDES ( list of included files )
+\ : INCLUDING ( name len -- )  INCLUDES LINK,  DUP C, S, ;
+
 : (INCLUDE)  BEGIN REFILL WHILE INTERPRET REPEAT ;
 
 : INCLUDE-FILE  ( str len fid -- )  >SOURCE  HANDLER @
@@ -741,7 +764,6 @@ VARIABLE LAST 0,
 
 : HIDE      LAST @ @  CURRENT @ ! ;
 : REVEAL    LAST @ ?DUP IF  CURRENT @ !  THEN ;
-
 : LINK,     ALIGN HERE  OVER @ ,  SWAP ! ;
 : S,        HERE SWAP  DUP ALLOT  MOVE ;
 

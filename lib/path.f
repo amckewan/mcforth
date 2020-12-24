@@ -40,3 +40,17 @@
 : included  ( str len -- )  open-on-path include-file ;
 
 : include   parse-name included ;
+
+\S
+: included? ( name len -- f )  2>r includes
+    begin @ dup while
+        dup cell+ count  2r@ compare 0=
+    until then  r>drop r>drop ;
+
+\ : required ( a n -- )  2dup included? if 2drop else included then ;
+\ : require  parse-name required ;
+
+: .included ( -- ) \ first to last
+    includes begin dup @ ?dup 0= until
+    begin dup includes = not while cell+ count type cr repeat drop ;
+\    includes begin @ ?dup while dup cell+ count type cr repeat ;

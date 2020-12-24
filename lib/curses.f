@@ -3,7 +3,7 @@
 0 value libcurses
 
 : ?dlerror ( f -- )
-    if  dlerror pad place  pad msg !  -2 throw  then ;
+    if  dlerror sbuf place  sbuf msg !  -2 throw  then ;
 
 : open-curses  ( -- f )
     s" libncurses.so.6" dlopen  dup 0= ?dlerror  to libcurses ;
@@ -12,7 +12,7 @@
     libcurses ?dup if  dlclose  0 to libcurses  then ;
 
 : getsym ( addr len -- sym )
-    libcurses dlsym dup 0= ?dlerror ;
+    libcurses dlsym  dup 0= ?dlerror ;
 
 : call parse-name getsym postpone literal postpone dlcall ; immediate
 
@@ -62,7 +62,7 @@ s" stdscr" getsym >rel constant 'stdscr
 13 attr A_BOLD
 23 attr A_ITALICS
 
-: COLOR_PAIR ( n -- mask )  255 and 8 lshift ;
+: color-pair ( n -- mask )  255 and 8 lshift ;
 
 : wattron  ( win attr -- )  2 call wattron drop ;
 : wattroff ( win attr -- )  2 call wattroff drop ;
@@ -87,27 +87,40 @@ s" stdscr" getsym >rel constant 'stdscr
 : init-pair  ( pair fg bg -- )  3 call init_pair drop ;
 
 ( Line graphics )
-( These aren't filled in until after initscr so we can't use constant )
+\ acs_map isn't filled in until after initscr so we can't
+\ define these at build time
 s" acs_map" getsym >rel constant acs_map
-: >acs  cells acs_map + @ ;
-: acs ( c -- )  create , does> @ >acs ;
+: acs  ( c -- x )  cells acs_map + @ ;
+: acs: ( c -- )  create , does> @ acs ;
 
-char 0 acs ACS_BLOCK
-char q acs ACS_HLINE
-char x acs ACS_VLINE
-char l acs ACS_ULCORNER
-char k acs ACS_URCORNER
-char m acs ACS_LLCORNER
-char j acs ACS_LRCORNER
-char t acs ACS_LTEE
-char u acs ACS_RTEE
-char w acs ACS_TTEE
-char v acs ACS_BTEE
-char n acs ACS_PLUS
+char 0 acs: ACS_BLOCK
+char q acs: ACS_HLINE
+char x acs: ACS_VLINE
+char l acs: ACS_ULCORNER
+char k acs: ACS_URCORNER
+char m acs: ACS_LLCORNER
+char j acs: ACS_LRCORNER
+char t acs: ACS_LTEE
+char u acs: ACS_RTEE
+char w acs: ACS_TTEE
+char v acs: ACS_BTEE
+char n acs: ACS_PLUS
 
-: acs-test 'z' 1+ 'a' do i cells acs_map + @ addch loop ;
+\ or do it by hand
+: acs-emit ( c -- )  acs addch ;
+: acs-type ( str len -- )  0 ?do count acs-emit loop drop ;
 
-: .acs ( str len -- )  0 ?do count >acs addch loop drop ;
+
+\ ************** TESTING ****************
+
+: acs-test
+    s" hv~a.f`>qi,ymjt|{gn+uoprs}w-lkx" 2dup
+    2 0 mv 0 do count addch bl addch loop drop
+    3 0 mv 0 do count acs-emit bl addch loop drop ;
+
+\ 'z' 1+ 'a' do i acs-emit loop ;
+
+
 
 : box
     10 5 mv ACS_ULCORNER addch ACS_HLINE addch ACS_URCORNER addch
@@ -115,13 +128,58 @@ char n acs ACS_PLUS
     12 5 mv ACS_LLCORNER addch ACS_HLINE addch ACS_LRCORNER addch
 ;
 
-: bigbox
-    10 10 mv s" lqwqk" .acs
-    11 10 mv s" x~x~x" .acs
-    12 10 mv s" tqnqu" .acs
-    13 10 mv s" x~x~x" .acs
-    14 10 mv s" mqvqj" .acs
+: box2
+    10 20 mv ACS_ULCORNER addch ACS_HLINE addch ACS_HLINE addch ACS_HLINE addch ACS_URCORNER addch
+    11 20 mv ACS_VLINE addch bl addch bl addch bl addch ACS_VLINE addch
+    12 20 mv ACS_LLCORNER addch ACS_HLINE addch ACS_HLINE addch ACS_HLINE addch ACS_LRCORNER addch
 ;
+
+: bigbox
+    10 10 mv s" lqwqk" acs-type
+    11 10 mv s" x~x~x" acs-type
+    12 10 mv s" tqnqu" acs-type
+    13 10 mv s" x~x~x" acs-type
+    14 10 mv s" mqvqj" acs-type
+;
+
+: +B A_BOLD attron ;
+: -B A_BOLD attroff ;
+: +I A_ITALICS attron ;
+: -I A_ITALICS attroff ;
+
+
+: row  ( n -- )
+    dup 2* 21 + 0 mv
+    \ even rows start with white square (arbitrary)
+    'x' acs-emit  8 0 do
+        \ 1 xor dup 1 and if COLOR_WHITE else COLOR_BLACK then
+        bl
+        dup dup addch addch addch
+        'x' acs-emit
+    loop drop ;
+
+: break ( n -- )
+    2* 22 + 0 mv
+    s" tqqqnqqqnqqqnqqqnqqqnqqqnqqqnqqqu" acs-type ;
+
+: piece ( char row col -- )
+    swap 2* 21 + swap 4 * 2 + mv addch ;
+
+: pieces
+    S" RNBQKBNR" drop 8 0 do count 0 i piece loop drop
+    8 0 do '`' acs 1 i piece loop
+    S" RNBQKBNR" drop 8 0 do count 7 i piece loop drop
+    8 0 do '`' acs 6 i piece loop
+;
+
+: board
+    20 0 mv s" lqqqwqqqwqqqwqqqwqqqwqqqwqqqwqqqk" acs-type
+    8 0 do i row i break loop
+    36 0 mv s" mqqqvqqqvqqqvqqqvqqqvqqqvqqqvqqqj" acs-type
+    \ pieces
+    37 0 mv
+;
+
 
 : test
     initscr
@@ -136,18 +194,21 @@ char n acs ACS_PLUS
     A_BOLD attroff
     [char] ! A_BOLD + addch
 
-    A_ITALICS attron
-    s" Italics" addstr
-    A_ITALICS attroff
+    +I s" Italics" addstr -I
+
+    +b +i s" bold+italics" addstr -b -i
 
     start-color
+    0 0 0 0 init-color ( actually black )
     8 1 do  i i 0 init-pair  loop
-    8 0 do 'A' i + i color_pair + addch loop
-    s" end" addstr
+    8 0 do 'A' i + i color-pair + addch loop
 
     3 0 mv acs-test
     box
+    box2
     bigbox
+
+    board
 
     refresh ;
 
