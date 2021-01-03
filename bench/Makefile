@@ -1,6 +1,6 @@
 FORTH = ../forth
 #FORTH = gforth-fast -e "warnings off"
-TIME = time -p
+TIME = time -f "%U"
 
 all:
 	$(TIME) $(FORTH) ./sieve.f -e "main bye"

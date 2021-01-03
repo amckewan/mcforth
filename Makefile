@@ -2,12 +2,16 @@
 
 all: test
 
+CELL = 4
+
 CC = gcc
 #CC = clang
-CFLAGS = -m32
 #CFLAGS += -Wall
-CFLAGS += -Werror
-CFLAGS += -O3
+CFLAGS = -Werror
+CFLAGS += -Ofast
+ifeq ($(CELL),4)
+CFLAGS += -m32
+endif
 
 SOURCES = src/fo.c src/string.c src/parse.c src/file.c
 HEADERS = src/fo.h
@@ -29,7 +33,7 @@ prims.inc kernel.inc: src/meta.f src/kernel.f
 	hexdump -C kernel.img > kernel.hex
 
 bootstrap:
-	gforth -e "4 CONSTANT CELL" src/cross.f -e ciao
+	gforth -e "$(CELL) CONSTANT CELL" src/cross.f -e ciao
 	$(CC) -DKERNEL $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o fo
 	./fo extend
 	$(CC) $(CFLAGS) $(INCLUDES) $(SOURCES) $(LIBS) -o forth
