@@ -5,8 +5,7 @@
  */
 
 #include "fo.h"
-#include <readline/readline.h>
-#include <readline/history.h>
+#include <editline/history.h>
 
 FILE *open_file(const char *str, int len, const char *mode) {
     char *filename = malloc(len + 1);

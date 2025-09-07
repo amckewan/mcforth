@@ -2,9 +2,9 @@
 
 all: tests
 
-CELL = 4
+CELL = 8
 
-CC = gcc
+CC = clang
 #CFLAGS = -Wall -Werror
 CFLAGS += -Ofast
 ifeq ($(CELL),4)

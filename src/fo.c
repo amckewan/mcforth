@@ -190,15 +190,21 @@ cell dl_sym(cell addr, cell len, cell handle) {
 }
 
 cell dl_call(cell sym, cell nargs, cell *args) {
-    cell (*func)() = (void*) sym;
+    typedef cell (*func0)(void);
+    typedef cell (*func1)(cell);
+    typedef cell (*func2)(cell,cell);
+    typedef cell (*func3)(cell,cell,cell);
+    typedef cell (*func4)(cell,cell,cell,cell);
+    typedef cell (*func5)(cell,cell,cell,cell,cell);
+    typedef cell (*func6)(cell,cell,cell,cell,cell,cell);
     switch (nargs) {
-        case 1: return func(args[0]);
-        case 2: return func(args[1], args[0]);
-        case 3: return func(args[2], args[1], args[0]);
-        case 4: return func(args[3], args[2], args[1], args[0]);
-        case 5: return func(args[4], args[3], args[2], args[1], args[0]);
-        case 6: return func(args[5], args[4], args[3], args[2], args[1], args[0]);
-        default: return func();
+        case 1: return ((func1)sym)(args[0]);
+        case 2: return ((func2)sym)(args[1], args[0]);
+        case 3: return ((func3)sym)(args[2], args[1], args[0]);
+        case 4: return ((func4)sym)(args[3], args[2], args[1], args[0]);
+        case 5: return ((func5)sym)(args[4], args[3], args[2], args[1], args[0]);
+        case 6: return ((func6)sym)(args[5], args[4], args[3], args[2], args[1], args[0]);
+        default:return ((func0)sym)();
     }
 }
 
