@@ -25,6 +25,13 @@ cell accept(cell addr_va, cell max) {
     if (len > max) len = max;
     memcpy(abs(addr_va), line, len);
 
+    // undo newline echoed by readine
+    // move cursor to the end of the previous line and erase to the end
+    // \033[1A      up 1 line
+    // \033[%dC     move to end
+    // \033[K       erase to end of line (then add space)
+    printf("\033[1A\033[%dC\033[K ", len); fflush(stdout);
+
     add_history(line);
     free(line);
     return len;
