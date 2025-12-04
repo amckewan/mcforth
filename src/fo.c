@@ -11,6 +11,7 @@ byte *m;
 static cell *M;
 
 // return stack grows down from top of memory
+// todo: move stack memory mangement to Forth?
 cell *R0;
 
 // data stack, grows down
@@ -22,6 +23,10 @@ int verbose;
 #define CELL sizeof(cell)
 #define aligned(x) (((cell)(x) + (CELL - 1)) & ~(CELL - 1))
 
+// todo: move name creation to forth
+// todo: make nfa always 8 bytes! (WIDTH=7)
+// cell name_to_xt(cell nfa) { return nfa + CELL; }
+// cell xt_to_name(cell cfa) { return cfa - CELL; }
 
 cell name_to_xt(cell nfa) {
     return aligned(nfa + (m[nfa] & 31) + 1);
@@ -39,6 +44,25 @@ int match(const char *name, const char *str, int len) {
         if (toupper(name[i]) != toupper(str[i])) return 0;
     }
     return 1;
+}
+
+// Search one find, return nfa or 0
+cell search_wordlist2(cell name, cell len, cell wid) {
+    cell link = AT(wid);
+    while (link) {
+        if ((m[link + CELL] & 63) == len
+              && match((char*)m + name, (char*)m + link + CELL + 1, len)) {
+            cell xt = aligned(link + CELL + 1 + len);
+            if (m[link + CELL] & 0x80) // headless
+                xt = AT(xt);
+            if (m[link + CELL] & 0x40) // immediate
+                xt = -xt;
+            return xt;
+        }
+        link = AT(link);
+    }
+    return 0;
+
 }
 
 // SEARCH-WORDLIST ( c-addr u wid -- 0 | xt 1 | xt -1 )
@@ -89,22 +113,22 @@ int digit(char c) {
     return (c <= '9') ? c - '0' : 10 + toupper(c) - 'A';
 }
 
-int number(const char *str, cell *num, int base) {
+int number(const char *str, cell *num, cell base) { // -> true if converted
     int len = *str++;
-    int n = 0;
-    int sign = 1;
-    if (len == 3 && *str == '\'' && str[2] == '\'') {
+    cell n = 0;
+    cell sign = 1;
+    if (str[0] == '\'' && str[2] == '\'' && len == 3) { // 'c'
         *num = str[1];
         return TRUE;
     }
-    if (len > 1) {
-        if (*str == '#') base = 10, str++, len--;
-        else if (*str == '$') base = 16, str++, len--;
-        else if (*str == '%') base = 2, str++, len--;
+    if (len > 1) { // Std. prefixes (convenient)
+        if (*str == '#') base = 10, str++, len--; else
+        if (*str == '$') base = 16, str++, len--; else
+        if (*str == '%') base =  2, str++, len--;
     }
     if (len > 1 && *str == '-') {
-        str++, len--;
         sign = -1;
+        str++, len--;
     }
     if (len == 0) return FALSE;
     for (int i = 0; i < len; i++) {
@@ -116,6 +140,7 @@ int number(const char *str, cell *num, int base) {
     return TRUE;
 }
 
+// todo: fix for 64-bits
 cell to_number(cell *sp, cell top, int base) {
     uint64_t u = (uint32_t)sp[2] | ((uint64_t)sp[1] << 32);
     char *str = abs(sp[0]);
@@ -136,11 +161,11 @@ void type(cell addr, cell len) {
     while (len--) putchar(m[addr++]);
 }
 
-void *dotq(void *I) {
-    char *p = (char *)I;
+void *dotq(void *cstr) {
+    char *p = cstr;
     int n = *p++;
     while (n--) putchar(*p++);
-    return (cell *)(p);
+    return p;
 }
 
 void dotid(cell nfa) {

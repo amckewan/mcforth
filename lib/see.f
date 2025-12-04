@@ -50,8 +50,8 @@ external
 : (see) ( xt -- )
     \ dup >name count 1f and type
     begin
-        dup . dup count ( a a+1 op )
-        dup .b dup .op .operands cr ( a a+1 )
+        cr dup .  dup count ( a a+1 op )
+        dup .b dup .op .operands ( a a+1 )
         over c@ 12 = if  drop @ 8 rshift 0
         else swap c@  dup 0=  over 9 = or  swap 10 18 within or  then
     until drop ;

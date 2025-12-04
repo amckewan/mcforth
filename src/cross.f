@@ -9,6 +9,8 @@ HEX
 CREATE EOL 1 C, 0A C,
 : H, , ;
 
+8 CONSTANT CELL
+
 \ Memory Access Words
 CREATE IMAGE 2000 ALLOT   IMAGE 2000 ERASE
 : THERE  ( taddr -- addr )   IMAGE + ;

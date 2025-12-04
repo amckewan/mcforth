@@ -22,6 +22,7 @@
 
 
 \ Variables shared with C code at fixed offsets
+\ TODO: remove as many as reasonable
 
 ( COLD ) 0 ,  ( WARM ) 0 ,
 ( H ) 0 ,  ( BASE ) #10 ,  ( STATE ) 0 ,  ( 'IN ) 0 ,
@@ -30,13 +31,13 @@
 ( HANDLER) 0 , 8 ,
 ( MSG ) 0 ,
 
-2 +ORIGIN CONSTANT H
-3 +ORIGIN CONSTANT BASE
-4 +ORIGIN CONSTANT STATE
-5 +ORIGIN CONSTANT 'IN
-6 +ORIGIN CONSTANT FORTH-WORDLIST
-8 +ORIGIN CONSTANT CURRENT
-9 +ORIGIN CONSTANT CONTEXT
+ 2 +ORIGIN CONSTANT H
+ 3 +ORIGIN CONSTANT BASE
+ 4 +ORIGIN CONSTANT STATE
+ 5 +ORIGIN CONSTANT 'IN
+ 6 +ORIGIN CONSTANT FORTH-WORDLIST
+ 8 +ORIGIN CONSTANT CURRENT
+ 9 +ORIGIN CONSTANT CONTEXT
 12 +ORIGIN CONSTANT HANDLER
 14 +ORIGIN CONSTANT MSG
 
@@ -612,7 +613,7 @@ CODE THROW  ( n -- )
     ` if (!top) pop; else if (!HANDLER) goto abort; else THROW; NEXT
 
 CODE RESET  R = R0, HANDLER = 0; NEXT
-
+ 
 ( ********** Compiler ********** )
 
 VARIABLE dA ( offset for target compiler )

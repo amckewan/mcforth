@@ -2,19 +2,12 @@
 
 all: tests
 
-CELL = 8
-
 CC = clang
-#CFLAGS = -Wall -Werror
+CFLAGS = -Wall -Werror
 CFLAGS += -Ofast
-ifeq ($(CELL),4)
-CFLAGS += -m32
-endif
 
 SOURCES = src/fo.c src/string.c src/parse.c src/file.c
 HEADERS = src/fo.h
-# use libedit to avoid GPL
-#LIBS = -lreadline
 LIBS = -ledit -ldl
 
 forth: forth.inc $(SOURCES) $(HEADERS)
@@ -32,7 +25,7 @@ prims.inc kernel.inc: src/meta.f src/kernel.f
 	hexdump -C kernel.img > kernel.hex
 
 bootstrap:
-	gforth -e "$(CELL) CONSTANT CELL" src/cross.f -e ciao
+	gforth src/cross.f -e ciao
 	hexdump -C kernel.img > kernel.hex
 	$(CC) -DKERNEL $(CFLAGS) $(SOURCES) $(LIBS) -o fo
 	./fo extend
