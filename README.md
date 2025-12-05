@@ -1,5 +1,8 @@
 # McForth
 
+This is the end of the master branch. Work continues on main with a new
+approach using a separate VM with spec.
+
 This is a byte-code Forth in C inspired by cmForth and ThisForth. It was
 developed and tested on Linux but should be reasonably portable to other
 operating systems. It can be built with either a 32- or 64-bit cell size.

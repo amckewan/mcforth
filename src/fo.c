@@ -316,8 +316,19 @@ cell getsize(const char *arg) {
     return aligned(size);
 }
 
+#include <sys/mman.h>
+void *membase;
+void *reserve(uintptr_t addr, size_t size) {
+    return mmap((void *)addr, size, PROT_READ | PROT_WRITE, 
+        MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED_NOREPLACE, -1, 0);
+}
+
 int main(int argc, char *argv[]) {
     cell datasize = CELLS(DATASIZE);
+    membase = reserve(0x10000, 1 * 1024 * 1024);
+    printf("membase: %p\n", membase);
+    printf("sizeof int = %lu\n", sizeof(int));
+    printf("sizeof long = %lu\n", sizeof(long));
 
     // process args, handle and remove the ones I use
     int fargc = 1;
