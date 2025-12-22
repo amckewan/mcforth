@@ -1,6 +1,6 @@
 # mcforth makefile
 
-all:
+all: tests
 
 CC = clang
 CFLAGS = -Wall -Werror

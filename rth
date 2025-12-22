@@ -1,0 +1,6 @@
+include lib/core.f
+include lib/extras.f
+include lib/core-ext.f
+include lib/string.f
+include lib/path.f
+include lib/see.f
