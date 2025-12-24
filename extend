@@ -19,9 +19,9 @@ include rth
     SOURCE-STACK 'IN !
     doargs
     TAG COUNT TYPE QUIT ;
-0 ! ( cold )
+ORIGIN ! ( cold )
 
-' quit 1 cells !
+' quit ORIGIN 1 cells + ! ( warm )
 decimal
 
 save forth.inc

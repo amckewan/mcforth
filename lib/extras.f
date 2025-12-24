@@ -58,12 +58,12 @@ typical
 : ?IOERR  ABORT" File I/O Error" ;
 : SAVE ( <filename> -- ) \ format for include
     PARSE-NAME W/O CREATE-FILE ?IOERR
-    HERE 0 DO
+    HERE ORIGIN DO
         DUP I C@ 0 <# ',' HOLD #S #> ROT
         I 15 AND 15 = IF WRITE-LINE ELSE WRITE-FILE THEN ?IOERR
     LOOP
     CLOSE-FILE ?IOERR ;
 : SAVE-IMAGE ( <filename> -- )
     PARSE-NAME W/O CREATE-FILE ?IOERR
-    DUP 0 HERE ROT WRITE-FILE ?IOERR
+    DUP ORIGIN  HERE OVER -  ROT WRITE-FILE ?IOERR
     CLOSE-FILE ?IOERR ;

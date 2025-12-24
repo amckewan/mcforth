@@ -4,6 +4,7 @@
 #include <dlfcn.h>
 
 // sizes in cells
+#define ORIGIN      0x10000
 #define DATASIZE    (32*1024) // default without -m option
 #define STACKSIZE   1024
 
@@ -236,6 +237,7 @@ cell dl_call(cell sym, cell nargs, cell *args) {
 void dump(int a, int n, int base) {
     int i, j;
     for (i = 0; i < n; i += 16, a += 16) {
+        putchar('\n');
         if (base == 10) printf("%4d ", a); else printf("%04X ", a);
         for (j = 0; j < 16; j++) {
             if (j % 4 == 0) putchar(' ');
@@ -244,7 +246,6 @@ void dump(int a, int n, int base) {
         putchar(' ');
         for (j = 0; j < 16; j++)
             putchar(isprint(m[a + j]) ? m[a + j] : '.');
-        putchar('\n');
     }
 }
 
@@ -283,16 +284,15 @@ byte dict[] = {
 #endif
 };
 
-void load_image(const char *filename) {
-    printf("load image %s\n", filename);
-    FILE *f = fopen(filename, "r");
-    if (!f) {
-        printf("can't open image %s\n", filename);
+void load_image(const char *filename, void *addr, int size) {
+    printf("load image %s at %p\n", filename, addr);
+    FILE *image = fopen(filename, "r");
+    if (!image) {
+        fprintf(stderr, "can't open image %s\n", filename);
         return;
     }
-    int x = fread(M, 1, sizeof M, f);
-    (void)x;
-    fclose(f);
+    fread(addr, 1, size, image);
+    fclose(image);
 }
 
 cell getsize(const char *arg) {
@@ -325,10 +325,10 @@ void *reserve(uintptr_t addr, size_t size) {
 
 int main(int argc, char *argv[]) {
     cell datasize = CELLS(DATASIZE);
-    membase = reserve(0x10000, 1 * 1024 * 1024);
-    printf("membase: %p\n", membase);
-    printf("sizeof int = %lu\n", sizeof(int));
-    printf("sizeof long = %lu\n", sizeof(long));
+    char *image_file = 0;
+
+    // membase = reserve(0x10000, 1 * 1024 * 1024);
+    // printf("membase: %p\n", membase);
 
     // process args, handle and remove the ones I use
     int fargc = 1;
@@ -347,7 +347,7 @@ int main(int argc, char *argv[]) {
                     verbose = strlen(arg);
                     continue;
                 case 'i':
-                    if (++i < argc) load_image(argv[i]);
+                    if (++i < argc) image_file = argv[i];
                     continue;
             }
         }
@@ -355,11 +355,15 @@ int main(int argc, char *argv[]) {
     }
 
     //printf("data size = %tu\n", datasize);
-    m = malloc(datasize);
-    M = (cell*) m;
-    R0 = (cell*) (m + datasize);
+    m = malloc(ORIGIN + datasize);
+    M = (cell*) (m + ORIGIN);
+    R0 = (cell*) (m + ORIGIN + datasize);
 
-    memcpy(m, dict, sizeof dict);
+    if (image_file) {
+        load_image(image_file, M, datasize);
+    } else {
+        memcpy(M, dict, sizeof dict);
+    }
 
     if (verbose > 1) {
         printf("sizeof(source) = %tu\n", sizeof(struct source));

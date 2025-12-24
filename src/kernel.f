@@ -31,6 +31,7 @@
 ( HANDLER) 0 , 8 ,
 ( MSG ) 0 ,
 
+     10000 CONSTANT ORIGIN
  2 +ORIGIN CONSTANT H
  3 +ORIGIN CONSTANT BASE
  4 +ORIGIN CONSTANT STATE
@@ -81,7 +82,7 @@ abort:
     I = abs(WARM);
 start:
     STATE = 0;
-    M[CURRENT] = M[CONTEXT] = CELLS(FORTH);
+    M[CURRENT] = M[CONTEXT] = ORIGIN + CELLS(FORTH);
     S = S0;
     R = R0;
 next:
@@ -581,7 +582,7 @@ CODE SEARCH-WORDLIST  ( c-addr u wid -- 0 | xt 1 | xt -1 )
     ` else S += 2, top = 0; NEXT
 
 CODE FIND  ( str -- xt flag | str 0 )
-    ` w = find(top, CELLS(CONTEXT));
+    ` w = find(top, ORIGIN + CELLS(CONTEXT));
     ` if (w > 0) *--S = w, top = -1;
     ` else if (w < 0) *--S = -w, top = 1;
     ` else push 0; NEXT

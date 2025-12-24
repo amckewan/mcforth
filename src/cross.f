@@ -12,8 +12,9 @@ CREATE EOL 1 C, 0A C,
 8 CONSTANT CELL
 
 \ Memory Access Words
+10000 CONSTANT ORIGIN ( start of dictionary on target, first 64K not used )
 CREATE IMAGE 2000 ALLOT   IMAGE 2000 ERASE
-: THERE  ( taddr -- addr )   IMAGE + ;
+: THERE  ( taddr -- addr )   ORIGIN -  IMAGE + ;
 : TC@    ( taddr -- char )   THERE C@ ;
 : TC!    ( char taddr -- )   THERE C! ;
 
@@ -27,7 +28,7 @@ CELL 1 CELLS = [IF]
 : T!     ( n taddr -- )      THERE L! ;
 [THEN]
 
-VARIABLE H
+VARIABLE H  ORIGIN H !
 : HERE  ( -- taddr )   H @ ;
 : ALLOT ( n -- )       H +! ;
 : C,    ( char -- )    HERE TC!      1 H +! ;
@@ -37,7 +38,7 @@ VARIABLE H
 
 : ALIGN  BEGIN HERE CELL 1 - AND WHILE 0 C, REPEAT ;
 
-: TDUMP  IMAGE H @ DUMP ;
+: TDUMP  SWAP THERE SWAP DUMP ;
 
 \ Output to prims.inc
 : ?ERR  ABORT" file I/O error" ;
@@ -59,7 +60,7 @@ variable seer
 : close-info    seer @ close-file ?err ;
 
 : info ( opc -- )
-    0 <# # # #> seer @ write-file ?err
+    0 <# # # '$' hold #> seer @ write-file ?err
     s"  OP " seer @ write-file ?err
     >in @  bl word count seer @ write-line ?err  >in ! ;
 
@@ -68,12 +69,12 @@ variable seer
 \ save image
 : SAVE-IMG
     R/W CREATE-FILE ?ERR
-    DUP IMAGE HERE ROT WRITE-FILE ?ERR
+    DUP IMAGE HERE ORIGIN - ROT WRITE-FILE ?ERR
     CLOSE-FILE ?ERR ;
 
 : SAVE-INC
     OPEN  BASE @ DECIMAL
-    HERE 0 DO
+    HERE ORIGIN DO
         I THERE 10 0 DO
             COUNT 0 <# #S #> WRITE  S" ," WRITE
         LOOP DROP
@@ -82,7 +83,7 @@ variable seer
 
 : SAVE  ( -- )
     CLOSE  close-info
-    CR ." Saving " BASE @ DECIMAL HERE . BASE ! ." bytes..."
+    CR ." Saving " BASE @ DECIMAL HERE ORIGIN - . BASE ! ." bytes..."
     S" kernel.img" SAVE-IMG
     S" kernel.inc" SAVE-INC
     ." done" ;
@@ -95,7 +96,7 @@ S" see.info" open-info
 \ **********************************************************************
 \ Compiler
 
-: +ORIGIN  ( n -- ta )  CELL * ;
+: +ORIGIN  ( n -- ta )  CELL * ORIGIN + ;
 
 : COMPILE,  ( addr -- )
     DUP TC@ 5F >  OVER 1+ TC@ 0= AND IF  TC@ C, EXIT  THEN

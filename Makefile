@@ -24,6 +24,9 @@ prims.inc kernel.inc: src/meta.f src/kernel.f
 	./forth src/meta.f -e ciao
 	hexdump -C kernel.img > kernel.hex
 
+%.hex: %.img
+	hexdump -C $< > $@
+
 bootstrap:
 	gforth src/cross.f -e ciao
 	hexdump -C kernel.img > kernel.hex
@@ -38,10 +41,10 @@ asm: prims.inc kernel.inc $(SOURCES) $(HEADERS)
 	$(CC) -DKERNEL $(CFLAGS) src/fo.c -S
 
 run: forth
-	@./forth
+	./forth
 
 tests: forth test/*
-	@./forth exit-on-error test/all.f -e "cr bye"
+	./forth exit-on-error test/all.f -e "cr bye"
 
 bench: forth
 	make -C bench

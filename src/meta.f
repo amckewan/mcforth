@@ -2,11 +2,14 @@
 
 : TAG S" Hello" ;
 
-VARIABLE H'  HEX 8000 ,
+\ Build target at 128K, 64K-128K for host forth
+HEX 20000 CONSTANT TARGET
+
+VARIABLE H'  TARGET ORIGIN - , ( dA )
 
 : .dA HERE . dA @ . ;
 
-: +ORIGIN  ( n -- ta )  CELL * ;
+: +ORIGIN  ( n -- ta )  CELLS ORIGIN + ;
 
 \ ========== Save target ==========
 
@@ -33,16 +36,16 @@ VARIABLE SEER
 : WRITE-INFO  SEER @ WRITE-FILE ?ERR ;
 
 : INFO ( opc -- )
-    0 <# # # #> WRITE-INFO  S"  OP " WRITE-INFO
+    0 <# # # '$' hold #> WRITE-INFO  S"  OP " WRITE-INFO
     >IN @  PARSE-NAME WRITE-INFO  EOL COUNT WRITE-INFO  >IN ! ;
 
 ( save dictionary image )
-: SAVE-IMAGE ( for hexdump )
-    OPEN  H' 2@ OVER - WRITE  CLOSE ;
-: SAVE-DICT ( for #include )
+: SAVE-IMAGE ( <name> -- ) \ to load with -i, and hexdump for vis.
+    OPEN  TARGET H' @ OVER - WRITE  CLOSE ;
+: SAVE-DICT ( <name> -- ) \ for #include in fo.c
     H' @ 10 ERASE ( for diff )
     OPEN  BASE @ DECIMAL
-    H' 2@ SWAP DO
+    H' @ TARGET DO
         I  10 0 DO  COUNT 0 <# #S #> WRITE  S" ," WRITE  LOOP DROP
         NEWLINE
     10 +LOOP  CLOSE  BASE ! ;
@@ -50,7 +53,7 @@ VARIABLE SEER
 : .INFO ( op )
     BASE @ DECIMAL
     SWAP . ." opcodes "
-    H' 2@ SWAP - . ." bytes"
+    H' @ TARGET - . ." bytes"
     BASE ! ;
 
 : SAVE  ( -- )
@@ -91,7 +94,7 @@ VARIABLE OP  ( next opcode )
 
 : TAG  HERE dA @ -  TAG DUP C, S,  CONSTANT ;
 
-: HAS ( a -- )  ' dA @ -  SWAP +ORIGIN dA @ +  ! ;
+: HAS ( a -- )  ' dA @ -  SWAP +ORIGIN dA @ +   cr 2dup . .  ! ;
 
 \ ========== Target Compiler ==========
 
@@ -103,13 +106,13 @@ MARKER EMPTY
 : }   { ;
 \ headless : }   H' @ ,  PRIOR  80 XOR  SWAP C!  { ; IMMEDIATE
 
-: SCAN ( a - a)   BEGIN  @  DUP 1 8000 WITHIN NOT UNTIL ;
+: SCAN ( a - a)   BEGIN  @  DUP ORIGIN TARGET WITHIN NOT UNTIL ;
 : TRIM ( a a - a)   DUP >R  dA @ -  SWAP !  R>
     DUP CELL+  DUP C@  EF AND  SWAP C! ;
 : CLIP ( a)   DUP BEGIN  DUP SCAN  DUP WHILE  TRIM  REPEAT
     SWAP !  DUP @  SWAP dA @ +  ! ;
 : PRUNE   { FORTH-WORDLIST CLIP
-    HERE dA @ - 2 +ORIGIN 8000 + !  { EMPTY ;
+    HERE dA @ - 2 +ORIGIN dA @ + !  { EMPTY ;
 
 \ for compatibility with cross.fs
 : $ ; IMMEDIATE
@@ -118,7 +121,7 @@ MARKER EMPTY
 : ,A  dA @ - , ;
 : 0, 0 , ;
 
-HEX  8000 2000 0 FILL  8000 H' !
+HEX  TARGET 2000 0 FILL  TARGET H' !
 { include ./kernel.f }
 PRUNE
 CR OP @ .INFO
