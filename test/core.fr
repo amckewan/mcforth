@@ -16,6 +16,8 @@ CR
 TESTING CORE WORDS
 HEX
 
+0 CONSTANT STD \ for words I want to skip such as M*
+
 \ ------------------------------------------------------------------------
 TESTING BASIC ASSUMPTIONS
 
@@ -293,6 +295,7 @@ T{ -2 S>D -> -2 -1 }T
 T{ MIN-INT S>D -> MIN-INT -1 }T
 T{ MAX-INT S>D -> MAX-INT 0 }T
 
+STD [IF]
 T{ 0 0 M* -> 0 S>D }T
 T{ 0 1 M* -> 0 S>D }T
 T{ 1 0 M* -> 0 S>D }T
@@ -311,6 +314,7 @@ T{ 2 MAX-INT M* -> MAX-INT 1 LSHIFT 0 }T
 T{ MIN-INT MIN-INT M* -> 0 MSB 1 RSHIFT }T
 T{ MAX-INT MIN-INT M* -> MSB MSB 2/ }T
 T{ MAX-INT MAX-INT M* -> 1 MSB 2/ INVERT }T
+[THEN]
 
 T{ 0 0 * -> 0 }T            \ TEST IDENTITIES
 T{ 0 1 * -> 0 }T
@@ -333,15 +337,18 @@ T{ 1 2 UM* -> 2 0 }T
 T{ 2 1 UM* -> 2 0 }T
 T{ 3 3 UM* -> 9 0 }T
 
+STD [IF]
 T{ MID-UINT+1 1 RSHIFT 2 UM* -> MID-UINT+1 0 }T
 T{ MID-UINT+1 2 UM* -> 0 1 }T
 T{ MID-UINT+1 4 UM* -> 0 2 }T
 T{ 1S 2 UM* -> 1S 1 LSHIFT 1 }T
 T{ MAX-UINT MAX-UINT UM* -> 1 1 INVERT }T
+[THEN]
 
 \ ------------------------------------------------------------------------
 TESTING DIVIDE: FM/MOD SM/REM UM/MOD */ */MOD / /MOD MOD
 
+STD [IF]
 T{ 0 S>D 1 FM/MOD -> 0 0 }T
 T{ 1 S>D 1 FM/MOD -> 0 1 }T
 T{ 2 S>D 1 FM/MOD -> 0 2 }T
@@ -415,6 +422,7 @@ T{ 3 0 2 UM/MOD -> 1 1 }T
 T{ MAX-UINT 2 UM* 2 UM/MOD -> 0 MAX-UINT }T
 T{ MAX-UINT 2 UM* MAX-UINT UM/MOD -> 0 2 }T
 T{ MAX-UINT MAX-UINT UM* MAX-UINT UM/MOD -> 0 MAX-UINT }T
+[THEN]
 
 : IFFLOORED
    [ -3 2 / -2 = INVERT ] LITERAL IF POSTPONE \ THEN ;
@@ -475,10 +483,13 @@ T{ 7 3 / -> 7 3 T/ }T
 T{ 7 -3 / -> 7 -3 T/ }T
 T{ -7 3 / -> -7 3 T/ }T
 T{ -7 -3 / -> -7 -3 T/ }T
+
+STD [IF]
 T{ MAX-INT 1 / -> MAX-INT 1 T/ }T
 T{ MIN-INT 1 / -> MIN-INT 1 T/ }T
 T{ MAX-INT MAX-INT / -> MAX-INT MAX-INT T/ }T
 T{ MIN-INT MIN-INT / -> MIN-INT MIN-INT T/ }T
+[THEN]
 
 T{ 0 1 MOD -> 0 1 TMOD }T
 T{ 1 1 MOD -> 1 1 TMOD }T
@@ -857,6 +868,7 @@ COUNT-BITS 2* CONSTANT #BITS-UD      \ NUMBER OF BITS IN UD
    SWAP BASE ! ;
 T{ GP5 -> <TRUE> }T
 
+STD [IF]
 : GP6
    BASE @ >R  2 BASE !
    MAX-UINT MAX-UINT <# #S #>      \ MAXIMUM UD TO BINARY
@@ -867,6 +879,7 @@ T{ GP5 -> <TRUE> }T
       >R CHAR+ R>
    LOOP SWAP DROP ;
 T{ GP6 -> <TRUE> }T
+[THEN]
 
 : GP7
    BASE @ >R    MAX-BASE BASE !
@@ -912,11 +925,14 @@ T{ 0 0 GN' Z' MAX-BASE >NUMBER-BASED -> 23 0 GN-CONSUMED }T
    0 0 2SWAP >NUMBER SWAP DROP      \ RETURN LENGTH ONLY
    R> BASE ! ;
 T{ 0 0 2 GN1 -> 0 0 0 }T
+
+STD [IF]
 T{ MAX-UINT 0 2 GN1 -> MAX-UINT 0 0 }T
 T{ MAX-UINT DUP 2 GN1 -> MAX-UINT DUP 0 }T
 T{ 0 0 MAX-BASE GN1 -> 0 0 0 }T
 T{ MAX-UINT 0 MAX-BASE GN1 -> MAX-UINT 0 0 }T
 T{ MAX-UINT DUP MAX-BASE GN1 -> MAX-UINT DUP 0 }T
+[THEN]
 
 : GN2   \ ( -- 16 10 )
    BASE @ >R  HEX BASE @  DECIMAL BASE @  R> BASE ! ;
