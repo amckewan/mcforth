@@ -3,10 +3,9 @@
 #include "fo.h"
 #include <dlfcn.h>
 
-// sizes in cells
-#define ORIGIN      0x10000
-#define DATASIZE    (32*1024) // default without -m option
-#define STACKSIZE   1024
+#define ORIGIN      0x10000     // start of forth-addressable memory
+#define DATASIZE    (256*1024)  // memory size without -m option
+#define STACKSIZE   1024        // stack cells, separate array (to be changed!)
 
 byte *m;
 static cell *M;
@@ -296,39 +295,27 @@ void load_image(const char *filename, void *addr, int size) {
 }
 
 cell getsize(const char *arg) {
-    //printf("arg = %s\n", arg);
     char *end;
     cell size = strtoul(arg, &end, 10);
-    switch (*end) {
-        case 'g':
-        case 'G':
-            size *= 1024;
-        case 'm':
-        case 'M':
-            size *= 1024;
-        case 'k':
-        case 'K':
-            size *= 1024;
-            break;
+    switch (toupper(*end)) {
+        case 'G':   size *= 1024;
+        case 'M':   size *= 1024;
+        case 'K':   size *= 1024;
     }
-    cell minsize = sizeof dict + 1000;
+    cell minsize = 0x20000; // need 80K-ish for metacompiler ( change this)
     if (size < minsize) size = minsize;
     return aligned(size);
 }
 
 #include <sys/mman.h>
-void *membase;
 void *reserve(uintptr_t addr, size_t size) {
     return mmap((void *)addr, size, PROT_READ | PROT_WRITE, 
         MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED_NOREPLACE, -1, 0);
 }
 
 int main(int argc, char *argv[]) {
-    cell datasize = CELLS(DATASIZE);
+    cell datasize = DATASIZE;
     char *image_file = 0;
-
-    // membase = reserve(0x10000, 1 * 1024 * 1024);
-    // printf("membase: %p\n", membase);
 
     // process args, handle and remove the ones I use
     int fargc = 1;
@@ -354,14 +341,20 @@ int main(int argc, char *argv[]) {
         fargv[fargc++] = argv[i];
     }
 
-    //printf("data size = %tu\n", datasize);
-    m = malloc(ORIGIN + datasize);
+    // Map in memory at 64K
+    m = 0; // all addresses are 0-based
+    void *membase = reserve(ORIGIN, datasize);
+    printf("membase: %p, origin: 0x%x, datasize: 0x%lx\n", membase, ORIGIN, datasize);
+
+    // m = malloc(ORIGIN + datasize); printf("using malloc\n");
+
     M = (cell*) (m + ORIGIN);
     R0 = (cell*) (m + ORIGIN + datasize);
 
     if (image_file) {
         load_image(image_file, M, datasize);
     } else {
+        // use compiled-in dictionary image
         memcpy(M, dict, sizeof dict);
     }
 
